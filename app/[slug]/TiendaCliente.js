@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 function formatoPrecio(valor) {
   return new Intl.NumberFormat("es-CO", {
@@ -16,6 +16,8 @@ export default function TiendaCliente({
   productos,
 }) {
   const [carrito, setCarrito] = useState({});
+  const [agregadoId, setAgregadoId] = useState(null);
+  const carritoRef = useRef(null);
 
   function agregar(producto) {
     setCarrito((actual) => ({
@@ -25,6 +27,12 @@ export default function TiendaCliente({
         cantidad: (actual[producto.id]?.cantidad || 0) + 1,
       },
     }));
+
+    setAgregadoId(producto.id);
+
+    setTimeout(() => {
+      setAgregadoId(null);
+    }, 1200);
   }
 
   function cambiarCantidad(id, cambio) {
@@ -60,6 +68,20 @@ export default function TiendaCliente({
       0
     );
   }, [productosCarrito]);
+
+  const cantidadTotal = useMemo(() => {
+    return productosCarrito.reduce(
+      (suma, producto) => suma + producto.cantidad,
+      0
+    );
+  }, [productosCarrito]);
+
+  function irAlCarrito() {
+    carritoRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }
 
   function pedirWhatsApp() {
     if (productosCarrito.length === 0) return;
@@ -114,6 +136,8 @@ export default function TiendaCliente({
           gridTemplateColumns:
             "repeat(auto-fit, minmax(220px, 1fr))",
           gap: "20px",
+          paddingBottom:
+            productosCarrito.length > 0 ? "95px" : "0",
         }}
       >
         {productos.map((producto) => (
@@ -185,13 +209,18 @@ export default function TiendaCliente({
                 border: "none",
                 padding: "13px",
                 borderRadius: "10px",
-                background: "#d97883",
+                background:
+                  agregadoId === producto.id
+                    ? "#58b77a"
+                    : "#d97883",
                 color: "white",
                 fontWeight: "700",
                 cursor: "pointer",
               }}
             >
-              Agregar al carrito
+              {agregadoId === producto.id
+                ? "✓ Agregado"
+                : "Agregar al carrito"}
             </button>
           </article>
         ))}
@@ -199,6 +228,7 @@ export default function TiendaCliente({
 
       {productosCarrito.length > 0 && (
         <section
+          ref={carritoRef}
           style={{
             marginTop: "40px",
             background: "white",
@@ -206,6 +236,7 @@ export default function TiendaCliente({
             padding: "24px",
             boxShadow:
               "0 5px 25px rgba(0,0,0,0.06)",
+            scrollMarginTop: "20px",
           }}
         >
           <h2>Mi pedido</h2>
@@ -287,6 +318,42 @@ export default function TiendaCliente({
             Pedir por WhatsApp
           </button>
         </section>
+      )}
+
+      {productosCarrito.length > 0 && (
+        <button
+          onClick={irAlCarrito}
+          style={{
+            position: "fixed",
+            left: "50%",
+            bottom: "18px",
+            transform: "translateX(-50%)",
+            width: "calc(100% - 32px)",
+            maxWidth: "520px",
+            border: "none",
+            borderRadius: "16px",
+            padding: "16px 20px",
+            background: "#222",
+            color: "white",
+            fontSize: "16px",
+            fontWeight: "700",
+            cursor: "pointer",
+            boxShadow: "0 8px 30px rgba(0,0,0,0.22)",
+            zIndex: 999,
+            display: "flex",
+            justifyContent: "space-between",
+            gap: "15px",
+          }}
+        >
+          <span>
+            🛒 {cantidadTotal}{" "}
+            {cantidadTotal === 1 ? "producto" : "productos"}
+          </span>
+
+          <span>
+            {formatoPrecio(total)} · Ver carrito
+          </span>
+        </button>
       )}
     </>
   );
