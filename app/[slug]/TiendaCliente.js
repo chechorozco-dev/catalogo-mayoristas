@@ -10,7 +10,7 @@ function formatoPrecio(valor) {
   }).format(valor || 0);
 }
 
-function GaleriaProducto({ producto }) {
+function GaleriaProducto({ producto, abrirImagen }) {
   const imagenes = [producto.foto_url, producto.foto_url_2].filter(Boolean);
   const [indice, setIndice] = useState(0);
 
@@ -33,13 +33,17 @@ function GaleriaProducto({ producto }) {
     );
   }
 
-  function anterior() {
+  function anterior(e) {
+    e.stopPropagation();
+
     setIndice((actual) =>
       actual === 0 ? imagenes.length - 1 : actual - 1
     );
   }
 
-  function siguiente() {
+  function siguiente(e) {
+    e.stopPropagation();
+
     setIndice((actual) =>
       actual === imagenes.length - 1 ? 0 : actual + 1
     );
@@ -47,6 +51,7 @@ function GaleriaProducto({ producto }) {
 
   return (
     <div
+      onClick={() => abrirImagen(imagenes, indice, producto.nombre)}
       style={{
         position: "relative",
         height: "220px",
@@ -54,6 +59,7 @@ function GaleriaProducto({ producto }) {
         background: "#f7efec",
         marginBottom: "15px",
         overflow: "hidden",
+        cursor: "zoom-in",
       }}
     >
       <img
@@ -82,10 +88,11 @@ function GaleriaProducto({ producto }) {
               height: "36px",
               borderRadius: "50%",
               border: "none",
-              background: "rgba(255,255,255,0.9)",
+              background: "rgba(255,255,255,0.92)",
               fontSize: "22px",
               cursor: "pointer",
               boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+              zIndex: 2,
             }}
           >
             ‹
@@ -104,10 +111,11 @@ function GaleriaProducto({ producto }) {
               height: "36px",
               borderRadius: "50%",
               border: "none",
-              background: "rgba(255,255,255,0.9)",
+              background: "rgba(255,255,255,0.92)",
               fontSize: "22px",
               cursor: "pointer",
               boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+              zIndex: 2,
             }}
           >
             ›
@@ -124,13 +132,17 @@ function GaleriaProducto({ producto }) {
               background: "rgba(255,255,255,0.8)",
               padding: "6px 9px",
               borderRadius: "20px",
+              zIndex: 2,
             }}
           >
             {imagenes.map((_, i) => (
               <button
                 key={i}
                 type="button"
-                onClick={() => setIndice(i)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIndice(i);
+                }}
                 aria-label={`Ver imagen ${i + 1}`}
                 style={{
                   width: "8px",
@@ -151,6 +163,143 @@ function GaleriaProducto({ producto }) {
   );
 }
 
+function VisorImagen({
+  visor,
+  cerrar,
+  anterior,
+  siguiente,
+}) {
+  if (!visor) return null;
+
+  return (
+    <div
+      onClick={cerrar}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.88)",
+        zIndex: 9999,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "20px",
+      }}
+    >
+      <button
+        type="button"
+        onClick={cerrar}
+        aria-label="Cerrar imagen"
+        style={{
+          position: "absolute",
+          top: "18px",
+          right: "18px",
+          width: "44px",
+          height: "44px",
+          borderRadius: "50%",
+          border: "none",
+          background: "white",
+          color: "#222",
+          fontSize: "24px",
+          fontWeight: "700",
+          cursor: "pointer",
+          zIndex: 10002,
+        }}
+      >
+        ✕
+      </button>
+
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          position: "relative",
+          width: "100%",
+          maxWidth: "900px",
+          maxHeight: "92vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <img
+          src={visor.imagenes[visor.indice]}
+          alt={visor.nombre}
+          style={{
+            maxWidth: "100%",
+            maxHeight: "88vh",
+            objectFit: "contain",
+            borderRadius: "14px",
+            display: "block",
+          }}
+        />
+
+        {visor.imagenes.length > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={anterior}
+              aria-label="Imagen anterior"
+              style={{
+                position: "absolute",
+                left: "12px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                width: "46px",
+                height: "46px",
+                borderRadius: "50%",
+                border: "none",
+                background: "rgba(255,255,255,0.92)",
+                fontSize: "28px",
+                cursor: "pointer",
+                boxShadow: "0 3px 15px rgba(0,0,0,0.25)",
+              }}
+            >
+              ‹
+            </button>
+
+            <button
+              type="button"
+              onClick={siguiente}
+              aria-label="Imagen siguiente"
+              style={{
+                position: "absolute",
+                right: "12px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                width: "46px",
+                height: "46px",
+                borderRadius: "50%",
+                border: "none",
+                background: "rgba(255,255,255,0.92)",
+                fontSize: "28px",
+                cursor: "pointer",
+                boxShadow: "0 3px 15px rgba(0,0,0,0.25)",
+              }}
+            >
+              ›
+            </button>
+
+            <div
+              style={{
+                position: "absolute",
+                bottom: "14px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                background: "rgba(0,0,0,0.55)",
+                color: "white",
+                padding: "7px 12px",
+                borderRadius: "20px",
+                fontSize: "14px",
+              }}
+            >
+              {visor.indice + 1} / {visor.imagenes.length}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function TiendaCliente({
   nombreTienda,
   whatsapp,
@@ -158,7 +307,49 @@ export default function TiendaCliente({
 }) {
   const [carrito, setCarrito] = useState({});
   const [agregadoId, setAgregadoId] = useState(null);
+  const [visor, setVisor] = useState(null);
+
   const carritoRef = useRef(null);
+
+  function abrirImagen(imagenes, indice, nombre) {
+    setVisor({
+      imagenes,
+      indice,
+      nombre,
+    });
+  }
+
+  function cerrarImagen() {
+    setVisor(null);
+  }
+
+  function imagenAnterior() {
+    setVisor((actual) => {
+      if (!actual) return actual;
+
+      return {
+        ...actual,
+        indice:
+          actual.indice === 0
+            ? actual.imagenes.length - 1
+            : actual.indice - 1,
+      };
+    });
+  }
+
+  function imagenSiguiente() {
+    setVisor((actual) => {
+      if (!actual) return actual;
+
+      return {
+        ...actual,
+        indice:
+          actual.indice === actual.imagenes.length - 1
+            ? 0
+            : actual.indice + 1,
+      };
+    });
+  }
 
   function agregar(producto) {
     setCarrito((actual) => ({
@@ -212,7 +403,8 @@ export default function TiendaCliente({
 
   const cantidadTotal = useMemo(() => {
     return productosCarrito.reduce(
-      (suma, producto) => suma + producto.cantidad,
+      (suma, producto) =>
+        suma + producto.cantidad,
       0
     );
   }, [productosCarrito]);
@@ -242,18 +434,29 @@ export default function TiendaCliente({
     const numero = (whatsapp || "").replace(/\D/g, "");
 
     if (!numero) {
-      alert("Esta tienda todavía no tiene un número de WhatsApp configurado.");
+      alert(
+        "Esta tienda todavía no tiene un número de WhatsApp configurado."
+      );
       return;
     }
 
     window.open(
-      `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`,
+      `https://wa.me/${numero}?text=${encodeURIComponent(
+        mensaje
+      )}`,
       "_blank"
     );
   }
 
   return (
     <>
+      <VisorImagen
+        visor={visor}
+        cerrar={cerrarImagen}
+        anterior={imagenAnterior}
+        siguiente={imagenSiguiente}
+      />
+
       <header
         style={{
           marginBottom: "35px",
@@ -297,7 +500,10 @@ export default function TiendaCliente({
                 "0 5px 25px rgba(0,0,0,0.06)",
             }}
           >
-            <GaleriaProducto producto={producto} />
+            <GaleriaProducto
+              producto={producto}
+              abrirImagen={abrirImagen}
+            />
 
             <small style={{ color: "#999" }}>
               {producto.referencia}
@@ -460,7 +666,8 @@ export default function TiendaCliente({
             fontSize: "16px",
             fontWeight: "700",
             cursor: "pointer",
-            boxShadow: "0 8px 30px rgba(0,0,0,0.22)",
+            boxShadow:
+              "0 8px 30px rgba(0,0,0,0.22)",
             zIndex: 999,
             display: "flex",
             justifyContent: "space-between",
