@@ -5,6 +5,7 @@ import TiendaCliente from "./TiendaCliente";
 export default async function TiendaPage({ params }) {
   const { slug } = await params;
 
+  // Buscar la tienda por su enlace
   const { data: tienda, error: tiendaError } = await supabase
     .from("tiendas")
     .select("id, nombre_tienda, slug, whatsapp")
@@ -16,40 +17,36 @@ export default async function TiendaPage({ params }) {
     notFound();
   }
 
-  const { data: productosTienda, error: productosError } = await supabase
-    .from("tienda_productos")
+  // Traer TODOS los productos activos
+  const { data: productosData, error: productosError } = await supabase
+    .from("productos")
     .select(`
-      precio_personalizado,
-      visible,
-      productos (
-        id,
-        referencia,
-        nombre,
-        categoria,
-        descripcion,
-        foto_url,
-        foto_url_2,
-        precio_detal
-      )
+      id,
+      referencia,
+      nombre,
+      categoria,
+      descripcion,
+      foto_url,
+      foto_url_2,
+      precio_detal
     `)
-    .eq("tienda_id", tienda.id)
-    .eq("visible", true);
+    .eq("activo", true)
+    .order("created_at", { ascending: false });
 
   if (productosError) {
-    console.error(productosError);
+    console.error("Error cargando productos:", productosError);
   }
 
-  const productos = (productosTienda || []).map((item) => ({
-    id: item.productos.id,
-    referencia: item.productos.referencia,
-    nombre: item.productos.nombre,
-    categoria: item.productos.categoria,
-    descripcion: item.productos.descripcion,
-    foto_url: item.productos.foto_url,
-    foto_url_2: item.productos.foto_url_2,
-    precio:
-      item.precio_personalizado ??
-      item.productos.precio_detal,
+  // Preparar productos para el catálogo
+  const productos = (productosData || []).map((producto) => ({
+    id: producto.id,
+    referencia: producto.referencia,
+    nombre: producto.nombre,
+    categoria: producto.categoria,
+    descripcion: producto.descripcion,
+    foto_url: producto.foto_url,
+    foto_url_2: producto.foto_url_2,
+    precio: producto.precio_detal,
   }));
 
   return (
