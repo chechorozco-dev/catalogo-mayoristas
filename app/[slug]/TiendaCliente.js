@@ -11,14 +11,18 @@ function formatoPrecio(valor) {
 }
 
 function GaleriaProducto({ producto, abrirImagen }) {
-  const imagenes = [producto.foto_url, producto.foto_url_2].filter(Boolean);
+  const imagenes = [
+    producto.foto_url,
+    producto.foto_url_2,
+  ].filter(Boolean);
+
   const [indice, setIndice] = useState(0);
 
   if (imagenes.length === 0) {
     return (
       <div
         style={{
-          height: "220px",
+          aspectRatio: "1 / 1",
           borderRadius: "14px",
           background: "#f7efec",
           marginBottom: "15px",
@@ -51,10 +55,16 @@ function GaleriaProducto({ producto, abrirImagen }) {
 
   return (
     <div
-      onClick={() => abrirImagen(imagenes, indice, producto.nombre)}
+      onClick={() =>
+        abrirImagen(
+          imagenes,
+          indice,
+          producto.nombre
+        )
+      }
       style={{
         position: "relative",
-        height: "220px",
+        aspectRatio: "1 / 1",
         borderRadius: "14px",
         background: "#f7efec",
         marginBottom: "15px",
@@ -78,22 +88,7 @@ function GaleriaProducto({ producto, abrirImagen }) {
           <button
             type="button"
             onClick={anterior}
-            aria-label="Imagen anterior"
-            style={{
-              position: "absolute",
-              left: "10px",
-              top: "50%",
-              transform: "translateY(-50%)",
-              width: "36px",
-              height: "36px",
-              borderRadius: "50%",
-              border: "none",
-              background: "rgba(255,255,255,0.92)",
-              fontSize: "22px",
-              cursor: "pointer",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-              zIndex: 2,
-            }}
+            style={botonFlechaIzquierda}
           >
             ‹
           </button>
@@ -101,22 +96,7 @@ function GaleriaProducto({ producto, abrirImagen }) {
           <button
             type="button"
             onClick={siguiente}
-            aria-label="Imagen siguiente"
-            style={{
-              position: "absolute",
-              right: "10px",
-              top: "50%",
-              transform: "translateY(-50%)",
-              width: "36px",
-              height: "36px",
-              borderRadius: "50%",
-              border: "none",
-              background: "rgba(255,255,255,0.92)",
-              fontSize: "22px",
-              cursor: "pointer",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-              zIndex: 2,
-            }}
+            style={botonFlechaDerecha}
           >
             ›
           </button>
@@ -132,7 +112,6 @@ function GaleriaProducto({ producto, abrirImagen }) {
               background: "rgba(255,255,255,0.8)",
               padding: "6px 9px",
               borderRadius: "20px",
-              zIndex: 2,
             }}
           >
             {imagenes.map((_, i) => (
@@ -143,7 +122,6 @@ function GaleriaProducto({ producto, abrirImagen }) {
                   e.stopPropagation();
                   setIndice(i);
                 }}
-                aria-label={`Ver imagen ${i + 1}`}
                 style={{
                   width: "8px",
                   height: "8px",
@@ -152,7 +130,9 @@ function GaleriaProducto({ producto, abrirImagen }) {
                   padding: 0,
                   cursor: "pointer",
                   background:
-                    i === indice ? "#d97883" : "#d8d8d8",
+                    i === indice
+                      ? "#d97883"
+                      : "#d8d8d8",
                 }}
               />
             ))}
@@ -188,7 +168,6 @@ function VisorImagen({
       <button
         type="button"
         onClick={cerrar}
-        aria-label="Cerrar imagen"
         style={{
           position: "absolute",
           top: "18px",
@@ -198,9 +177,7 @@ function VisorImagen({
           borderRadius: "50%",
           border: "none",
           background: "white",
-          color: "#222",
           fontSize: "24px",
-          fontWeight: "700",
           cursor: "pointer",
           zIndex: 10002,
         }}
@@ -228,7 +205,6 @@ function VisorImagen({
             maxHeight: "88vh",
             objectFit: "contain",
             borderRadius: "14px",
-            display: "block",
           }}
         />
 
@@ -237,20 +213,9 @@ function VisorImagen({
             <button
               type="button"
               onClick={anterior}
-              aria-label="Imagen anterior"
               style={{
-                position: "absolute",
+                ...botonVisor,
                 left: "12px",
-                top: "50%",
-                transform: "translateY(-50%)",
-                width: "46px",
-                height: "46px",
-                borderRadius: "50%",
-                border: "none",
-                background: "rgba(255,255,255,0.92)",
-                fontSize: "28px",
-                cursor: "pointer",
-                boxShadow: "0 3px 15px rgba(0,0,0,0.25)",
               }}
             >
               ‹
@@ -259,20 +224,9 @@ function VisorImagen({
             <button
               type="button"
               onClick={siguiente}
-              aria-label="Imagen siguiente"
               style={{
-                position: "absolute",
+                ...botonVisor,
                 right: "12px",
-                top: "50%",
-                transform: "translateY(-50%)",
-                width: "46px",
-                height: "46px",
-                borderRadius: "50%",
-                border: "none",
-                background: "rgba(255,255,255,0.92)",
-                fontSize: "28px",
-                cursor: "pointer",
-                boxShadow: "0 3px 15px rgba(0,0,0,0.25)",
               }}
             >
               ›
@@ -288,10 +242,10 @@ function VisorImagen({
                 color: "white",
                 padding: "7px 12px",
                 borderRadius: "20px",
-                fontSize: "14px",
               }}
             >
-              {visor.indice + 1} / {visor.imagenes.length}
+              {visor.indice + 1} /{" "}
+              {visor.imagenes.length}
             </div>
           </>
         )}
@@ -344,7 +298,8 @@ export default function TiendaCliente({
       return {
         ...actual,
         indice:
-          actual.indice === actual.imagenes.length - 1
+          actual.indice ===
+          actual.imagenes.length - 1
             ? 0
             : actual.indice + 1,
       };
@@ -356,7 +311,8 @@ export default function TiendaCliente({
       ...actual,
       [producto.id]: {
         ...producto,
-        cantidad: (actual[producto.id]?.cantidad || 0) + 1,
+        cantidad:
+          (actual[producto.id]?.cantidad || 0) + 1,
       },
     }));
 
@@ -373,7 +329,8 @@ export default function TiendaCliente({
 
       if (!producto) return actual;
 
-      const nuevaCantidad = producto.cantidad + cambio;
+      const nuevaCantidad =
+        producto.cantidad + cambio;
 
       if (nuevaCantidad <= 0) {
         const copia = { ...actual };
@@ -391,12 +348,14 @@ export default function TiendaCliente({
     });
   }
 
-  const productosCarrito = Object.values(carrito);
+  const productosCarrito =
+    Object.values(carrito);
 
   const total = useMemo(() => {
     return productosCarrito.reduce(
       (suma, producto) =>
-        suma + producto.precio * producto.cantidad,
+        suma +
+        producto.precio * producto.cantidad,
       0
     );
   }, [productosCarrito]);
@@ -431,11 +390,14 @@ export default function TiendaCliente({
       lineas.join("\n\n") +
       `\n\nTotal: ${formatoPrecio(total)}`;
 
-    const numero = (whatsapp || "").replace(/\D/g, "");
+    const numero = (whatsapp || "").replace(
+      /\D/g,
+      ""
+    );
 
     if (!numero) {
       alert(
-        "Esta tienda todavía no tiene un número de WhatsApp configurado."
+        "Esta tienda todavía no tiene WhatsApp configurado."
       );
       return;
     }
@@ -450,6 +412,49 @@ export default function TiendaCliente({
 
   return (
     <>
+      <style jsx global>{`
+        .product-grid {
+          display: grid;
+          grid-template-columns: repeat(
+            auto-fill,
+            minmax(220px, 1fr)
+          );
+          gap: 20px;
+        }
+
+        @media (max-width: 600px) {
+          .product-grid {
+            grid-template-columns: repeat(
+              2,
+              minmax(0, 1fr)
+            );
+            gap: 10px;
+          }
+
+          .product-card {
+            padding: 10px !important;
+            border-radius: 14px !important;
+          }
+
+          .product-name {
+            font-size: 15px !important;
+          }
+
+          .product-price {
+            font-size: 17px !important;
+          }
+
+          .product-reference {
+            font-size: 12px !important;
+          }
+
+          .add-button {
+            font-size: 13px !important;
+            padding: 11px 5px !important;
+          }
+        }
+      `}</style>
+
       <VisorImagen
         visor={visor}
         cerrar={cerrarImagen}
@@ -463,7 +468,9 @@ export default function TiendaCliente({
           textAlign: "center",
         }}
       >
-        <p className="eyebrow">CATÁLOGO DIGITAL</p>
+        <p className="eyebrow">
+          CATÁLOGO DIGITAL
+        </p>
 
         <h1
           style={{
@@ -475,22 +482,24 @@ export default function TiendaCliente({
         </h1>
 
         <p style={{ color: "#666" }}>
-          Descubre nuestros productos y arma tu pedido fácilmente.
+          Descubre nuestros productos y arma tu
+          pedido fácilmente.
         </p>
       </header>
 
-     <section
-  style={{
-    display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: "12px",
-    paddingBottom:
-      productosCarrito.length > 0 ? "95px" : "0",
-  }}
->
+      <section
+        className="product-grid"
+        style={{
+          paddingBottom:
+            productosCarrito.length > 0
+              ? "95px"
+              : "0",
+        }}
+      >
         {productos.map((producto) => (
           <article
             key={producto.id}
+            className="product-card"
             style={{
               background: "white",
               borderRadius: "18px",
@@ -504,11 +513,15 @@ export default function TiendaCliente({
               abrirImagen={abrirImagen}
             />
 
-            <small style={{ color: "#999" }}>
+            <small
+              className="product-reference"
+              style={{ color: "#999" }}
+            >
               {producto.referencia}
             </small>
 
             <h2
+              className="product-name"
               style={{
                 fontSize: "19px",
                 margin: "5px 0",
@@ -518,6 +531,7 @@ export default function TiendaCliente({
             </h2>
 
             <p
+              className="product-price"
               style={{
                 fontSize: "21px",
                 fontWeight: "700",
@@ -528,6 +542,7 @@ export default function TiendaCliente({
             </p>
 
             <button
+              className="add-button"
               onClick={() => agregar(producto)}
               style={{
                 width: "100%",
@@ -561,7 +576,6 @@ export default function TiendaCliente({
             padding: "24px",
             boxShadow:
               "0 5px 25px rgba(0,0,0,0.06)",
-            scrollMarginTop: "20px",
           }}
         >
           <h2>Mi pedido</h2>
@@ -571,18 +585,26 @@ export default function TiendaCliente({
               key={producto.id}
               style={{
                 display: "flex",
-                justifyContent: "space-between",
+                justifyContent:
+                  "space-between",
                 alignItems: "center",
                 gap: "15px",
                 padding: "14px 0",
-                borderBottom: "1px solid #eee",
+                borderBottom:
+                  "1px solid #eee",
               }}
             >
               <div>
-                <strong>{producto.referencia}</strong>
+                <strong>
+                  {producto.referencia}
+                </strong>
+
                 <div>{producto.nombre}</div>
+
                 <small>
-                  {formatoPrecio(producto.precio)}
+                  {formatoPrecio(
+                    producto.precio
+                  )}
                 </small>
               </div>
 
@@ -596,18 +618,26 @@ export default function TiendaCliente({
                 <button
                   type="button"
                   onClick={() =>
-                    cambiarCantidad(producto.id, -1)
+                    cambiarCantidad(
+                      producto.id,
+                      -1
+                    )
                   }
                 >
                   −
                 </button>
 
-                <strong>{producto.cantidad}</strong>
+                <strong>
+                  {producto.cantidad}
+                </strong>
 
                 <button
                   type="button"
                   onClick={() =>
-                    cambiarCantidad(producto.id, 1)
+                    cambiarCantidad(
+                      producto.id,
+                      1
+                    )
                   }
                 >
                   +
@@ -619,12 +649,15 @@ export default function TiendaCliente({
           <h2
             style={{
               display: "flex",
-              justifyContent: "space-between",
+              justifyContent:
+                "space-between",
               marginTop: "25px",
             }}
           >
             <span>Total</span>
-            <span>{formatoPrecio(total)}</span>
+            <span>
+              {formatoPrecio(total)}
+            </span>
           </h2>
 
           <button
@@ -654,8 +687,10 @@ export default function TiendaCliente({
             position: "fixed",
             left: "50%",
             bottom: "18px",
-            transform: "translateX(-50%)",
-            width: "calc(100% - 32px)",
+            transform:
+              "translateX(-50%)",
+            width:
+              "calc(100% - 32px)",
             maxWidth: "520px",
             border: "none",
             borderRadius: "16px",
@@ -669,7 +704,8 @@ export default function TiendaCliente({
               "0 8px 30px rgba(0,0,0,0.22)",
             zIndex: 999,
             display: "flex",
-            justifyContent: "space-between",
+            justifyContent:
+              "space-between",
             gap: "15px",
           }}
         >
@@ -688,3 +724,36 @@ export default function TiendaCliente({
     </>
   );
 }
+
+const botonFlechaIzquierda = {
+  position: "absolute",
+  left: "10px",
+  top: "50%",
+  transform: "translateY(-50%)",
+  width: "36px",
+  height: "36px",
+  borderRadius: "50%",
+  border: "none",
+  background: "rgba(255,255,255,0.92)",
+  fontSize: "22px",
+  cursor: "pointer",
+};
+
+const botonFlechaDerecha = {
+  ...botonFlechaIzquierda,
+  left: "auto",
+  right: "10px",
+};
+
+const botonVisor = {
+  position: "absolute",
+  top: "50%",
+  transform: "translateY(-50%)",
+  width: "46px",
+  height: "46px",
+  borderRadius: "50%",
+  border: "none",
+  background: "rgba(255,255,255,0.92)",
+  fontSize: "28px",
+  cursor: "pointer",
+};
