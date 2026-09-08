@@ -21,15 +21,16 @@ export default async function TiendaPage({ params }) {
     .select(`
       precio_personalizado,
       visible,
-      productos (
-        id,
-        referencia,
-        nombre,
-        categoria,
-        descripcion,
-        foto_url,
-        precio_detal
-      )
+     productos (
+  id,
+  referencia,
+  nombre,
+  categoria,
+  descripcion,
+  foto_url,
+  foto_url_2,
+  precio_detal
+)
     `)
     .eq("tienda_id", tienda.id)
     .eq("visible", true);
