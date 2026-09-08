@@ -5,7 +5,6 @@ import TiendaCliente from "./TiendaCliente";
 export default async function TiendaPage({ params }) {
   const { slug } = await params;
 
-  // Buscar tienda
   const { data: tienda, error: tiendaError } = await supabase
     .from("tiendas")
     .select("id, nombre_tienda, slug, whatsapp")
@@ -17,7 +16,6 @@ export default async function TiendaPage({ params }) {
     notFound();
   }
 
-  // Traer todos los productos activos
   const { data: productosData, error: productosError } =
     await supabase
       .from("productos")
@@ -30,11 +28,12 @@ export default async function TiendaPage({ params }) {
         foto_url,
         foto_url_2,
         precio_detal,
-        activo
+        activo,
+        created_at
       `)
-      .eq("activo", true);
+      .eq("activo", true)
+      .order("created_at", { ascending: false });
 
-  // Mostrar el error directamente para poder identificarlo
   if (productosError) {
     return (
       <main
@@ -79,7 +78,7 @@ export default async function TiendaPage({ params }) {
     <main
       style={{
         padding: "40px 20px",
-        maxWidth: "1100px",
+        maxWidth: "1250px",
         margin: "auto",
       }}
     >
