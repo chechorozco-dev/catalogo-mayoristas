@@ -479,16 +479,15 @@ export default function TiendaCliente({
         </p>
       </header>
 
-      <section
-        style={{
-          display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: "20px",
-          paddingBottom:
-            productosCarrito.length > 0 ? "95px" : "0",
-        }}
-      >
+     <section
+  style={{
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: "12px",
+    paddingBottom:
+      productosCarrito.length > 0 ? "95px" : "0",
+  }}
+>
         {productos.map((producto) => (
           <article
             key={producto.id}
