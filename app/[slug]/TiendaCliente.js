@@ -10,6 +10,147 @@ function formatoPrecio(valor) {
   }).format(valor || 0);
 }
 
+function GaleriaProducto({ producto }) {
+  const imagenes = [producto.foto_url, producto.foto_url_2].filter(Boolean);
+  const [indice, setIndice] = useState(0);
+
+  if (imagenes.length === 0) {
+    return (
+      <div
+        style={{
+          height: "220px",
+          borderRadius: "14px",
+          background: "#f7efec",
+          marginBottom: "15px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#999",
+        }}
+      >
+        Foto próximamente
+      </div>
+    );
+  }
+
+  function anterior() {
+    setIndice((actual) =>
+      actual === 0 ? imagenes.length - 1 : actual - 1
+    );
+  }
+
+  function siguiente() {
+    setIndice((actual) =>
+      actual === imagenes.length - 1 ? 0 : actual + 1
+    );
+  }
+
+  return (
+    <div
+      style={{
+        position: "relative",
+        height: "220px",
+        borderRadius: "14px",
+        background: "#f7efec",
+        marginBottom: "15px",
+        overflow: "hidden",
+      }}
+    >
+      <img
+        src={imagenes[indice]}
+        alt={`${producto.nombre} - imagen ${indice + 1}`}
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          display: "block",
+        }}
+      />
+
+      {imagenes.length > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={anterior}
+            aria-label="Imagen anterior"
+            style={{
+              position: "absolute",
+              left: "10px",
+              top: "50%",
+              transform: "translateY(-50%)",
+              width: "36px",
+              height: "36px",
+              borderRadius: "50%",
+              border: "none",
+              background: "rgba(255,255,255,0.9)",
+              fontSize: "22px",
+              cursor: "pointer",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+            }}
+          >
+            ‹
+          </button>
+
+          <button
+            type="button"
+            onClick={siguiente}
+            aria-label="Imagen siguiente"
+            style={{
+              position: "absolute",
+              right: "10px",
+              top: "50%",
+              transform: "translateY(-50%)",
+              width: "36px",
+              height: "36px",
+              borderRadius: "50%",
+              border: "none",
+              background: "rgba(255,255,255,0.9)",
+              fontSize: "22px",
+              cursor: "pointer",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+            }}
+          >
+            ›
+          </button>
+
+          <div
+            style={{
+              position: "absolute",
+              bottom: "10px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              display: "flex",
+              gap: "7px",
+              background: "rgba(255,255,255,0.8)",
+              padding: "6px 9px",
+              borderRadius: "20px",
+            }}
+          >
+            {imagenes.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setIndice(i)}
+                aria-label={`Ver imagen ${i + 1}`}
+                style={{
+                  width: "8px",
+                  height: "8px",
+                  borderRadius: "50%",
+                  border: "none",
+                  padding: 0,
+                  cursor: "pointer",
+                  background:
+                    i === indice ? "#d97883" : "#d8d8d8",
+                }}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function TiendaCliente({
   nombreTienda,
   whatsapp,
@@ -98,7 +239,12 @@ export default function TiendaCliente({
       lineas.join("\n\n") +
       `\n\nTotal: ${formatoPrecio(total)}`;
 
-    const numero = whatsapp.replace(/\D/g, "");
+    const numero = (whatsapp || "").replace(/\D/g, "");
+
+    if (!numero) {
+      alert("Esta tienda todavía no tiene un número de WhatsApp configurado.");
+      return;
+    }
 
     window.open(
       `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`,
@@ -151,33 +297,7 @@ export default function TiendaCliente({
                 "0 5px 25px rgba(0,0,0,0.06)",
             }}
           >
-            <div
-              style={{
-                height: "220px",
-                borderRadius: "14px",
-                background: "#f7efec",
-                marginBottom: "15px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                color: "#999",
-              }}
-            >
-              {producto.foto_url ? (
-                <img
-                  src={producto.foto_url}
-                  alt={producto.nombre}
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                  }}
-                />
-              ) : (
-                "Foto próximamente"
-              )}
-            </div>
+            <GaleriaProducto producto={producto} />
 
             <small style={{ color: "#999" }}>
               {producto.referencia}
@@ -269,6 +389,7 @@ export default function TiendaCliente({
                 }}
               >
                 <button
+                  type="button"
                   onClick={() =>
                     cambiarCantidad(producto.id, -1)
                   }
@@ -279,6 +400,7 @@ export default function TiendaCliente({
                 <strong>{producto.cantidad}</strong>
 
                 <button
+                  type="button"
                   onClick={() =>
                     cambiarCantidad(producto.id, 1)
                   }
@@ -347,7 +469,9 @@ export default function TiendaCliente({
         >
           <span>
             🛒 {cantidadTotal}{" "}
-            {cantidadTotal === 1 ? "producto" : "productos"}
+            {cantidadTotal === 1
+              ? "producto"
+              : "productos"}
           </span>
 
           <span>
