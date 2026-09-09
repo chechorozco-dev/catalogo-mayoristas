@@ -263,6 +263,26 @@ export default function RegistroPage() {
                 cursor: "pointer",
               }}
             >
+<button
+  type="button"
+  onClick={() => {
+    window.location.href = "/login";
+  }}
+  style={{
+    width: "100%",
+    border: "1px solid #d97883",
+    padding: "14px",
+    borderRadius: "10px",
+    background: "white",
+    color: "#d97883",
+    fontSize: "16px",
+    fontWeight: "700",
+    cursor: "pointer",
+    marginTop: "10px",
+  }}
+>
+  ⚙️ Administrar mi catálogo
+</button>
               {copiado
                 ? "✓ Enlace copiado"
                 : "📋 Copiar enlace para compartir"}
