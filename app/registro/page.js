@@ -17,13 +17,19 @@ export default function RegistroPage() {
   const [whatsapp, setWhatsapp] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
   const [mensaje, setMensaje] = useState("");
+  const [enlaceCatalogo, setEnlaceCatalogo] = useState("");
+  const [copiado, setCopiado] = useState(false);
+
   const [cargando, setCargando] = useState(false);
 
   async function registrar(e) {
     e.preventDefault();
 
     setMensaje("");
+    setEnlaceCatalogo("");
+    setCopiado(false);
     setCargando(true);
 
     const slug = crearSlug(nombreTienda);
@@ -53,11 +59,25 @@ export default function RegistroPage() {
       return;
     }
 
-    setMensaje(
-      `¡Registro creado! Tu catálogo será: /${slug}`
-    );
+    const enlaceCompleto = `${window.location.origin}/${slug}`;
+
+    setEnlaceCatalogo(enlaceCompleto);
 
     setCargando(false);
+  }
+
+  async function copiarEnlace() {
+    try {
+      await navigator.clipboard.writeText(enlaceCatalogo);
+
+      setCopiado(true);
+
+      setTimeout(() => {
+        setCopiado(false);
+      }, 2500);
+    } catch (error) {
+      alert("No se pudo copiar el enlace.");
+    }
   }
 
   return (
@@ -157,8 +177,9 @@ export default function RegistroPage() {
               color: "white",
               fontSize: "16px",
               fontWeight: "700",
-              cursor: "pointer",
+              cursor: cargando ? "not-allowed" : "pointer",
               marginTop: "8px",
+              opacity: cargando ? 0.7 : 1,
             }}
           >
             {cargando ? "Creando..." : "Crear mi catálogo"}
@@ -171,11 +192,81 @@ export default function RegistroPage() {
               marginTop: "20px",
               padding: "14px",
               borderRadius: "10px",
-              background: "#f7f7f7",
+              background: "#ffeaea",
+              color: "#a33",
               lineHeight: "1.5",
             }}
           >
             {mensaje}
+          </div>
+        )}
+
+        {enlaceCatalogo && (
+          <div
+            style={{
+              marginTop: "24px",
+              padding: "22px",
+              borderRadius: "16px",
+              background: "#f7f7f7",
+              textAlign: "center",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "23px",
+                fontWeight: "700",
+                marginBottom: "10px",
+              }}
+            >
+              ✅ ¡Tu catálogo fue creado!
+            </div>
+
+            <p
+              style={{
+                fontSize: "16px",
+                lineHeight: "1.5",
+                color: "#555",
+                marginBottom: "15px",
+              }}
+            >
+              Este es el enlace que debes compartir con tus clientes para que
+              puedan ver tu catálogo:
+            </p>
+
+            <div
+              style={{
+                background: "white",
+                border: "1px solid #ddd",
+                borderRadius: "10px",
+                padding: "14px",
+                fontSize: "15px",
+                fontWeight: "600",
+                wordBreak: "break-all",
+                marginBottom: "12px",
+              }}
+            >
+              {enlaceCatalogo}
+            </div>
+
+            <button
+              type="button"
+              onClick={copiarEnlace}
+              style={{
+                width: "100%",
+                border: "none",
+                padding: "14px",
+                borderRadius: "10px",
+                background: copiado ? "#50a773" : "#d97883",
+                color: "white",
+                fontSize: "16px",
+                fontWeight: "700",
+                cursor: "pointer",
+              }}
+            >
+              {copiado
+                ? "✓ Enlace copiado"
+                : "📋 Copiar enlace para compartir"}
+            </button>
           </div>
         )}
       </div>
