@@ -209,13 +209,6 @@ export default function TiendaCliente({
   const [busqueda, setBusqueda] =
     useState("");
 
-  const [nombreCliente, setNombreCliente] =
-    useState("");
-  const [ciudadCliente, setCiudadCliente] =
-    useState("");
-  const [observaciones, setObservaciones] =
-    useState("");
-
   const carritoRef = useRef(null);
 
   function abrirImagen(
@@ -374,15 +367,13 @@ export default function TiendaCliente({
 
     const productosTexto =
       productosCarrito.map(
-        (producto, indice) => {
+        (producto) => {
           const subtotal =
             Number(producto.precio || 0) *
             producto.cantidad;
 
           return (
-            `*${indice + 1}. ${
-              producto.referencia || ""
-            } — ${producto.nombre}*\n` +
+            `*${producto.referencia} — ${producto.nombre}*\n` +
             `Cantidad: ${producto.cantidad}\n` +
             `Precio unitario: ${formatoPrecio(
               producto.precio
@@ -394,39 +385,15 @@ export default function TiendaCliente({
         }
       );
 
-    let datosCliente = "";
-
-    if (nombreCliente.trim()) {
-      datosCliente +=
-        `👤 *Cliente:* ${nombreCliente.trim()}\n`;
-    }
-
-    if (ciudadCliente.trim()) {
-      datosCliente +=
-        `📍 *Ciudad:* ${ciudadCliente.trim()}\n`;
-    }
-
-    let observacionesTexto = "";
-
-    if (observaciones.trim()) {
-      observacionesTexto =
-        `\n\n📝 *Observaciones*\n` +
-        `${observaciones.trim()}`;
-    }
-
     const mensaje =
-      `🛍️ *NUEVO PEDIDO — ${nombreTienda}*\n\n` +
-      (datosCliente
-        ? `${datosCliente}\n`
-        : "") +
+      `🛍️ *NUEVO PEDIDO*\n\n` +
       productosTexto.join("\n\n") +
       `\n\n━━━━━━━━━━━━━━\n` +
+      `📦 *Productos diferentes:* ${productosCarrito.length}\n` +
       `📦 *Total unidades:* ${cantidadTotal}\n` +
       `💰 *TOTAL PEDIDO: ${formatoPrecio(
         total
-      )}*` +
-      observacionesTexto +
-      `\n\n✅ Pedido enviado desde el catálogo digital.`;
+      )}*`;
 
     window.open(
       `https://wa.me/${numero}?text=${encodeURIComponent(
@@ -831,44 +798,8 @@ export default function TiendaCliente({
           font-size: 20px;
         }
 
-        .client-data {
-          margin-top: 30px;
-          padding: 22px;
-          background: #fafafa;
-          border-radius: 12px;
-        }
-
-        .client-data h3 {
-          margin-top: 0;
-          margin-bottom: 8px;
-        }
-
-        .client-data p {
-          margin-top: 0;
-          color: #777;
-          font-size: 14px;
-        }
-
-        .client-input,
-        .client-textarea {
-          width: 100%;
-          border: 1px solid #ddd;
-          border-radius: 8px;
-          padding: 13px 14px;
-          font-size: 16px;
-          margin-top: 8px;
-          margin-bottom: 14px;
-          font-family: inherit;
-          background: white;
-        }
-
-        .client-textarea {
-          min-height: 90px;
-          resize: vertical;
-        }
-
         .order-summary {
-          margin-top: 25px;
+          margin-top: 28px;
           padding-top: 20px;
           border-top: 1px solid #eee;
         }
@@ -877,7 +808,7 @@ export default function TiendaCliente({
           display: flex;
           justify-content: space-between;
           gap: 20px;
-          margin-bottom: 8px;
+          margin-bottom: 10px;
           color: #555;
         }
 
@@ -885,15 +816,15 @@ export default function TiendaCliente({
           display: flex;
           justify-content: space-between;
           gap: 20px;
-          margin-top: 15px;
-          font-size: 23px;
+          margin-top: 18px;
+          font-size: 25px;
           font-weight: 700;
         }
 
         .whatsapp-button {
           width: 100%;
-          margin-top: 18px;
-          padding: 16px;
+          margin-top: 20px;
+          padding: 17px;
           border: none;
           border-radius: 8px;
           background: #25d366;
@@ -1158,14 +1089,14 @@ export default function TiendaCliente({
 
                     <div
                       style={{
-                        marginTop: "5px",
+                        marginTop: "6px",
                         color: "#777",
                       }}
                     >
+                      Precio unitario:{" "}
                       {formatoPrecio(
                         producto.precio
-                      )}{" "}
-                      c/u
+                      )}
                     </div>
 
                     <div
@@ -1176,7 +1107,9 @@ export default function TiendaCliente({
                     >
                       Subtotal:{" "}
                       {formatoPrecio(
-                        producto.precio *
+                        Number(
+                          producto.precio || 0
+                        ) *
                           producto.cantidad
                       )}
                     </div>
@@ -1216,61 +1149,6 @@ export default function TiendaCliente({
                 </div>
               )
             )}
-
-            <div className="client-data">
-              <h3>Datos del cliente</h3>
-
-              <p>
-                Estos datos se enviarán junto con el pedido por WhatsApp.
-              </p>
-
-              <label>
-                Nombre
-              </label>
-
-              <input
-                type="text"
-                className="client-input"
-                placeholder="Ej: María López"
-                value={nombreCliente}
-                onChange={(e) =>
-                  setNombreCliente(
-                    e.target.value
-                  )
-                }
-              />
-
-              <label>
-                Ciudad
-              </label>
-
-              <input
-                type="text"
-                className="client-input"
-                placeholder="Ej: Villavicencio"
-                value={ciudadCliente}
-                onChange={(e) =>
-                  setCiudadCliente(
-                    e.target.value
-                  )
-                }
-              />
-
-              <label>
-                Observaciones
-              </label>
-
-              <textarea
-                className="client-textarea"
-                placeholder="Ej: Enviar por Interrapidísimo, talla, color, referencia especial..."
-                value={observaciones}
-                onChange={(e) =>
-                  setObservaciones(
-                    e.target.value
-                  )
-                }
-              />
-            </div>
 
             <div className="order-summary">
               <div className="summary-row">
