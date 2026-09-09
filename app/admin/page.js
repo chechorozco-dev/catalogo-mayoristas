@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -9,9 +10,16 @@ export default function AdminPage() {
 
   const [usuario, setUsuario] = useState(null);
   const [tienda, setTienda] = useState(null);
+
   const [cargando, setCargando] = useState(true);
+  const [guardando, setGuardando] = useState(false);
+
   const [mensaje, setMensaje] = useState("");
   const [copiado, setCopiado] = useState(false);
+
+  const [editando, setEditando] = useState(false);
+  const [nombreEditado, setNombreEditado] = useState("");
+  const [whatsappEditado, setWhatsappEditado] = useState("");
 
   useEffect(() => {
     cargarDatos();
@@ -21,7 +29,6 @@ export default function AdminPage() {
     setCargando(true);
     setMensaje("");
 
-    // 1. Verificar si hay sesión iniciada
     const {
       data: { session },
       error: sessionError,
@@ -40,7 +47,6 @@ export default function AdminPage() {
 
     setUsuario(user);
 
-    // 2. Buscar la tienda que pertenece a este usuario
     const { data: tiendaEncontrada, error: tiendaError } = await supabase
       .from("tiendas")
       .select(
@@ -61,6 +67,9 @@ export default function AdminPage() {
     }
 
     setTienda(tiendaEncontrada);
+    setNombreEditado(tiendaEncontrada.nombre_tienda || "");
+    setWhatsappEditado(tiendaEncontrada.whatsapp || "");
+
     setCargando(false);
   }
 
@@ -85,9 +94,7 @@ export default function AdminPage() {
         setCopiado(false);
       }, 2500);
     } catch (error) {
-      setMensaje(
-        "No se pudo copiar automáticamente el enlace."
-      );
+      setMensaje("No se pudo copiar automáticamente el enlace.");
     }
   }
 
@@ -95,6 +102,105 @@ export default function AdminPage() {
     if (!tienda) return;
 
     window.open(`/${tienda.slug}`, "_blank");
+  }
+
+  function empezarEdicion() {
+    if (!tienda) return;
+
+    setNombreEditado(tienda.nombre_tienda || "");
+    setWhatsappEditado(tienda.whatsapp || "");
+    setMensaje("");
+    setEditando(true);
+  }
+
+  function cancelarEdicion() {
+    if (!tienda) return;
+
+    setNombreEditado(tienda.nombre_tienda || "");
+    setWhatsappEditado(tienda.whatsapp || "");
+    setMensaje("");
+    setEditando(false);
+  }
+
+  async function guardarCambios(e) {
+    e.preventDefault();
+
+    if (!tienda) return;
+
+    setMensaje("");
+    setGuardando(true);
+
+    const nombreLimpio = nombreEditado.trim();
+
+    if (!nombreLimpio) {
+      setMensaje("El nombre de la tienda no puede quedar vacío.");
+      setGuardando(false);
+      return;
+    }
+
+    let numero = whatsappEditado.replace(/\D/g, "");
+
+    if (numero.length === 10 && numero.startsWith("3")) {
+      numero = "57" + numero;
+    }
+
+    if (numero.length < 10) {
+      setMensaje("Escribe un número de WhatsApp válido.");
+      setGuardando(false);
+      return;
+    }
+
+    const { data: tiendaActualizada, error } = await supabase
+      .from("tiendas")
+      .update({
+        nombre_tienda: nombreLimpio,
+        whatsapp: numero,
+      })
+      .eq("id", tienda.id)
+      .eq("usuario_id", usuario.id)
+      .select(
+        "id, usuario_id, nombre_tienda, slug, whatsapp, logo_url, activa, creado_en"
+      )
+      .single();
+
+    if (error) {
+      console.error("Error actualizando tienda:", error);
+
+      setMensaje(
+        "No se pudieron guardar los cambios. Revisa los permisos de Supabase."
+      );
+
+      setGuardando(false);
+      return;
+    }
+
+    setTienda(tiendaActualizada);
+    setNombreEditado(tiendaActualizada.nombre_tienda || "");
+    setWhatsappEditado(tiendaActualizada.whatsapp || "");
+
+    setEditando(false);
+    setGuardando(false);
+
+    setMensaje("✅ Datos de la tienda actualizados correctamente.");
+  }
+
+  function mostrarWhatsapp(numero) {
+    if (!numero) return "";
+
+    let limpio = numero.replace(/\D/g, "");
+
+    if (limpio.startsWith("57") && limpio.length === 12) {
+      limpio = limpio.slice(2);
+    }
+
+    if (limpio.length === 10) {
+      return `+57 ${limpio.slice(0, 3)} ${limpio.slice(
+        3,
+        6
+      )} ${limpio.slice(6)}`;
+    }
+
+    return numero;
   }
 
   if (cargando) {
@@ -143,8 +249,6 @@ export default function AdminPage() {
             boxShadow: "0 10px 35px rgba(0,0,0,0.08)",
           }}
         >
-          {/* CABECERA */}
-
           <div
             style={{
               display: "flex",
@@ -198,8 +302,12 @@ export default function AdminPage() {
                 marginTop: "22px",
                 padding: "14px",
                 borderRadius: "10px",
-                background: "#ffeaea",
-                color: "#a33",
+                background: mensaje.startsWith("✅")
+                  ? "#eef9f1"
+                  : "#ffeaea",
+                color: mensaje.startsWith("✅")
+                  ? "#287a42"
+                  : "#a33",
                 lineHeight: "1.5",
               }}
             >
@@ -209,47 +317,166 @@ export default function AdminPage() {
 
           {tienda && (
             <>
-              {/* INFORMACIÓN DE LA TIENDA */}
-
-              <div
-                style={{
-                  marginTop: "30px",
-                  padding: "24px",
-                  background: "#f7f7f7",
-                  borderRadius: "16px",
-                }}
-              >
-                <p
+              {!editando && (
+                <div
                   style={{
-                    margin: 0,
-                    color: "#777",
-                    fontSize: "14px",
+                    marginTop: "30px",
+                    padding: "24px",
+                    background: "#f7f7f7",
+                    borderRadius: "16px",
                   }}
                 >
-                  Tu tienda
-                </p>
+                  <p
+                    style={{
+                      margin: 0,
+                      color: "#777",
+                      fontSize: "14px",
+                    }}
+                  >
+                    Tu tienda
+                  </p>
 
-                <h2
+                  <h2
+                    style={{
+                      marginTop: "5px",
+                      marginBottom: "8px",
+                      fontSize: "27px",
+                    }}
+                  >
+                    {tienda.nombre_tienda}
+                  </h2>
+
+                  <p
+                    style={{
+                      margin: 0,
+                      color: "#666",
+                    }}
+                  >
+                    WhatsApp: {mostrarWhatsapp(tienda.whatsapp)}
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={empezarEdicion}
+                    style={{
+                      width: "100%",
+                      marginTop: "18px",
+                      border: "1px solid #d97883",
+                      padding: "13px",
+                      borderRadius: "10px",
+                      background: "white",
+                      color: "#d97883",
+                      fontSize: "16px",
+                      fontWeight: "700",
+                      cursor: "pointer",
+                    }}
+                  >
+                    ✏️ Editar datos de mi tienda
+                  </button>
+                </div>
+              )}
+
+              {editando && (
+                <div
                   style={{
-                    marginTop: "5px",
-                    marginBottom: "8px",
-                    fontSize: "27px",
+                    marginTop: "30px",
+                    padding: "24px",
+                    background: "#f7f7f7",
+                    borderRadius: "16px",
                   }}
                 >
-                  {tienda.nombre_tienda}
-                </h2>
+                  <h2
+                    style={{
+                      marginTop: 0,
+                      marginBottom: "20px",
+                      fontSize: "24px",
+                    }}
+                  >
+                    Editar datos de mi tienda
+                  </h2>
 
-                <p
-                  style={{
-                    margin: 0,
-                    color: "#666",
-                  }}
-                >
-                  WhatsApp: {tienda.whatsapp}
-                </p>
-              </div>
+                  <form onSubmit={guardarCambios}>
+                    <label
+                      style={{
+                        fontWeight: "600",
+                      }}
+                    >
+                      Nombre de la tienda
+                    </label>
 
-              {/* ENLACE DEL CATÁLOGO */}
+                    <input
+                      type="text"
+                      value={nombreEditado}
+                      onChange={(e) =>
+                        setNombreEditado(e.target.value)
+                      }
+                      required
+                      style={estiloInput}
+                    />
+
+                    <label
+                      style={{
+                        fontWeight: "600",
+                      }}
+                    >
+                      WhatsApp
+                    </label>
+
+                    <input
+                      type="tel"
+                      value={whatsappEditado}
+                      onChange={(e) =>
+                        setWhatsappEditado(e.target.value)
+                      }
+                      required
+                      style={estiloInput}
+                    />
+
+                    <button
+                      type="submit"
+                      disabled={guardando}
+                      style={{
+                        width: "100%",
+                        border: "none",
+                        padding: "14px",
+                        borderRadius: "10px",
+                        background: "#d97883",
+                        color: "white",
+                        fontSize: "16px",
+                        fontWeight: "700",
+                        cursor: guardando
+                          ? "not-allowed"
+                          : "pointer",
+                        opacity: guardando ? 0.7 : 1,
+                      }}
+                    >
+                      {guardando
+                        ? "Guardando..."
+                        : "💾 Guardar cambios"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={cancelarEdicion}
+                      disabled={guardando}
+                      style={{
+                        width: "100%",
+                        marginTop: "10px",
+                        border: "1px solid #ddd",
+                        padding: "14px",
+                        borderRadius: "10px",
+                        background: "white",
+                        color: "#666",
+                        fontSize: "16px",
+                        fontWeight: "600",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Cancelar
+                    </button>
+                  </form>
+                </div>
+              )}
 
               <div
                 style={{
@@ -342,8 +569,6 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* AVISO */}
-
               <div
                 style={{
                   marginTop: "20px",
@@ -362,8 +587,8 @@ export default function AdminPage() {
                   }}
                 >
                   Los productos del catálogo son administrados por la
-                  plataforma. Desde aquí puedes consultar y compartir tu
-                  catálogo con tus clientes.
+                  plataforma. Desde aquí puedes actualizar los datos de tu
+                  tienda y compartir tu catálogo con tus clientes.
                 </p>
               </div>
             </>
@@ -373,3 +598,14 @@ export default function AdminPage() {
     </main>
   );
 }
+
+const estiloInput = {
+  width: "100%",
+  padding: "14px",
+  marginTop: "7px",
+  marginBottom: "18px",
+  borderRadius: "10px",
+  border: "1px solid #ddd",
+  fontSize: "16px",
+  boxSizing: "border-box",
+};
