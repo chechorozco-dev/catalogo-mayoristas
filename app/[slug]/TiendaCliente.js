@@ -209,6 +209,13 @@ export default function TiendaCliente({
   const [busqueda, setBusqueda] =
     useState("");
 
+  const [nombreCliente, setNombreCliente] =
+    useState("");
+  const [ciudadCliente, setCiudadCliente] =
+    useState("");
+  const [observaciones, setObservaciones] =
+    useState("");
+
   const carritoRef = useRef(null);
 
   function abrirImagen(
@@ -302,32 +309,29 @@ export default function TiendaCliente({
   const productosCarrito =
     Object.values(carrito);
 
-  const productosFiltrados =
-    useMemo(() => {
-      const texto = busqueda
-        .trim()
-        .toLowerCase();
+  const productosFiltrados = useMemo(() => {
+    const texto = busqueda
+      .trim()
+      .toLowerCase();
 
-      if (!texto) {
-        return productos;
-      }
+    if (!texto) return productos;
 
-      return productos.filter(
-        (producto) =>
-          producto.nombre
-            ?.toLowerCase()
-            .includes(texto) ||
-          producto.referencia
-            ?.toLowerCase()
-            .includes(texto)
-      );
-    }, [productos, busqueda]);
+    return productos.filter(
+      (producto) =>
+        producto.nombre
+          ?.toLowerCase()
+          .includes(texto) ||
+        producto.referencia
+          ?.toLowerCase()
+          .includes(texto)
+    );
+  }, [productos, busqueda]);
 
   const total = useMemo(() => {
     return productosCarrito.reduce(
       (suma, producto) =>
         suma +
-        producto.precio *
+        Number(producto.precio || 0) *
           producto.cantidad,
       0
     );
@@ -349,22 +353,12 @@ export default function TiendaCliente({
   }
 
   function pedirWhatsApp() {
-    if (productosCarrito.length === 0)
+    if (productosCarrito.length === 0) {
+      alert(
+        "Agrega al menos un producto al pedido."
+      );
       return;
-
-    const lineas = productosCarrito.map(
-      (producto) =>
-        `${producto.referencia} - ${producto.nombre}\n` +
-        `Cantidad: ${producto.cantidad}\n` +
-        `Precio: ${formatoPrecio(
-          producto.precio
-        )}`
-    );
-
-    const mensaje =
-      `¡Hola! Quiero hacer el siguiente pedido:\n\n` +
-      lineas.join("\n\n") +
-      `\n\nTotal: ${formatoPrecio(total)}`;
+    }
 
     const numero = (whatsapp || "").replace(
       /\D/g,
@@ -377,6 +371,62 @@ export default function TiendaCliente({
       );
       return;
     }
+
+    const productosTexto =
+      productosCarrito.map(
+        (producto, indice) => {
+          const subtotal =
+            Number(producto.precio || 0) *
+            producto.cantidad;
+
+          return (
+            `*${indice + 1}. ${
+              producto.referencia || ""
+            } — ${producto.nombre}*\n` +
+            `Cantidad: ${producto.cantidad}\n` +
+            `Precio unitario: ${formatoPrecio(
+              producto.precio
+            )}\n` +
+            `Subtotal: ${formatoPrecio(
+              subtotal
+            )}`
+          );
+        }
+      );
+
+    let datosCliente = "";
+
+    if (nombreCliente.trim()) {
+      datosCliente +=
+        `👤 *Cliente:* ${nombreCliente.trim()}\n`;
+    }
+
+    if (ciudadCliente.trim()) {
+      datosCliente +=
+        `📍 *Ciudad:* ${ciudadCliente.trim()}\n`;
+    }
+
+    let observacionesTexto = "";
+
+    if (observaciones.trim()) {
+      observacionesTexto =
+        `\n\n📝 *Observaciones*\n` +
+        `${observaciones.trim()}`;
+    }
+
+    const mensaje =
+      `🛍️ *NUEVO PEDIDO — ${nombreTienda}*\n\n` +
+      (datosCliente
+        ? `${datosCliente}\n`
+        : "") +
+      productosTexto.join("\n\n") +
+      `\n\n━━━━━━━━━━━━━━\n` +
+      `📦 *Total unidades:* ${cantidadTotal}\n` +
+      `💰 *TOTAL PEDIDO: ${formatoPrecio(
+        total
+      )}*` +
+      observacionesTexto +
+      `\n\n✅ Pedido enviado desde el catálogo digital.`;
 
     window.open(
       `https://wa.me/${numero}?text=${encodeURIComponent(
@@ -402,12 +452,7 @@ export default function TiendaCliente({
           position: sticky;
           top: 0;
           z-index: 100;
-          background: rgba(
-            255,
-            255,
-            255,
-            0.97
-          );
+          background: rgba(255, 255, 255, 0.97);
           border-bottom: 1px solid #eeeeee;
           backdrop-filter: blur(10px);
         }
@@ -669,12 +714,7 @@ export default function TiendaCliente({
         .viewer {
           position: fixed;
           inset: 0;
-          background: rgba(
-            0,
-            0,
-            0,
-            0.9
-          );
+          background: rgba(0, 0, 0, 0.9);
           z-index: 9999;
           display: flex;
           align-items: center;
@@ -791,12 +831,71 @@ export default function TiendaCliente({
           font-size: 20px;
         }
 
+        .client-data {
+          margin-top: 30px;
+          padding: 22px;
+          background: #fafafa;
+          border-radius: 12px;
+        }
+
+        .client-data h3 {
+          margin-top: 0;
+          margin-bottom: 8px;
+        }
+
+        .client-data p {
+          margin-top: 0;
+          color: #777;
+          font-size: 14px;
+        }
+
+        .client-input,
+        .client-textarea {
+          width: 100%;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          padding: 13px 14px;
+          font-size: 16px;
+          margin-top: 8px;
+          margin-bottom: 14px;
+          font-family: inherit;
+          background: white;
+        }
+
+        .client-textarea {
+          min-height: 90px;
+          resize: vertical;
+        }
+
+        .order-summary {
+          margin-top: 25px;
+          padding-top: 20px;
+          border-top: 1px solid #eee;
+        }
+
+        .summary-row {
+          display: flex;
+          justify-content: space-between;
+          gap: 20px;
+          margin-bottom: 8px;
+          color: #555;
+        }
+
+        .summary-total {
+          display: flex;
+          justify-content: space-between;
+          gap: 20px;
+          margin-top: 15px;
+          font-size: 23px;
+          font-weight: 700;
+        }
+
         .whatsapp-button {
           width: 100%;
           margin-top: 18px;
           padding: 16px;
           border: none;
-          border-radius: 6px;
+          border-radius: 8px;
           background: #25d366;
           color: white;
           font-size: 17px;
@@ -957,7 +1056,7 @@ export default function TiendaCliente({
             <button
               type="button"
               className="icon-button"
-              aria-label="Mi pedido"
+              aria-label="Ver pedido"
               onClick={irAlCarrito}
             >
               ♡
@@ -997,11 +1096,9 @@ export default function TiendaCliente({
 
       <main className="catalog-container">
         <section className="product-grid">
-          {productosFiltrados.length ===
-          0 ? (
+          {productosFiltrados.length === 0 ? (
             <div className="empty-results">
-              No encontramos productos con esa
-              búsqueda.
+              No encontramos productos con esa búsqueda.
             </div>
           ) : (
             productosFiltrados.map(
@@ -1055,25 +1152,32 @@ export default function TiendaCliente({
                 >
                   <div>
                     <strong>
+                      {producto.referencia} —{" "}
                       {producto.nombre}
                     </strong>
 
                     <div
                       style={{
+                        marginTop: "5px",
                         color: "#777",
-                        marginTop: "4px",
                       }}
                     >
-                      {producto.referencia}
+                      {formatoPrecio(
+                        producto.precio
+                      )}{" "}
+                      c/u
                     </div>
 
                     <div
                       style={{
                         marginTop: "5px",
+                        fontWeight: "600",
                       }}
                     >
+                      Subtotal:{" "}
                       {formatoPrecio(
-                        producto.precio
+                        producto.precio *
+                          producto.cantidad
                       )}
                     </div>
                   </div>
@@ -1113,21 +1217,89 @@ export default function TiendaCliente({
               )
             )}
 
-            <div
-              style={{
-                display: "flex",
-                justifyContent:
-                  "space-between",
-                marginTop: "25px",
-                fontSize: "23px",
-                fontWeight: "700",
-              }}
-            >
-              <span>Total</span>
+            <div className="client-data">
+              <h3>Datos del cliente</h3>
 
-              <span>
-                {formatoPrecio(total)}
-              </span>
+              <p>
+                Estos datos se enviarán junto con el pedido por WhatsApp.
+              </p>
+
+              <label>
+                Nombre
+              </label>
+
+              <input
+                type="text"
+                className="client-input"
+                placeholder="Ej: María López"
+                value={nombreCliente}
+                onChange={(e) =>
+                  setNombreCliente(
+                    e.target.value
+                  )
+                }
+              />
+
+              <label>
+                Ciudad
+              </label>
+
+              <input
+                type="text"
+                className="client-input"
+                placeholder="Ej: Villavicencio"
+                value={ciudadCliente}
+                onChange={(e) =>
+                  setCiudadCliente(
+                    e.target.value
+                  )
+                }
+              />
+
+              <label>
+                Observaciones
+              </label>
+
+              <textarea
+                className="client-textarea"
+                placeholder="Ej: Enviar por Interrapidísimo, talla, color, referencia especial..."
+                value={observaciones}
+                onChange={(e) =>
+                  setObservaciones(
+                    e.target.value
+                  )
+                }
+              />
+            </div>
+
+            <div className="order-summary">
+              <div className="summary-row">
+                <span>
+                  Productos diferentes
+                </span>
+
+                <strong>
+                  {productosCarrito.length}
+                </strong>
+              </div>
+
+              <div className="summary-row">
+                <span>
+                  Total unidades
+                </span>
+
+                <strong>
+                  {cantidadTotal}
+                </strong>
+              </div>
+
+              <div className="summary-total">
+                <span>Total</span>
+
+                <span>
+                  {formatoPrecio(total)}
+                </span>
+              </div>
             </div>
 
             <button
@@ -1135,7 +1307,7 @@ export default function TiendaCliente({
               className="whatsapp-button"
               onClick={pedirWhatsApp}
             >
-              Pedir por WhatsApp
+              Enviar pedido por WhatsApp
             </button>
           </section>
         )}
