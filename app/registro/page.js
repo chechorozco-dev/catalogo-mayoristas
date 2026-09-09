@@ -34,6 +34,12 @@ export default function RegistroPage() {
 
     const slug = crearSlug(nombreTienda);
 
+    if (!slug) {
+      setMensaje("Escribe un nombre válido para tu tienda.");
+      setCargando(false);
+      return;
+    }
+
     let numero = whatsapp.replace(/\D/g, "");
 
     if (numero.length === 10 && numero.startsWith("3")) {
@@ -62,7 +68,6 @@ export default function RegistroPage() {
     const enlaceCompleto = `${window.location.origin}/${slug}`;
 
     setEnlaceCatalogo(enlaceCompleto);
-
     setCargando(false);
   }
 
@@ -76,8 +81,14 @@ export default function RegistroPage() {
         setCopiado(false);
       }, 2500);
     } catch (error) {
-      alert("No se pudo copiar el enlace.");
+      setMensaje(
+        "No se pudo copiar automáticamente. Puedes seleccionar el enlace y copiarlo manualmente."
+      );
     }
+  }
+
+  function administrarCatalogo() {
+    window.location.href = "/login";
   }
 
   return (
@@ -114,77 +125,80 @@ export default function RegistroPage() {
           style={{
             color: "#666",
             marginBottom: "25px",
+            lineHeight: "1.5",
           }}
         >
           Configura tu tienda y comparte tu catálogo con tus clientes.
         </p>
 
-        <form onSubmit={registrar}>
-          <label>Nombre de tu tienda</label>
+        {!enlaceCatalogo && (
+          <form onSubmit={registrar}>
+            <label>Nombre de tu tienda</label>
 
-          <input
-            type="text"
-            value={nombreTienda}
-            onChange={(e) => setNombreTienda(e.target.value)}
-            required
-            placeholder="Ej: Accesorios Laura"
-            style={estiloInput}
-          />
+            <input
+              type="text"
+              value={nombreTienda}
+              onChange={(e) => setNombreTienda(e.target.value)}
+              required
+              placeholder="Ej: Accesorios Laura"
+              style={estiloInput}
+            />
 
-          <label>WhatsApp</label>
+            <label>WhatsApp</label>
 
-          <input
-            type="tel"
-            value={whatsapp}
-            onChange={(e) => setWhatsapp(e.target.value)}
-            required
-            placeholder="Ej: 3101234567"
-            style={estiloInput}
-          />
+            <input
+              type="tel"
+              value={whatsapp}
+              onChange={(e) => setWhatsapp(e.target.value)}
+              required
+              placeholder="Ej: 3101234567"
+              style={estiloInput}
+            />
 
-          <label>Correo electrónico</label>
+            <label>Correo electrónico</label>
 
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            placeholder="tu@email.com"
-            style={estiloInput}
-          />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              placeholder="tu@email.com"
+              style={estiloInput}
+            />
 
-          <label>Contraseña</label>
+            <label>Contraseña</label>
 
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={6}
-            placeholder="Mínimo 6 caracteres"
-            style={estiloInput}
-          />
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+              placeholder="Mínimo 6 caracteres"
+              style={estiloInput}
+            />
 
-          <button
-            type="submit"
-            disabled={cargando}
-            style={{
-              width: "100%",
-              border: "none",
-              padding: "15px",
-              borderRadius: "12px",
-              background: "#d97883",
-              color: "white",
-              fontSize: "16px",
-              fontWeight: "700",
-              cursor: cargando ? "not-allowed" : "pointer",
-              marginTop: "8px",
-              opacity: cargando ? 0.7 : 1,
-            }}
-          >
-            {cargando ? "Creando..." : "Crear mi catálogo"}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={cargando}
+              style={{
+                width: "100%",
+                border: "none",
+                padding: "15px",
+                borderRadius: "12px",
+                background: "#d97883",
+                color: "white",
+                fontSize: "16px",
+                fontWeight: "700",
+                cursor: cargando ? "not-allowed" : "pointer",
+                marginTop: "8px",
+                opacity: cargando ? 0.7 : 1,
+              }}
+            >
+              {cargando ? "Creando..." : "Crear mi catálogo"}
+            </button>
+          </form>
+        )}
 
         {mensaje && (
           <div
@@ -204,7 +218,7 @@ export default function RegistroPage() {
         {enlaceCatalogo && (
           <div
             style={{
-              marginTop: "24px",
+              marginTop: "10px",
               padding: "22px",
               borderRadius: "16px",
               background: "#f7f7f7",
@@ -213,7 +227,7 @@ export default function RegistroPage() {
           >
             <div
               style={{
-                fontSize: "23px",
+                fontSize: "24px",
                 fontWeight: "700",
                 marginBottom: "10px",
               }}
@@ -226,11 +240,11 @@ export default function RegistroPage() {
                 fontSize: "16px",
                 lineHeight: "1.5",
                 color: "#555",
-                marginBottom: "15px",
+                marginBottom: "18px",
               }}
             >
               Este es el enlace que debes compartir con tus clientes para que
-              puedan ver tu catálogo:
+              puedan ver tu catálogo y realizar sus pedidos.
             </p>
 
             <div
@@ -263,29 +277,79 @@ export default function RegistroPage() {
                 cursor: "pointer",
               }}
             >
-<button
-  type="button"
-  onClick={() => {
-    window.location.href = "/login";
-  }}
-  style={{
-    width: "100%",
-    border: "1px solid #d97883",
-    padding: "14px",
-    borderRadius: "10px",
-    background: "white",
-    color: "#d97883",
-    fontSize: "16px",
-    fontWeight: "700",
-    cursor: "pointer",
-    marginTop: "10px",
-  }}
->
-  ⚙️ Administrar mi catálogo
-</button>
               {copiado
                 ? "✓ Enlace copiado"
                 : "📋 Copiar enlace para compartir"}
+            </button>
+
+            <button
+              type="button"
+              onClick={administrarCatalogo}
+              style={{
+                width: "100%",
+                border: "1px solid #d97883",
+                padding: "14px",
+                borderRadius: "10px",
+                background: "white",
+                color: "#d97883",
+                fontSize: "16px",
+                fontWeight: "700",
+                cursor: "pointer",
+                marginTop: "10px",
+              }}
+            >
+              ⚙️ Administrar mi catálogo
+            </button>
+
+            <p
+              style={{
+                fontSize: "14px",
+                color: "#777",
+                lineHeight: "1.5",
+                marginTop: "16px",
+                marginBottom: 0,
+              }}
+            >
+              Para administrar tu catálogo debes ingresar con el correo y la
+              contraseña que acabas de registrar.
+            </p>
+          </div>
+        )}
+
+        {!enlaceCatalogo && (
+          <div
+            style={{
+              textAlign: "center",
+              marginTop: "22px",
+            }}
+          >
+            <span
+              style={{
+                color: "#777",
+                fontSize: "14px",
+              }}
+            >
+              ¿Ya tienes un catálogo?
+            </span>
+
+            <br />
+
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = "/login";
+              }}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#d97883",
+                fontWeight: "700",
+                cursor: "pointer",
+                marginTop: "6px",
+                fontSize: "15px",
+              }}
+            >
+              Ingresar para administrarlo
             </button>
           </div>
         )}
