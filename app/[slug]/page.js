@@ -5,6 +5,7 @@ import TiendaCliente from "./TiendaCliente";
 export default async function TiendaPage({ params }) {
   const { slug } = await params;
 
+  // Buscar la tienda
   const { data: tienda, error: tiendaError } = await supabase
     .from("tiendas")
     .select("id, nombre_tienda, slug, whatsapp")
@@ -16,6 +17,9 @@ export default async function TiendaPage({ params }) {
     notFound();
   }
 
+  // Cargar productos públicos
+  // IMPORTANTE:
+  // Aquí NO traemos la columna "costo"
   const { data: productosData, error: productosError } =
     await supabase
       .from("productos")
@@ -63,6 +67,8 @@ export default async function TiendaPage({ params }) {
     );
   }
 
+  // Convertimos precio_detal en "precio"
+  // porque TiendaCliente ya trabaja con producto.precio
   const productos = (productosData || []).map((producto) => ({
     id: producto.id,
     referencia: producto.referencia,
@@ -72,6 +78,7 @@ export default async function TiendaPage({ params }) {
     foto_url: producto.foto_url,
     foto_url_2: producto.foto_url_2,
     precio: producto.precio_detal,
+    created_at: producto.created_at,
   }));
 
   return (
