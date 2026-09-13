@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -102,6 +101,13 @@ export default function AdminPage() {
     if (!tienda) return;
 
     window.open(`/${tienda.slug}`, "_blank");
+  }
+
+  // NUEVO:
+  // Lleva al mayorista a la zona privada
+  // donde puede ver costo + precio sugerido.
+  function verProductosYPrecios() {
+    router.push("/admin/productos");
   }
 
   function empezarEdicion() {
@@ -249,6 +255,7 @@ export default function AdminPage() {
             boxShadow: "0 10px 35px rgba(0,0,0,0.08)",
           }}
         >
+          {/* ENCABEZADO */}
           <div
             style={{
               display: "flex",
@@ -296,6 +303,7 @@ export default function AdminPage() {
             </button>
           </div>
 
+          {/* MENSAJES */}
           {mensaje && (
             <div
               style={{
@@ -317,6 +325,7 @@ export default function AdminPage() {
 
           {tienda && (
             <>
+              {/* DATOS DE LA TIENDA */}
               {!editando && (
                 <div
                   style={{
@@ -376,6 +385,7 @@ export default function AdminPage() {
                 </div>
               )}
 
+              {/* EDICIÓN */}
               {editando && (
                 <div
                   style={{
@@ -478,6 +488,58 @@ export default function AdminPage() {
                 </div>
               )}
 
+              {/* NUEVA ZONA PRIVADA DE PRECIOS */}
+              <div
+                style={{
+                  marginTop: "20px",
+                  padding: "24px",
+                  background: "#222",
+                  color: "white",
+                  borderRadius: "16px",
+                }}
+              >
+                <h2
+                  style={{
+                    marginTop: 0,
+                    marginBottom: "8px",
+                    fontSize: "22px",
+                  }}
+                >
+                  Tus precios de mayorista
+                </h2>
+
+                <p
+                  style={{
+                    marginTop: 0,
+                    marginBottom: "18px",
+                    color: "#ddd",
+                    lineHeight: "1.5",
+                  }}
+                >
+                  Consulta tu costo, el precio sugerido de venta y
+                  la ganancia sugerida de cada producto.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={verProductosYPrecios}
+                  style={{
+                    width: "100%",
+                    border: "none",
+                    padding: "15px",
+                    borderRadius: "10px",
+                    background: "#d97883",
+                    color: "white",
+                    fontSize: "16px",
+                    fontWeight: "700",
+                    cursor: "pointer",
+                  }}
+                >
+                  💰 Ver productos y precios
+                </button>
+              </div>
+
+              {/* ENLACE PÚBLICO */}
               <div
                 style={{
                   marginTop: "20px",
@@ -503,8 +565,9 @@ export default function AdminPage() {
                     marginTop: 0,
                   }}
                 >
-                  Este es el enlace que debes compartir con tus clientes para
-                  que puedan ver tus productos.
+                  Este es el enlace que debes compartir con tus
+                  clientes para que puedan ver tus productos y el
+                  precio de venta.
                 </p>
 
                 <div
@@ -538,7 +601,9 @@ export default function AdminPage() {
                       border: "none",
                       padding: "14px",
                       borderRadius: "10px",
-                      background: copiado ? "#50a773" : "#d97883",
+                      background: copiado
+                        ? "#50a773"
+                        : "#d97883",
                       color: "white",
                       fontSize: "16px",
                       fontWeight: "700",
@@ -569,6 +634,7 @@ export default function AdminPage() {
                 </div>
               </div>
 
+              {/* INFORMACIÓN */}
               <div
                 style={{
                   marginTop: "20px",
@@ -578,7 +644,9 @@ export default function AdminPage() {
                   lineHeight: "1.5",
                 }}
               >
-                <strong>Tu catálogo está listo para compartir.</strong>
+                <strong>
+                  Tu catálogo está listo para compartir.
+                </strong>
 
                 <p
                   style={{
@@ -586,9 +654,10 @@ export default function AdminPage() {
                     marginBottom: 0,
                   }}
                 >
-                  Los productos del catálogo son administrados por la
-                  plataforma. Desde aquí puedes actualizar los datos de tu
-                  tienda y compartir tu catálogo con tus clientes.
+                  Los productos del catálogo son administrados por
+                  la plataforma. Desde aquí puedes consultar tus
+                  precios, actualizar los datos de tu tienda y
+                  compartir tu catálogo con tus clientes.
                 </p>
               </div>
             </>
