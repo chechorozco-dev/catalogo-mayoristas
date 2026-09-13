@@ -1,24 +1,48 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
+
 import { useRouter } from "next/navigation";
-import { supabase } from "../../lib/supabase";
 
 export default function AdminPage() {
   const router = useRouter();
 
-  const [usuario, setUsuario] = useState(null);
-  const [tienda, setTienda] = useState(null);
+  const [cliente, setCliente] =
+    useState(null);
 
-  const [cargando, setCargando] = useState(true);
-  const [guardando, setGuardando] = useState(false);
+  const [tienda, setTienda] =
+    useState(null);
 
-  const [mensaje, setMensaje] = useState("");
-  const [copiado, setCopiado] = useState(false);
+  const [cargando, setCargando] =
+    useState(true);
 
-  const [editando, setEditando] = useState(false);
-  const [nombreEditado, setNombreEditado] = useState("");
-  const [whatsappEditado, setWhatsappEditado] = useState("");
+  const [guardando, setGuardando] =
+    useState(false);
+
+  const [cerrando, setCerrando] =
+    useState(false);
+
+  const [mensaje, setMensaje] =
+    useState("");
+
+  const [copiado, setCopiado] =
+    useState(false);
+
+  const [editando, setEditando] =
+    useState(false);
+
+  const [
+    nombreEditado,
+    setNombreEditado,
+  ] = useState("");
+
+  const [
+    whatsappEditado,
+    setWhatsappEditado,
+  ] = useState("");
 
   useEffect(() => {
     cargarDatos();
@@ -28,64 +52,160 @@ export default function AdminPage() {
     setCargando(true);
     setMensaje("");
 
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+    try {
+      /*
+        PRIMERO comprobamos la sesión
+        creada con el código de WhatsApp.
+      */
 
-    if (sessionError) {
-      console.error(sessionError);
-    }
+      const sesionResponse =
+        await fetch(
+          "/api/auth/sesion",
+          {
+            method: "GET",
+            cache: "no-store",
+          }
+        );
 
-    if (!session) {
-      router.replace("/login");
-      return;
-    }
+      const sesionData =
+        await sesionResponse.json();
 
-    const user = session.user;
+      if (
+        !sesionResponse.ok ||
+        !sesionData.autenticado
+      ) {
+        router.replace("/login");
+        return;
+      }
 
-    setUsuario(user);
+      /*
+        Si todavía no tiene tienda,
+        va a elegir su nombre.
+      */
 
-    const { data: tiendaEncontrada, error: tiendaError } = await supabase
-      .from("tiendas")
-      .select(
-        "id, usuario_id, nombre_tienda, slug, whatsapp, logo_url, activa, creado_en"
-      )
-      .eq("usuario_id", user.id)
-      .single();
+      if (
+        !sesionData.cliente?.tienda_id
+      ) {
+        router.replace(
+          "/crear-tienda"
+        );
 
-    if (tiendaError) {
-      console.error("Error buscando tienda:", tiendaError);
+        return;
+      }
 
-      setMensaje(
-        "No pudimos encontrar la tienda asociada a esta cuenta."
+      /*
+        Ahora obtenemos los datos reales
+        de su tienda mediante nuestra API
+        privada.
+      */
+
+      const tiendaResponse =
+        await fetch(
+          "/api/tiendas/mi-tienda",
+          {
+            method: "GET",
+            cache: "no-store",
+          }
+        );
+
+      const tiendaData =
+        await tiendaResponse.json();
+
+      if (
+        tiendaData.necesita_tienda
+      ) {
+        router.replace(
+          "/crear-tienda"
+        );
+
+        return;
+      }
+
+      if (
+        !tiendaResponse.ok ||
+        !tiendaData.ok
+      ) {
+        setMensaje(
+          tiendaData.mensaje ||
+            "No pudimos cargar tu tienda."
+        );
+
+        setCargando(false);
+
+        return;
+      }
+
+      setCliente(
+        tiendaData.cliente
+      );
+
+      setTienda(
+        tiendaData.tienda
+      );
+
+      setNombreEditado(
+        tiendaData.tienda
+          .nombre_tienda || ""
+      );
+
+      setWhatsappEditado(
+        tiendaData.tienda
+          .whatsapp || ""
       );
 
       setCargando(false);
-      return;
+    } catch (error) {
+      console.error(
+        "Error cargando administrador:",
+        error
+      );
+
+      setMensaje(
+        "No pudimos cargar tu catálogo."
+      );
+
+      setCargando(false);
     }
-
-    setTienda(tiendaEncontrada);
-    setNombreEditado(tiendaEncontrada.nombre_tienda || "");
-    setWhatsappEditado(tiendaEncontrada.whatsapp || "");
-
-    setCargando(false);
   }
 
+  /* =====================================
+     CERRAR SESIÓN
+  ===================================== */
+
   async function cerrarSesion() {
-    await supabase.auth.signOut();
+    if (cerrando) return;
+
+    setCerrando(true);
+
+    try {
+      await fetch(
+        "/api/auth/cerrar-sesion",
+        {
+          method: "POST",
+        }
+      );
+    } catch (error) {
+      console.error(error);
+    }
 
     router.replace("/login");
     router.refresh();
   }
 
+  /* =====================================
+     COPIAR ENLACE
+  ===================================== */
+
   async function copiarEnlace() {
     if (!tienda) return;
 
-    const enlace = `${window.location.origin}/${tienda.slug}`;
+    const enlace =
+      `${window.location.origin}/${tienda.slug}`;
 
     try {
-      await navigator.clipboard.writeText(enlace);
+      await navigator.clipboard.writeText(
+        enlace
+      );
 
       setCopiado(true);
 
@@ -93,40 +213,74 @@ export default function AdminPage() {
         setCopiado(false);
       }, 2500);
     } catch (error) {
-      setMensaje("No se pudo copiar automáticamente el enlace.");
+      setMensaje(
+        "No se pudo copiar automáticamente el enlace."
+      );
     }
   }
+
+  /* =====================================
+     VER CATÁLOGO
+  ===================================== */
 
   function verCatalogo() {
     if (!tienda) return;
 
-    window.open(`/${tienda.slug}`, "_blank");
+    window.open(
+      `/${tienda.slug}`,
+      "_blank"
+    );
   }
 
-  // NUEVO:
-  // Lleva al mayorista a la zona privada
-  // donde puede ver costo + precio sugerido.
+  /* =====================================
+     PRECIOS MAYORISTAS
+  ===================================== */
+
   function verProductosYPrecios() {
-    router.push("/admin/productos");
+    router.push(
+      "/admin/productos"
+    );
   }
+
+  /* =====================================
+     EDITAR
+  ===================================== */
 
   function empezarEdicion() {
     if (!tienda) return;
 
-    setNombreEditado(tienda.nombre_tienda || "");
-    setWhatsappEditado(tienda.whatsapp || "");
+    setNombreEditado(
+      tienda.nombre_tienda || ""
+    );
+
+    setWhatsappEditado(
+      tienda.whatsapp || ""
+    );
+
     setMensaje("");
+
     setEditando(true);
   }
 
   function cancelarEdicion() {
     if (!tienda) return;
 
-    setNombreEditado(tienda.nombre_tienda || "");
-    setWhatsappEditado(tienda.whatsapp || "");
+    setNombreEditado(
+      tienda.nombre_tienda || ""
+    );
+
+    setWhatsappEditado(
+      tienda.whatsapp || ""
+    );
+
     setMensaje("");
+
     setEditando(false);
   }
+
+  /* =====================================
+     GUARDAR CAMBIOS
+  ===================================== */
 
   async function guardarCambios(e) {
     e.preventDefault();
@@ -136,94 +290,140 @@ export default function AdminPage() {
     setMensaje("");
     setGuardando(true);
 
-    const nombreLimpio = nombreEditado.trim();
+    try {
+      const response =
+        await fetch(
+          "/api/tiendas/mi-tienda",
+          {
+            method: "PATCH",
 
-    if (!nombreLimpio) {
-      setMensaje("El nombre de la tienda no puede quedar vacío.");
-      setGuardando(false);
-      return;
-    }
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
 
-    let numero = whatsappEditado.replace(/\D/g, "");
+            body: JSON.stringify({
+              nombre_tienda:
+                nombreEditado,
 
-    if (numero.length === 10 && numero.startsWith("3")) {
-      numero = "57" + numero;
-    }
+              whatsapp:
+                whatsappEditado,
+            }),
+          }
+        );
 
-    if (numero.length < 10) {
-      setMensaje("Escribe un número de WhatsApp válido.");
-      setGuardando(false);
-      return;
-    }
+      const data =
+        await response.json();
 
-    const { data: tiendaActualizada, error } = await supabase
-      .from("tiendas")
-      .update({
-        nombre_tienda: nombreLimpio,
-        whatsapp: numero,
-      })
-      .eq("id", tienda.id)
-      .eq("usuario_id", usuario.id)
-      .select(
-        "id, usuario_id, nombre_tienda, slug, whatsapp, logo_url, activa, creado_en"
-      )
-      .single();
+      if (
+        !response.ok ||
+        !data.ok
+      ) {
+        setMensaje(
+          data.mensaje ||
+            "No pudimos guardar los cambios."
+        );
 
-    if (error) {
-      console.error("Error actualizando tienda:", error);
+        setGuardando(false);
 
-      setMensaje(
-        "No se pudieron guardar los cambios. Revisa los permisos de Supabase."
+        return;
+      }
+
+      const tiendaActualizada =
+        data.tienda;
+
+      setTienda(
+        tiendaActualizada
       );
 
+      setNombreEditado(
+        tiendaActualizada
+          .nombre_tienda || ""
+      );
+
+      setWhatsappEditado(
+        tiendaActualizada
+          .whatsapp || ""
+      );
+
+      setEditando(false);
+
+      setMensaje(
+        "✅ Datos de la tienda actualizados correctamente."
+      );
+    } catch (error) {
+      console.error(error);
+
+      setMensaje(
+        "No pudimos guardar los cambios."
+      );
+    } finally {
       setGuardando(false);
-      return;
     }
-
-    setTienda(tiendaActualizada);
-    setNombreEditado(tiendaActualizada.nombre_tienda || "");
-    setWhatsappEditado(tiendaActualizada.whatsapp || "");
-
-    setEditando(false);
-    setGuardando(false);
-
-    setMensaje("✅ Datos de la tienda actualizados correctamente.");
   }
+
+  /* =====================================
+     MOSTRAR TELÉFONO
+  ===================================== */
 
   function mostrarWhatsapp(numero) {
     if (!numero) return "";
 
-    let limpio = numero.replace(/\D/g, "");
+    let limpio =
+      String(numero).replace(
+        /\D/g,
+        ""
+      );
 
-    if (limpio.startsWith("57") && limpio.length === 12) {
-      limpio = limpio.slice(2);
+    if (
+      limpio.startsWith("57") &&
+      limpio.length === 12
+    ) {
+      limpio =
+        limpio.slice(2);
     }
 
-    if (limpio.length === 10) {
-      return `+57 ${limpio.slice(0, 3)} ${limpio.slice(
-        3,
-        6
-      )} ${limpio.slice(6)}`;
+    if (
+      limpio.length === 10
+    ) {
+      return (
+        `+57 ` +
+        `${limpio.slice(0, 3)} ` +
+        `${limpio.slice(3, 6)} ` +
+        `${limpio.slice(6)}`
+      );
     }
 
     return numero;
   }
+
+  /* =====================================
+     CARGANDO
+  ===================================== */
 
   if (cargando) {
     return (
       <main
         style={{
           minHeight: "100vh",
+
           display: "flex",
+
           alignItems: "center",
-          justifyContent: "center",
-          background: "#fff8f6",
+
+          justifyContent:
+            "center",
+
+          background:
+            "#fff8f6",
+
           padding: "20px",
         }}
       >
         <p
           style={{
             fontSize: "18px",
+
             color: "#666",
           }}
         >
@@ -237,31 +437,49 @@ export default function AdminPage() {
     <main
       style={{
         minHeight: "100vh",
-        background: "#fff8f6",
-        padding: "25px 18px 50px",
+
+        background:
+          "#fff8f6",
+
+        padding:
+          "25px 18px 50px",
       }}
     >
       <div
         style={{
           maxWidth: "800px",
+
           margin: "0 auto",
         }}
       >
         <div
           style={{
             background: "white",
+
             borderRadius: "20px",
+
             padding: "25px",
-            boxShadow: "0 10px 35px rgba(0,0,0,0.08)",
+
+            boxShadow:
+              "0 10px 35px rgba(0,0,0,0.08)",
           }}
         >
-          {/* ENCABEZADO */}
+          {/* =========================
+              ENCABEZADO
+          ========================= */}
+
           <div
             style={{
               display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
+
+              justifyContent:
+                "space-between",
+
+              alignItems:
+                "flex-start",
+
               gap: "20px",
+
               flexWrap: "wrap",
             }}
           >
@@ -269,7 +487,9 @@ export default function AdminPage() {
               <h1
                 style={{
                   margin: 0,
-                  fontSize: "32px",
+
+                  fontSize:
+                    "32px",
                 }}
               >
                 Mi catálogo
@@ -277,46 +497,103 @@ export default function AdminPage() {
 
               <p
                 style={{
-                  marginTop: "8px",
-                  marginBottom: 0,
-                  color: "#777",
-                  fontSize: "16px",
+                  marginTop:
+                    "8px",
+
+                  marginBottom:
+                    0,
+
+                  color:
+                    "#777",
+
+                  fontSize:
+                    "16px",
                 }}
               >
-                {usuario?.email}
+                {cliente?.nombre
+                  ? `Hola, ${cliente.nombre}`
+                  : mostrarWhatsapp(
+                      cliente?.telefono
+                    )}
               </p>
             </div>
 
             <button
               type="button"
-              onClick={cerrarSesion}
+
+              onClick={
+                cerrarSesion
+              }
+
+              disabled={
+                cerrando
+              }
+
               style={{
-                border: "1px solid #ddd",
-                background: "white",
-                padding: "11px 16px",
-                borderRadius: "10px",
-                cursor: "pointer",
-                fontSize: "15px",
+                border:
+                  "1px solid #ddd",
+
+                background:
+                  "white",
+
+                padding:
+                  "11px 16px",
+
+                borderRadius:
+                  "10px",
+
+                cursor:
+                  cerrando
+                    ? "not-allowed"
+                    : "pointer",
+
+                fontSize:
+                  "15px",
+
+                opacity:
+                  cerrando
+                    ? 0.6
+                    : 1,
               }}
             >
-              Cerrar sesión
+              {cerrando
+                ? "Cerrando..."
+                : "Cerrar sesión"}
             </button>
           </div>
 
-          {/* MENSAJES */}
+          {/* =========================
+              MENSAJES
+          ========================= */}
+
           {mensaje && (
             <div
               style={{
-                marginTop: "22px",
-                padding: "14px",
-                borderRadius: "10px",
-                background: mensaje.startsWith("✅")
-                  ? "#eef9f1"
-                  : "#ffeaea",
-                color: mensaje.startsWith("✅")
-                  ? "#287a42"
-                  : "#a33",
-                lineHeight: "1.5",
+                marginTop:
+                  "22px",
+
+                padding:
+                  "14px",
+
+                borderRadius:
+                  "10px",
+
+                background:
+                  mensaje.startsWith(
+                    "✅"
+                  )
+                    ? "#eef9f1"
+                    : "#ffeaea",
+
+                color:
+                  mensaje.startsWith(
+                    "✅"
+                  )
+                    ? "#287a42"
+                    : "#a33",
+
+                lineHeight:
+                  "1.5",
               }}
             >
               {mensaje}
@@ -325,21 +602,35 @@ export default function AdminPage() {
 
           {tienda && (
             <>
-              {/* DATOS DE LA TIENDA */}
+              {/* =========================
+                  DATOS DE TIENDA
+              ========================= */}
+
               {!editando && (
                 <div
                   style={{
-                    marginTop: "30px",
-                    padding: "24px",
-                    background: "#f7f7f7",
-                    borderRadius: "16px",
+                    marginTop:
+                      "30px",
+
+                    padding:
+                      "24px",
+
+                    background:
+                      "#f7f7f7",
+
+                    borderRadius:
+                      "16px",
                   }}
                 >
                   <p
                     style={{
                       margin: 0,
-                      color: "#777",
-                      fontSize: "14px",
+
+                      color:
+                        "#777",
+
+                      fontSize:
+                        "14px",
                     }}
                   >
                     Tu tienda
@@ -347,37 +638,72 @@ export default function AdminPage() {
 
                   <h2
                     style={{
-                      marginTop: "5px",
-                      marginBottom: "8px",
-                      fontSize: "27px",
+                      marginTop:
+                        "5px",
+
+                      marginBottom:
+                        "8px",
+
+                      fontSize:
+                        "27px",
                     }}
                   >
-                    {tienda.nombre_tienda}
+                    {
+                      tienda.nombre_tienda
+                    }
                   </h2>
 
                   <p
                     style={{
                       margin: 0,
-                      color: "#666",
+
+                      color:
+                        "#666",
                     }}
                   >
-                    WhatsApp: {mostrarWhatsapp(tienda.whatsapp)}
+                    WhatsApp:{" "}
+                    {mostrarWhatsapp(
+                      tienda.whatsapp
+                    )}
                   </p>
 
                   <button
                     type="button"
-                    onClick={empezarEdicion}
+
+                    onClick={
+                      empezarEdicion
+                    }
+
                     style={{
-                      width: "100%",
-                      marginTop: "18px",
-                      border: "1px solid #d97883",
-                      padding: "13px",
-                      borderRadius: "10px",
-                      background: "white",
-                      color: "#d97883",
-                      fontSize: "16px",
-                      fontWeight: "700",
-                      cursor: "pointer",
+                      width:
+                        "100%",
+
+                      marginTop:
+                        "18px",
+
+                      border:
+                        "1px solid #d97883",
+
+                      padding:
+                        "13px",
+
+                      borderRadius:
+                        "10px",
+
+                      background:
+                        "white",
+
+                      color:
+                        "#d97883",
+
+                      fontSize:
+                        "16px",
+
+                      fontWeight:
+                        "700",
+
+                      cursor:
+                        "pointer",
                     }}
                   >
                     ✏️ Editar datos de mi tienda
@@ -385,30 +711,50 @@ export default function AdminPage() {
                 </div>
               )}
 
-              {/* EDICIÓN */}
+              {/* =========================
+                  EDICIÓN
+              ========================= */}
+
               {editando && (
                 <div
                   style={{
-                    marginTop: "30px",
-                    padding: "24px",
-                    background: "#f7f7f7",
-                    borderRadius: "16px",
+                    marginTop:
+                      "30px",
+
+                    padding:
+                      "24px",
+
+                    background:
+                      "#f7f7f7",
+
+                    borderRadius:
+                      "16px",
                   }}
                 >
                   <h2
                     style={{
-                      marginTop: 0,
-                      marginBottom: "20px",
-                      fontSize: "24px",
+                      marginTop:
+                        0,
+
+                      marginBottom:
+                        "20px",
+
+                      fontSize:
+                        "24px",
                     }}
                   >
                     Editar datos de mi tienda
                   </h2>
 
-                  <form onSubmit={guardarCambios}>
+                  <form
+                    onSubmit={
+                      guardarCambios
+                    }
+                  >
                     <label
                       style={{
-                        fontWeight: "600",
+                        fontWeight:
+                          "600",
                       }}
                     >
                       Nombre de la tienda
@@ -416,17 +762,31 @@ export default function AdminPage() {
 
                     <input
                       type="text"
-                      value={nombreEditado}
-                      onChange={(e) =>
-                        setNombreEditado(e.target.value)
+
+                      value={
+                        nombreEditado
                       }
+
+                      onChange={(
+                        e
+                      ) =>
+                        setNombreEditado(
+                          e.target
+                            .value
+                        )
+                      }
+
                       required
-                      style={estiloInput}
+
+                      style={
+                        estiloInput
+                      }
                     />
 
                     <label
                       style={{
-                        fontWeight: "600",
+                        fontWeight:
+                          "600",
                       }}
                     >
                       WhatsApp
@@ -434,30 +794,68 @@ export default function AdminPage() {
 
                     <input
                       type="tel"
-                      value={whatsappEditado}
-                      onChange={(e) =>
-                        setWhatsappEditado(e.target.value)
+
+                      value={
+                        whatsappEditado
                       }
+
+                      onChange={(
+                        e
+                      ) =>
+                        setWhatsappEditado(
+                          e.target
+                            .value
+                        )
+                      }
+
                       required
-                      style={estiloInput}
+
+                      style={
+                        estiloInput
+                      }
                     />
 
                     <button
                       type="submit"
-                      disabled={guardando}
+
+                      disabled={
+                        guardando
+                      }
+
                       style={{
-                        width: "100%",
-                        border: "none",
-                        padding: "14px",
-                        borderRadius: "10px",
-                        background: "#d97883",
-                        color: "white",
-                        fontSize: "16px",
-                        fontWeight: "700",
-                        cursor: guardando
-                          ? "not-allowed"
-                          : "pointer",
-                        opacity: guardando ? 0.7 : 1,
+                        width:
+                          "100%",
+
+                        border:
+                          "none",
+
+                        padding:
+                          "14px",
+
+                        borderRadius:
+                          "10px",
+
+                        background:
+                          "#d97883",
+
+                        color:
+                          "white",
+
+                        fontSize:
+                          "16px",
+
+                        fontWeight:
+                          "700",
+
+                        cursor:
+                          guardando
+                            ? "not-allowed"
+                            : "pointer",
+
+                        opacity:
+                          guardando
+                            ? 0.7
+                            : 1,
                       }}
                     >
                       {guardando
@@ -467,19 +865,45 @@ export default function AdminPage() {
 
                     <button
                       type="button"
-                      onClick={cancelarEdicion}
-                      disabled={guardando}
+
+                      onClick={
+                        cancelarEdicion
+                      }
+
+                      disabled={
+                        guardando
+                      }
+
                       style={{
-                        width: "100%",
-                        marginTop: "10px",
-                        border: "1px solid #ddd",
-                        padding: "14px",
-                        borderRadius: "10px",
-                        background: "white",
-                        color: "#666",
-                        fontSize: "16px",
-                        fontWeight: "600",
-                        cursor: "pointer",
+                        width:
+                          "100%",
+
+                        marginTop:
+                          "10px",
+
+                        border:
+                          "1px solid #ddd",
+
+                        padding:
+                          "14px",
+
+                        borderRadius:
+                          "10px",
+
+                        background:
+                          "white",
+
+                        color:
+                          "#666",
+
+                        fontSize:
+                          "16px",
+
+                        fontWeight:
+                          "600",
+
+                        cursor:
+                          "pointer",
                       }}
                     >
                       Cancelar
@@ -488,21 +912,38 @@ export default function AdminPage() {
                 </div>
               )}
 
-              {/* NUEVA ZONA PRIVADA DE PRECIOS */}
+              {/* =========================
+                  PRECIOS MAYORISTAS
+              ========================= */}
+
               <div
                 style={{
-                  marginTop: "20px",
-                  padding: "24px",
-                  background: "#222",
-                  color: "white",
-                  borderRadius: "16px",
+                  marginTop:
+                    "20px",
+
+                  padding:
+                    "24px",
+
+                  background:
+                    "#222",
+
+                  color:
+                    "white",
+
+                  borderRadius:
+                    "16px",
                 }}
               >
                 <h2
                   style={{
-                    marginTop: 0,
-                    marginBottom: "8px",
-                    fontSize: "22px",
+                    marginTop:
+                      0,
+
+                    marginBottom:
+                      "8px",
+
+                    fontSize:
+                      "22px",
                   }}
                 >
                   Tus precios de mayorista
@@ -510,49 +951,91 @@ export default function AdminPage() {
 
                 <p
                   style={{
-                    marginTop: 0,
-                    marginBottom: "18px",
-                    color: "#ddd",
-                    lineHeight: "1.5",
+                    marginTop:
+                      0,
+
+                    marginBottom:
+                      "18px",
+
+                    color:
+                      "#ddd",
+
+                    lineHeight:
+                      "1.5",
                   }}
                 >
-                  Consulta tu costo, el precio sugerido de venta y
-                  la ganancia sugerida de cada producto.
+                  Consulta tu costo, el precio sugerido de venta y la ganancia de cada producto.
                 </p>
 
                 <button
                   type="button"
-                  onClick={verProductosYPrecios}
+
+                  onClick={
+                    verProductosYPrecios
+                  }
+
                   style={{
-                    width: "100%",
-                    border: "none",
-                    padding: "15px",
-                    borderRadius: "10px",
-                    background: "#d97883",
-                    color: "white",
-                    fontSize: "16px",
-                    fontWeight: "700",
-                    cursor: "pointer",
+                    width:
+                      "100%",
+
+                    border:
+                      "none",
+
+                    padding:
+                      "15px",
+
+                    borderRadius:
+                      "10px",
+
+                    background:
+                      "#d97883",
+
+                    color:
+                      "white",
+
+                    fontSize:
+                      "16px",
+
+                    fontWeight:
+                      "700",
+
+                    cursor:
+                      "pointer",
                   }}
                 >
                   💰 Ver productos y precios
                 </button>
               </div>
 
-              {/* ENLACE PÚBLICO */}
+              {/* =========================
+                  ENLACE CATÁLOGO
+              ========================= */}
+
               <div
                 style={{
-                  marginTop: "20px",
-                  padding: "24px",
-                  border: "1px solid #eee",
-                  borderRadius: "16px",
+                  marginTop:
+                    "20px",
+
+                  padding:
+                    "24px",
+
+                  border:
+                    "1px solid #eee",
+
+                  borderRadius:
+                    "16px",
                 }}
               >
                 <h2
                   style={{
-                    marginTop: 0,
-                    marginBottom: "8px",
-                    fontSize: "22px",
+                    marginTop:
+                      0,
+
+                    marginBottom:
+                      "8px",
+
+                    fontSize:
+                      "22px",
                   }}
                 >
                   Enlace de tu catálogo
@@ -560,54 +1043,94 @@ export default function AdminPage() {
 
                 <p
                   style={{
-                    color: "#666",
-                    lineHeight: "1.5",
-                    marginTop: 0,
+                    color:
+                      "#666",
+
+                    lineHeight:
+                      "1.5",
+
+                    marginTop:
+                      0,
                   }}
                 >
-                  Este es el enlace que debes compartir con tus
-                  clientes para que puedan ver tus productos y el
-                  precio de venta.
+                  Este es el enlace que debes compartir con tus clientes para que puedan ver tus productos y el precio de venta.
                 </p>
 
                 <div
                   style={{
-                    background: "#f7f7f7",
-                    padding: "14px",
-                    borderRadius: "10px",
-                    wordBreak: "break-all",
-                    fontWeight: "600",
-                    marginTop: "15px",
+                    background:
+                      "#f7f7f7",
+
+                    padding:
+                      "14px",
+
+                    borderRadius:
+                      "10px",
+
+                    wordBreak:
+                      "break-all",
+
+                    fontWeight:
+                      "600",
+
+                    marginTop:
+                      "15px",
                   }}
                 >
-                  {typeof window !== "undefined"
+                  {typeof window !==
+                  "undefined"
                     ? `${window.location.origin}/${tienda.slug}`
                     : `/${tienda.slug}`}
                 </div>
 
                 <div
                   style={{
-                    display: "grid",
+                    display:
+                      "grid",
+
                     gridTemplateColumns:
                       "repeat(auto-fit, minmax(180px, 1fr))",
-                    gap: "10px",
-                    marginTop: "14px",
+
+                    gap:
+                      "10px",
+
+                    marginTop:
+                      "14px",
                   }}
                 >
                   <button
                     type="button"
-                    onClick={copiarEnlace}
+
+                    onClick={
+                      copiarEnlace
+                    }
+
                     style={{
-                      border: "none",
-                      padding: "14px",
-                      borderRadius: "10px",
-                      background: copiado
-                        ? "#50a773"
-                        : "#d97883",
-                      color: "white",
-                      fontSize: "16px",
-                      fontWeight: "700",
-                      cursor: "pointer",
+                      border:
+                        "none",
+
+                      padding:
+                        "14px",
+
+                      borderRadius:
+                        "10px",
+
+                      background:
+                        copiado
+                          ? "#50a773"
+                          : "#d97883",
+
+                      color:
+                        "white",
+
+                      fontSize:
+                        "16px",
+
+                      fontWeight:
+                        "700",
+
+                      cursor:
+                        "pointer",
                     }}
                   >
                     {copiado
@@ -617,16 +1140,35 @@ export default function AdminPage() {
 
                   <button
                     type="button"
-                    onClick={verCatalogo}
+
+                    onClick={
+                      verCatalogo
+                    }
+
                     style={{
-                      border: "1px solid #d97883",
-                      padding: "14px",
-                      borderRadius: "10px",
-                      background: "white",
-                      color: "#d97883",
-                      fontSize: "16px",
-                      fontWeight: "700",
-                      cursor: "pointer",
+                      border:
+                        "1px solid #d97883",
+
+                      padding:
+                        "14px",
+
+                      borderRadius:
+                        "10px",
+
+                      background:
+                        "white",
+
+                      color:
+                        "#d97883",
+
+                      fontSize:
+                        "16px",
+
+                      fontWeight:
+                        "700",
+
+                      cursor:
+                        "pointer",
                     }}
                   >
                     👁️ Ver mi catálogo
@@ -634,14 +1176,26 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* INFORMACIÓN */}
+              {/* =========================
+                  INFORMACIÓN
+              ========================= */}
+
               <div
                 style={{
-                  marginTop: "20px",
-                  padding: "20px",
-                  background: "#fff8f6",
-                  borderRadius: "16px",
-                  lineHeight: "1.5",
+                  marginTop:
+                    "20px",
+
+                  padding:
+                    "20px",
+
+                  background:
+                    "#fff8f6",
+
+                  borderRadius:
+                    "16px",
+
+                  lineHeight:
+                    "1.5",
                 }}
               >
                 <strong>
@@ -650,14 +1204,14 @@ export default function AdminPage() {
 
                 <p
                   style={{
-                    color: "#666",
-                    marginBottom: 0,
+                    color:
+                      "#666",
+
+                    marginBottom:
+                      0,
                   }}
                 >
-                  Los productos del catálogo son administrados por
-                  la plataforma. Desde aquí puedes consultar tus
-                  precios, actualizar los datos de tu tienda y
-                  compartir tu catálogo con tus clientes.
+                  Los productos del catálogo son administrados por la plataforma. Desde aquí puedes consultar tus precios, actualizar los datos de tu tienda y compartir tu catálogo con tus clientes.
                 </p>
               </div>
             </>
@@ -670,11 +1224,18 @@ export default function AdminPage() {
 
 const estiloInput = {
   width: "100%",
+
   padding: "14px",
+
   marginTop: "7px",
+
   marginBottom: "18px",
+
   borderRadius: "10px",
+
   border: "1px solid #ddd",
+
   fontSize: "16px",
+
   boxSizing: "border-box",
 };
