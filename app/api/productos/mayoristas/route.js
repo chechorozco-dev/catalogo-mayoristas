@@ -182,7 +182,7 @@ export async function GET() {
     // Traer los productos con costo privado
     const productosResponse =
       await fetch(
-        `${supabaseUrl}/rest/v1/productos?activo=eq.true&select=id,referencia,nombre,foto_url,foto_url_2,costo,precio_detal,activo,created_at&order=created_at.desc`,
+        `${supabaseUrl}/rest/v1/productos?activo=eq.true&select=id,referencia,nombre,categoria,foto_url,foto_url_2,costo,precio_detal,activo,created_at_at&order=created_at.desc`,
         {
           method: "GET",
           headers,
