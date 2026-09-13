@@ -1,187 +1,582 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "../../lib/supabase";
+
+const PAISES = [
+  { nombre: "Colombia", codigo: "57", bandera: "🇨🇴" },
+  { nombre: "Estados Unidos", codigo: "1", bandera: "🇺🇸" },
+  { nombre: "México", codigo: "52", bandera: "🇲🇽" },
+  { nombre: "Ecuador", codigo: "593", bandera: "🇪🇨" },
+  { nombre: "Perú", codigo: "51", bandera: "🇵🇪" },
+  { nombre: "Venezuela", codigo: "58", bandera: "🇻🇪" },
+  { nombre: "Panamá", codigo: "507", bandera: "🇵🇦" },
+];
 
 export default function LoginPage() {
   const router = useRouter();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [mensaje, setMensaje] = useState("");
-  const [cargando, setCargando] = useState(false);
+  const [cargandoSesion, setCargandoSesion] = useState(true);
 
-  async function iniciarSesion(e) {
+  const [codigoPais, setCodigoPais] = useState("57");
+  const [telefono, setTelefono] = useState("");
+
+  const [codigo, setCodigo] = useState("");
+
+  const [codigoEnviado, setCodigoEnviado] = useState(false);
+
+  const [enviando, setEnviando] = useState(false);
+  const [verificando, setVerificando] = useState(false);
+
+  const [mensaje, setMensaje] = useState("");
+  const [tipoMensaje, setTipoMensaje] = useState("");
+
+  useEffect(() => {
+    revisarSesion();
+  }, []);
+
+  async function revisarSesion() {
+    try {
+      const response = await fetch("/api/auth/sesion", {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.autenticado) {
+        if (data.cliente?.tienda_id) {
+          router.replace("/admin");
+        } else {
+          router.replace("/crear-tienda");
+        }
+
+        return;
+      }
+    } catch (error) {
+      console.error(error);
+    }
+
+    setCargandoSesion(false);
+  }
+
+  function telefonoCompleto() {
+    const numero = String(telefono || "").replace(/\D/g, "");
+
+    return `${codigoPais}${numero}`;
+  }
+
+  async function enviarCodigo(e) {
     e.preventDefault();
 
+    const numero = String(telefono || "").replace(/\D/g, "");
+
     setMensaje("");
-    setCargando(true);
+    setTipoMensaje("");
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      console.error(error);
-
-      setMensaje(
-        "No pudimos iniciar sesión. Revisa tu correo y contraseña."
-      );
-
-      setCargando(false);
+    if (!numero) {
+      setMensaje("Escribe tu número de WhatsApp.");
+      setTipoMensaje("error");
       return;
     }
 
-    if (data.user) {
-      router.push("/admin");
-      router.refresh();
+    if (codigoPais === "57" && numero.length !== 10) {
+      setMensaje(
+        "Para Colombia escribe los 10 dígitos de tu celular."
+      );
+      setTipoMensaje("error");
+      return;
     }
 
-    setCargando(false);
+    setEnviando(true);
+
+    try {
+      const response = await fetch("/api/auth/enviar-codigo", {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          telefono: telefonoCompleto(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        setMensaje(
+          data.mensaje ||
+            "No pudimos enviar el código."
+        );
+
+        setTipoMensaje("error");
+        setEnviando(false);
+        return;
+      }
+
+      setCodigoEnviado(true);
+
+      setMensaje(
+        "Te enviamos un código de 4 dígitos por WhatsApp."
+      );
+
+      setTipoMensaje("exito");
+    } catch (error) {
+      console.error(error);
+
+      setMensaje(
+        "Ocurrió un error. Intenta nuevamente."
+      );
+
+      setTipoMensaje("error");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  async function verificarCodigo(e) {
+    e.preventDefault();
+
+    const codigoLimpio = String(codigo || "").replace(/\D/g, "");
+
+    setMensaje("");
+    setTipoMensaje("");
+
+    if (codigoLimpio.length !== 4) {
+      setMensaje("Escribe el código de 4 números.");
+      setTipoMensaje("error");
+      return;
+    }
+
+    setVerificando(true);
+
+    try {
+      const response = await fetch(
+        "/api/auth/verificar-codigo",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify({
+            telefono: telefonoCompleto(),
+            codigo: codigoLimpio,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        setMensaje(
+          data.mensaje ||
+            "El código no es válido."
+        );
+
+        setTipoMensaje("error");
+        setVerificando(false);
+        return;
+      }
+
+      setMensaje("Código correcto. Ingresando...");
+      setTipoMensaje("exito");
+
+      if (data.cliente?.tienda_id) {
+        router.replace("/admin");
+      } else {
+        router.replace("/crear-tienda");
+      }
+
+      router.refresh();
+    } catch (error) {
+      console.error(error);
+
+      setMensaje(
+        "Ocurrió un error al verificar el código."
+      );
+
+      setTipoMensaje("error");
+    } finally {
+      setVerificando(false);
+    }
+  }
+
+  function cambiarNumero() {
+    setCodigoEnviado(false);
+    setCodigo("");
+    setMensaje("");
+    setTipoMensaje("");
+  }
+
+  if (cargandoSesion) {
+    return (
+      <main
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#fff8f6",
+          padding: "20px",
+        }}
+      >
+        <p
+          style={{
+            color: "#666",
+            fontSize: "17px",
+          }}
+        >
+          Verificando acceso...
+        </p>
+      </main>
+    );
   }
 
   return (
     <main
       style={{
         minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "25px",
         background: "#fff8f6",
+        padding: "45px 18px",
       }}
     >
       <div
         style={{
-          width: "100%",
-          maxWidth: "430px",
-          background: "white",
-          padding: "30px",
-          borderRadius: "20px",
-          boxShadow: "0 10px 35px rgba(0,0,0,0.08)",
+          maxWidth: "540px",
+          margin: "0 auto",
         }}
       >
-        <h1
+        <div
           style={{
-            fontSize: "30px",
-            marginBottom: "10px",
+            background: "white",
+            borderRadius: "24px",
+            padding: "38px",
+            boxShadow: "0 12px 40px rgba(0,0,0,0.08)",
           }}
         >
-          Administrar catálogo
-        </h1>
-
-        <p
-          style={{
-            color: "#666",
-            marginBottom: "25px",
-            lineHeight: "1.5",
-          }}
-        >
-          Ingresa con el correo y la contraseña que utilizaste al crear tu
-          catálogo.
-        </p>
-
-        <form onSubmit={iniciarSesion}>
-          <label>Correo electrónico</label>
-
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            placeholder="tu@email.com"
-            style={estiloInput}
-          />
-
-          <label>Contraseña</label>
-
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            placeholder="Tu contraseña"
-            style={estiloInput}
-          />
-
-          <button
-            type="submit"
-            disabled={cargando}
+          <p
             style={{
-              width: "100%",
-              border: "none",
-              padding: "15px",
-              borderRadius: "12px",
-              background: "#d97883",
-              color: "white",
-              fontSize: "16px",
+              margin: 0,
+              color: "#d97883",
               fontWeight: "700",
-              cursor: cargando ? "not-allowed" : "pointer",
-              marginTop: "8px",
-              opacity: cargando ? 0.7 : 1,
+              fontSize: "14px",
+              letterSpacing: "1px",
             }}
           >
-            {cargando ? "Ingresando..." : "Ingresar a mi catálogo"}
-          </button>
-        </form>
+            ACCESO PARA MAYORISTAS
+          </p>
 
-        {mensaje && (
-          <div
+          <h1
             style={{
-              marginTop: "20px",
-              padding: "14px",
-              borderRadius: "10px",
-              background: "#ffeaea",
-              color: "#a33",
+              marginTop: "10px",
+              marginBottom: "10px",
+              fontSize: "36px",
+              lineHeight: "1.1",
+            }}
+          >
+            Ingresa a tu catálogo
+          </h1>
+
+          <p
+            style={{
+              marginTop: 0,
+              marginBottom: "28px",
+              color: "#666",
+              fontSize: "17px",
               lineHeight: "1.5",
             }}
           >
-            {mensaje}
-          </div>
-        )}
+            Usa el número de WhatsApp que tienes registrado con nosotros.
+          </p>
 
-        <div
-          style={{
-            textAlign: "center",
-            marginTop: "22px",
-          }}
-        >
-          <span style={{ color: "#777" }}>
-            ¿Todavía no tienes catálogo?
-          </span>
+          {!codigoEnviado ? (
+            <form onSubmit={enviarCodigo}>
+              <label
+                style={{
+                  display: "block",
+                  fontWeight: "700",
+                  marginBottom: "8px",
+                }}
+              >
+                País
+              </label>
 
-          <br />
+              <select
+                value={codigoPais}
+                onChange={(e) =>
+                  setCodigoPais(e.target.value)
+                }
+                style={{
+                  width: "100%",
+                  padding: "14px 15px",
+                  borderRadius: "12px",
+                  border: "1px solid #ddd",
+                  fontSize: "16px",
+                  background: "white",
+                  marginBottom: "18px",
+                }}
+              >
+                {PAISES.map((pais) => (
+                  <option
+                    key={pais.codigo}
+                    value={pais.codigo}
+                  >
+                    {pais.bandera} {pais.nombre} +{pais.codigo}
+                  </option>
+                ))}
+              </select>
 
-          <button
-            type="button"
-            onClick={() => router.push("/registro")}
+              <label
+                style={{
+                  display: "block",
+                  fontWeight: "700",
+                  marginBottom: "8px",
+                }}
+              >
+                Número de WhatsApp
+              </label>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "90px 1fr",
+                  gap: "10px",
+                }}
+              >
+                <div
+                  style={{
+                    border: "1px solid #ddd",
+                    borderRadius: "12px",
+                    padding: "15px 12px",
+                    background: "#f7f7f7",
+                    fontWeight: "700",
+                    textAlign: "center",
+                  }}
+                >
+                  +{codigoPais}
+                </div>
+
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  value={telefono}
+                  onChange={(e) =>
+                    setTelefono(
+                      e.target.value.replace(/\D/g, "")
+                    )
+                  }
+                  placeholder={
+                    codigoPais === "57"
+                      ? "3202793473"
+                      : "Número de teléfono"
+                  }
+                  autoFocus
+                  style={{
+                    width: "100%",
+                    padding: "15px 16px",
+                    borderRadius: "12px",
+                    border: "1px solid #ddd",
+                    fontSize: "17px",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+
+              {mensaje && (
+                <Mensaje
+                  tipo={tipoMensaje}
+                  texto={mensaje}
+                />
+              )}
+
+              <button
+                type="submit"
+                disabled={enviando}
+                style={estiloBotonPrincipal(enviando)}
+              >
+                {enviando
+                  ? "Enviando código..."
+                  : "Enviar código por WhatsApp"}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={verificarCodigo}>
+              <div
+                style={{
+                  background: "#f7f7f7",
+                  padding: "15px",
+                  borderRadius: "12px",
+                  marginBottom: "22px",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "14px",
+                    color: "#777",
+                  }}
+                >
+                  Código enviado a
+                </div>
+
+                <strong
+                  style={{
+                    display: "block",
+                    marginTop: "4px",
+                  }}
+                >
+                  +{telefonoCompleto()}
+                </strong>
+
+                <button
+                  type="button"
+                  onClick={cambiarNumero}
+                  style={{
+                    marginTop: "8px",
+                    border: "none",
+                    background: "transparent",
+                    color: "#d97883",
+                    fontWeight: "700",
+                    cursor: "pointer",
+                    padding: 0,
+                  }}
+                >
+                  Cambiar número
+                </button>
+              </div>
+
+              <label
+                style={{
+                  display: "block",
+                  fontWeight: "700",
+                  textAlign: "center",
+                  marginBottom: "12px",
+                }}
+              >
+                Código de verificación
+              </label>
+
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={4}
+                value={codigo}
+                onChange={(e) =>
+                  setCodigo(
+                    e.target.value
+                      .replace(/\D/g, "")
+                      .slice(0, 4)
+                  )
+                }
+                placeholder="••••"
+                autoFocus
+                style={{
+                  width: "100%",
+                  padding: "16px",
+                  borderRadius: "12px",
+                  border: "1px solid #ddd",
+                  fontSize: "32px",
+                  fontWeight: "700",
+                  textAlign: "center",
+                  letterSpacing: "14px",
+                  boxSizing: "border-box",
+                }}
+              />
+
+              {mensaje && (
+                <Mensaje
+                  tipo={tipoMensaje}
+                  texto={mensaje}
+                />
+              )}
+
+              <button
+                type="submit"
+                disabled={verificando}
+                style={estiloBotonPrincipal(verificando)}
+              >
+                {verificando
+                  ? "Verificando..."
+                  : "Ingresar a mi catálogo"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setCodigo("");
+                  setCodigoEnviado(false);
+                  setMensaje("");
+                  setTipoMensaje("");
+                }}
+                style={{
+                  width: "100%",
+                  marginTop: "12px",
+                  padding: "13px",
+                  border: "1px solid #ddd",
+                  borderRadius: "12px",
+                  background: "white",
+                  fontSize: "15px",
+                  cursor: "pointer",
+                }}
+              >
+                Solicitar otro código
+              </button>
+            </form>
+          )}
+
+          <div
             style={{
-              background: "none",
-              border: "none",
-              color: "#d97883",
-              fontWeight: "700",
-              cursor: "pointer",
-              marginTop: "5px",
-              fontSize: "15px",
+              marginTop: "26px",
+              borderTop: "1px solid #eee",
+              paddingTop: "20px",
+              textAlign: "center",
+              color: "#777",
+              fontSize: "14px",
+              lineHeight: "1.5",
             }}
           >
-            Crear mi catálogo
-          </button>
+            El acceso está disponible únicamente para clientes registrados con nosotros.
+          </div>
         </div>
       </div>
     </main>
   );
 }
 
-const estiloInput = {
-  width: "100%",
-  padding: "14px",
-  marginTop: "7px",
-  marginBottom: "18px",
-  borderRadius: "10px",
-  border: "1px solid #ddd",
-  fontSize: "16px",
-  boxSizing: "border-box",
-};
+function Mensaje({ tipo, texto }) {
+  const exito = tipo === "exito";
+
+  return (
+    <div
+      style={{
+        marginTop: "18px",
+        padding: "13px",
+        borderRadius: "10px",
+        background: exito ? "#eef9f1" : "#ffeaea",
+        color: exito ? "#287a42" : "#a33",
+        lineHeight: "1.4",
+      }}
+    >
+      {texto}
+    </div>
+  );
+}
+
+function estiloBotonPrincipal(deshabilitado) {
+  return {
+    width: "100%",
+    marginTop: "22px",
+    border: "none",
+    padding: "16px",
+    borderRadius: "12px",
+    background: "#d97883",
+    color: "white",
+    fontSize: "17px",
+    fontWeight: "700",
+    cursor: deshabilitado ? "not-allowed" : "pointer",
+    opacity: deshabilitado ? 0.7 : 1,
+  };
+}
