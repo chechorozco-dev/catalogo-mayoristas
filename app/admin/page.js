@@ -25,6 +25,12 @@ export default function AdminPage() {
   const [cerrando, setCerrando] =
     useState(false);
 
+  const [subiendoLogo, setSubiendoLogo] =
+    useState(false);
+
+  const [previewLogo, setPreviewLogo] =
+    useState("");
+
   const [mensaje, setMensaje] =
     useState("");
 
@@ -48,16 +54,16 @@ export default function AdminPage() {
     cargarDatos();
   }, []);
 
+  /* =========================================
+     CARGAR DATOS
+  ========================================= */
+
   async function cargarDatos() {
     setCargando(true);
     setMensaje("");
 
     try {
-      /*
-        PRIMERO comprobamos la sesión
-        creada con el código de WhatsApp.
-      */
-
+      // 1. Verificar sesión por WhatsApp
       const sesionResponse =
         await fetch(
           "/api/auth/sesion",
@@ -78,11 +84,7 @@ export default function AdminPage() {
         return;
       }
 
-      /*
-        Si todavía no tiene tienda,
-        va a elegir su nombre.
-      */
-
+      // 2. Si todavía no tiene tienda
       if (
         !sesionData.cliente?.tienda_id
       ) {
@@ -93,12 +95,7 @@ export default function AdminPage() {
         return;
       }
 
-      /*
-        Ahora obtenemos los datos reales
-        de su tienda mediante nuestra API
-        privada.
-      */
-
+      // 3. Cargar tienda
       const tiendaResponse =
         await fetch(
           "/api/tiendas/mi-tienda",
@@ -131,7 +128,6 @@ export default function AdminPage() {
         );
 
         setCargando(false);
-
         return;
       }
 
@@ -168,9 +164,9 @@ export default function AdminPage() {
     }
   }
 
-  /* =====================================
+  /* =========================================
      CERRAR SESIÓN
-  ===================================== */
+  ========================================= */
 
   async function cerrarSesion() {
     if (cerrando) return;
@@ -192,9 +188,9 @@ export default function AdminPage() {
     router.refresh();
   }
 
-  /* =====================================
+  /* =========================================
      COPIAR ENLACE
-  ===================================== */
+  ========================================= */
 
   async function copiarEnlace() {
     if (!tienda) return;
@@ -219,9 +215,9 @@ export default function AdminPage() {
     }
   }
 
-  /* =====================================
+  /* =========================================
      VER CATÁLOGO
-  ===================================== */
+  ========================================= */
 
   function verCatalogo() {
     if (!tienda) return;
@@ -232,9 +228,9 @@ export default function AdminPage() {
     );
   }
 
-  /* =====================================
+  /* =========================================
      PRECIOS MAYORISTAS
-  ===================================== */
+  ========================================= */
 
   function verProductosYPrecios() {
     router.push(
@@ -242,9 +238,132 @@ export default function AdminPage() {
     );
   }
 
-  /* =====================================
-     EDITAR
-  ===================================== */
+  /* =========================================
+     SUBIR LOGO
+  ========================================= */
+
+  async function subirLogo(e) {
+    const archivo =
+      e.target.files?.[0];
+
+    if (!archivo) return;
+
+    setMensaje("");
+
+    const tiposPermitidos = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+    ];
+
+    if (
+      !tiposPermitidos.includes(
+        archivo.type
+      )
+    ) {
+      setMensaje(
+        "El logo debe ser JPG, PNG o WEBP."
+      );
+
+      e.target.value = "";
+      return;
+    }
+
+    if (
+      archivo.size >
+      2 * 1024 * 1024
+    ) {
+      setMensaje(
+        "El logo no puede pesar más de 2 MB."
+      );
+
+      e.target.value = "";
+      return;
+    }
+
+    // Vista previa inmediata
+    const vistaPrevia =
+      URL.createObjectURL(
+        archivo
+      );
+
+    setPreviewLogo(
+      vistaPrevia
+    );
+
+    setSubiendoLogo(true);
+
+    try {
+      const formData =
+        new FormData();
+
+      formData.append(
+        "logo",
+        archivo
+      );
+
+      const response =
+        await fetch(
+          "/api/tiendas/logo",
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+      const data =
+        await response.json();
+
+      if (
+        !response.ok ||
+        !data.ok
+      ) {
+        setMensaje(
+          data.mensaje ||
+            "No pudimos subir el logo."
+        );
+
+        setPreviewLogo("");
+
+        e.target.value = "";
+
+        return;
+      }
+
+      setTienda(
+        (actual) => ({
+          ...actual,
+          logo_url:
+            data.logo_url,
+        })
+      );
+
+      setPreviewLogo("");
+
+      setMensaje(
+        "✅ Logo actualizado correctamente."
+      );
+    } catch (error) {
+      console.error(
+        "Error subiendo logo:",
+        error
+      );
+
+      setMensaje(
+        "No pudimos subir el logo."
+      );
+
+      setPreviewLogo("");
+    } finally {
+      setSubiendoLogo(false);
+
+      e.target.value = "";
+    }
+  }
+
+  /* =========================================
+     EDITAR DATOS
+  ========================================= */
 
   function empezarEdicion() {
     if (!tienda) return;
@@ -278,11 +397,13 @@ export default function AdminPage() {
     setEditando(false);
   }
 
-  /* =====================================
+  /* =========================================
      GUARDAR CAMBIOS
-  ===================================== */
+  ========================================= */
 
-  async function guardarCambios(e) {
+  async function guardarCambios(
+    e
+  ) {
     e.preventDefault();
 
     if (!tienda) return;
@@ -324,8 +445,6 @@ export default function AdminPage() {
             "No pudimos guardar los cambios."
         );
 
-        setGuardando(false);
-
         return;
       }
 
@@ -362,11 +481,13 @@ export default function AdminPage() {
     }
   }
 
-  /* =====================================
-     MOSTRAR TELÉFONO
-  ===================================== */
+  /* =========================================
+     MOSTRAR WHATSAPP
+  ========================================= */
 
-  function mostrarWhatsapp(numero) {
+  function mostrarWhatsapp(
+    numero
+  ) {
     if (!numero) return "";
 
     let limpio =
@@ -388,8 +509,14 @@ export default function AdminPage() {
     ) {
       return (
         `+57 ` +
-        `${limpio.slice(0, 3)} ` +
-        `${limpio.slice(3, 6)} ` +
+        `${limpio.slice(
+          0,
+          3
+        )} ` +
+        `${limpio.slice(
+          3,
+          6
+        )} ` +
         `${limpio.slice(6)}`
       );
     }
@@ -397,9 +524,9 @@ export default function AdminPage() {
     return numero;
   }
 
-  /* =====================================
+  /* =========================================
      CARGANDO
-  ===================================== */
+  ========================================= */
 
   if (cargando) {
     return (
@@ -666,6 +793,218 @@ export default function AdminPage() {
                       tienda.whatsapp
                     )}
                   </p>
+
+                  {/* =========================
+                      LOGO
+                  ========================= */}
+
+                  <div
+                    style={{
+                      marginTop:
+                        "22px",
+
+                      padding:
+                        "20px",
+
+                      borderRadius:
+                        "14px",
+
+                      background:
+                        "white",
+
+                      border:
+                        "1px solid #eee",
+
+                      textAlign:
+                        "center",
+                    }}
+                  >
+                    <p
+                      style={{
+                        marginTop:
+                          0,
+
+                        marginBottom:
+                          "14px",
+
+                        fontWeight:
+                          "700",
+
+                        fontSize:
+                          "16px",
+                      }}
+                    >
+                      Logo de tu tienda
+                    </p>
+
+                    <div
+                      style={{
+                        width:
+                          "130px",
+
+                        height:
+                          "130px",
+
+                        margin:
+                          "0 auto 16px",
+
+                        borderRadius:
+                          "18px",
+
+                        overflow:
+                          "hidden",
+
+                        border:
+                          "1px solid #ddd",
+
+                        background:
+                          "#f7f7f7",
+
+                        display:
+                          "flex",
+
+                        alignItems:
+                          "center",
+
+                        justifyContent:
+                          "center",
+                      }}
+                    >
+                      {previewLogo ||
+                      tienda.logo_url ? (
+                        <img
+                          src={
+                            previewLogo ||
+                            tienda.logo_url
+                          }
+
+                          alt="Logo de la tienda"
+
+                          style={{
+                            width:
+                              "100%",
+
+                            height:
+                              "100%",
+
+                            objectFit:
+                              "cover",
+
+                            display:
+                              "block",
+                          }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            textAlign:
+                              "center",
+
+                            color:
+                              "#999",
+
+                            fontSize:
+                              "13px",
+
+                            padding:
+                              "10px",
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize:
+                                "30px",
+
+                              marginBottom:
+                                "5px",
+                            }}
+                          >
+                            🖼️
+                          </div>
+
+                          Sin logo
+                        </div>
+                      )}
+                    </div>
+
+                    <label
+                      style={{
+                        display:
+                          "inline-block",
+
+                        padding:
+                          "12px 18px",
+
+                        borderRadius:
+                          "10px",
+
+                        background:
+                          "#222",
+
+                        color:
+                          "white",
+
+                        fontWeight:
+                          "700",
+
+                        cursor:
+                          subiendoLogo
+                            ? "not-allowed"
+                            : "pointer",
+
+                        opacity:
+                          subiendoLogo
+                            ? 0.7
+                            : 1,
+                      }}
+                    >
+                      {subiendoLogo
+                        ? "Subiendo..."
+                        : tienda.logo_url
+                          ? "📷 Cambiar logo"
+                          : "📷 Subir logo"}
+
+                      <input
+                        type="file"
+
+                        accept="image/jpeg,image/png,image/webp"
+
+                        onChange={
+                          subirLogo
+                        }
+
+                        disabled={
+                          subiendoLogo
+                        }
+
+                        style={{
+                          display:
+                            "none",
+                        }}
+                      />
+                    </label>
+
+                    <p
+                      style={{
+                        marginTop:
+                          "12px",
+
+                        marginBottom:
+                          0,
+
+                        color:
+                          "#888",
+
+                        fontSize:
+                          "12px",
+                      }}
+                    >
+                      Elige una foto desde tu celular.
+                      JPG, PNG o WEBP. Máximo 2 MB.
+                    </p>
+                  </div>
+
+                  {/* BOTÓN EDITAR */}
 
                   <button
                     type="button"
@@ -1211,7 +1550,7 @@ export default function AdminPage() {
                       0,
                   }}
                 >
-                  Los productos del catálogo son administrados por la plataforma. Desde aquí puedes consultar tus precios, actualizar los datos de tu tienda y compartir tu catálogo con tus clientes.
+                  Los productos del catálogo son administrados por la plataforma. Desde aquí puedes consultar tus precios, actualizar los datos de tu tienda, subir tu logo y compartir tu catálogo con tus clientes.
                 </p>
               </div>
             </>
