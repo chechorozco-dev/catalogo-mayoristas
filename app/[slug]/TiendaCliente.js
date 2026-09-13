@@ -203,6 +203,7 @@ function VisorImagen({
 
 export default function TiendaCliente({
   nombreTienda,
+  logoUrl,
   whatsapp,
   productos,
 }) {
