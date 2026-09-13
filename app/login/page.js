@@ -93,11 +93,9 @@ export default function LoginPage() {
     try {
       const response = await fetch("/api/auth/enviar-codigo", {
         method: "POST",
-
         headers: {
           "Content-Type": "application/json",
         },
-
         body: JSON.stringify({
           telefono: telefonoCompleto(),
         }),
@@ -107,10 +105,8 @@ export default function LoginPage() {
 
       if (!response.ok || !data.ok) {
         setMensaje(
-          data.mensaje ||
-            "No pudimos enviar el código."
+          data.mensaje || "No pudimos enviar el código."
         );
-
         setTipoMensaje("error");
         setEnviando(false);
         return;
@@ -157,11 +153,9 @@ export default function LoginPage() {
         "/api/auth/verificar-codigo",
         {
           method: "POST",
-
           headers: {
             "Content-Type": "application/json",
           },
-
           body: JSON.stringify({
             telefono: telefonoCompleto(),
             codigo: codigoLimpio,
@@ -173,8 +167,7 @@ export default function LoginPage() {
 
       if (!response.ok || !data.ok) {
         setMensaje(
-          data.mensaje ||
-            "El código no es válido."
+          data.mensaje || "El código no es válido."
         );
 
         setTipoMensaje("error");
@@ -295,16 +288,7 @@ export default function LoginPage() {
 
           {!codigoEnviado ? (
             <form onSubmit={enviarCodigo}>
-              <label
-                style={{
-                  display: "block",
-                  fontWeight: "700",
-                  marginBottom: "8px",
-                }}
-              >
-                País
-              </label>
-
+              {/* SELECTOR DE CÓDIGO DE PAÍS */}
               <select
                 value={codigoPais}
                 onChange={(e) =>
@@ -325,7 +309,7 @@ export default function LoginPage() {
                     key={pais.codigo}
                     value={pais.codigo}
                   >
-                    {pais.bandera} {pais.nombre} +{pais.codigo}
+                    {pais.bandera} {pais.nombre} (+{pais.codigo})
                   </option>
                 ))}
               </select>
@@ -371,7 +355,7 @@ export default function LoginPage() {
                   }
                   placeholder={
                     codigoPais === "57"
-                      ? "3202793473"
+                      ? "320 000 0000"
                       : "Número de teléfono"
                   }
                   autoFocus
