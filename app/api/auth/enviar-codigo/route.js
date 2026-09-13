@@ -64,18 +64,29 @@ export async function POST(request) {
       );
     }
 
-    // 1. Verificar que el teléfono esté autorizado
+    /*
+      IMPORTANTE:
+      Las nuevas claves sb_secret_ de Supabase
+      se envían solamente como "apikey".
+      NO como Authorization Bearer.
+    */
+
+    const supabaseHeaders = {
+      apikey: supabaseSecretKey,
+      "Content-Type": "application/json",
+    };
+
+    // ==========================================
+    // 1. VERIFICAR CLIENTE AUTORIZADO
+    // ==========================================
+
     const clienteResponse = await fetch(
       `${supabaseUrl}/rest/v1/clientes_autorizados?telefono=eq.${encodeURIComponent(
         telefono
       )}&activo=eq.true&select=id,telefono,nombre,activo`,
       {
         method: "GET",
-        headers: {
-          apikey: supabaseSecretKey,
-          Authorization: `Bearer ${supabaseSecretKey}`,
-          "Content-Type": "application/json",
-        },
+        headers: supabaseHeaders,
         cache: "no-store",
       }
     );
@@ -86,6 +97,7 @@ export async function POST(request) {
 
       console.error(
         "Error consultando cliente autorizado:",
+        clienteResponse.status,
         errorTexto
       );
 
@@ -102,7 +114,10 @@ export async function POST(request) {
     const clientes =
       await clienteResponse.json();
 
-    if (!clientes || clientes.length === 0) {
+    if (
+      !Array.isArray(clientes) ||
+      clientes.length === 0
+    ) {
       return NextResponse.json(
         {
           ok: false,
@@ -113,11 +128,13 @@ export async function POST(request) {
       );
     }
 
-    // 2. Evitar demasiados códigos seguidos
-    const desdeHaceUnMinuto =
-      new Date(
-        Date.now() - 60 * 1000
-      ).toISOString();
+    // ==========================================
+    // 2. EVITAR CÓDIGOS DEMASIADO SEGUIDOS
+    // ==========================================
+
+    const desdeHaceUnMinuto = new Date(
+      Date.now() - 60 * 1000
+    ).toISOString();
 
     const recientesResponse = await fetch(
       `${supabaseUrl}/rest/v1/codigos_acceso?telefono=eq.${encodeURIComponent(
@@ -127,16 +144,21 @@ export async function POST(request) {
       )}&select=id`,
       {
         method: "GET",
-        headers: {
-          apikey: supabaseSecretKey,
-          Authorization: `Bearer ${supabaseSecretKey}`,
-          "Content-Type": "application/json",
-        },
+        headers: supabaseHeaders,
         cache: "no-store",
       }
     );
 
-    if (recientesResponse.ok) {
+    if (!recientesResponse.ok) {
+      const errorTexto =
+        await recientesResponse.text();
+
+      console.error(
+        "Error consultando códigos recientes:",
+        recientesResponse.status,
+        errorTexto
+      );
+    } else {
       const recientes =
         await recientesResponse.json();
 
@@ -155,31 +177,33 @@ export async function POST(request) {
       }
     }
 
-    // 3. Generar código de exactamente 4 dígitos
-    const codigo = crypto.randomInt(
-      1000,
-      10000
-    ).toString();
+    // ==========================================
+    // 3. GENERAR CÓDIGO DE 4 DÍGITOS
+    // ==========================================
+
+    const codigo = crypto
+      .randomInt(1000, 10000)
+      .toString();
 
     const codigoHash =
       hashCodigo(codigo);
 
-    const venceEn =
-      new Date(
-        Date.now() + 5 * 60 * 1000
-      ).toISOString();
+    const venceEn = new Date(
+      Date.now() + 5 * 60 * 1000
+    ).toISOString();
 
-    // 4. Invalidar códigos anteriores todavía pendientes
-    await fetch(
+    // ==========================================
+    // 4. INVALIDAR CÓDIGOS ANTERIORES
+    // ==========================================
+
+    const invalidarResponse = await fetch(
       `${supabaseUrl}/rest/v1/codigos_acceso?telefono=eq.${encodeURIComponent(
         telefono
       )}&usado=eq.false`,
       {
         method: "PATCH",
         headers: {
-          apikey: supabaseSecretKey,
-          Authorization: `Bearer ${supabaseSecretKey}`,
-          "Content-Type": "application/json",
+          ...supabaseHeaders,
           Prefer: "return=minimal",
         },
         body: JSON.stringify({
@@ -188,15 +212,27 @@ export async function POST(request) {
       }
     );
 
-    // 5. Guardar el nuevo código protegido
+    if (!invalidarResponse.ok) {
+      const errorTexto =
+        await invalidarResponse.text();
+
+      console.error(
+        "Error invalidando códigos anteriores:",
+        invalidarResponse.status,
+        errorTexto
+      );
+    }
+
+    // ==========================================
+    // 5. GUARDAR NUEVO CÓDIGO
+    // ==========================================
+
     const guardarResponse = await fetch(
       `${supabaseUrl}/rest/v1/codigos_acceso`,
       {
         method: "POST",
         headers: {
-          apikey: supabaseSecretKey,
-          Authorization: `Bearer ${supabaseSecretKey}`,
-          "Content-Type": "application/json",
+          ...supabaseHeaders,
           Prefer: "return=representation",
         },
         body: JSON.stringify({
@@ -215,6 +251,7 @@ export async function POST(request) {
 
       console.error(
         "Error guardando código:",
+        guardarResponse.status,
         errorTexto
       );
 
@@ -228,7 +265,10 @@ export async function POST(request) {
       );
     }
 
-    // 6. Preparar token WATI
+    // ==========================================
+    // 6. PREPARAR TOKEN DE WATI
+    // ==========================================
+
     const authorization =
       watiToken
         .trim()
@@ -246,7 +286,10 @@ export async function POST(request) {
         telefono
       )}`;
 
-    // 7. Enviar plantilla codigo_web por WATI
+    // ==========================================
+    // 7. ENVIAR CÓDIGO POR WATI
+    // ==========================================
+
     const watiResponse = await fetch(
       urlWati,
       {
@@ -278,10 +321,11 @@ export async function POST(request) {
     if (!watiResponse.ok) {
       console.error(
         "Error enviando código por WATI:",
+        watiResponse.status,
         watiTexto
       );
 
-      // Invalidamos el código porque no se pudo enviar
+      // Invalidar el código si WATI no pudo enviarlo
       await fetch(
         `${supabaseUrl}/rest/v1/codigos_acceso?telefono=eq.${encodeURIComponent(
           telefono
@@ -290,14 +334,7 @@ export async function POST(request) {
         )}`,
         {
           method: "PATCH",
-          headers: {
-            apikey:
-              supabaseSecretKey,
-            Authorization:
-              `Bearer ${supabaseSecretKey}`,
-            "Content-Type":
-              "application/json",
-          },
+          headers: supabaseHeaders,
           body: JSON.stringify({
             usado: true,
           }),
@@ -313,6 +350,10 @@ export async function POST(request) {
         { status: 500 }
       );
     }
+
+    // ==========================================
+    // 8. TODO CORRECTO
+    // ==========================================
 
     return NextResponse.json({
       ok: true,
