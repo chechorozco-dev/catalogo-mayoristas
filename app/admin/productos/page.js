@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "../../../lib/supabase";
 
 export default function ProductosMayoristaPage() {
   const router = useRouter();
@@ -19,43 +18,58 @@ export default function ProductosMayoristaPage() {
     setCargando(true);
     setError("");
 
-    // Verificar que el mayorista tenga sesión iniciada
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+    try {
+      // 1. Verificar la nueva sesión por WhatsApp
+      const sesionResponse = await fetch("/api/auth/sesion", {
+        method: "GET",
+        cache: "no-store",
+      });
 
-    if (sessionError || !session) {
-      router.replace("/login");
-      return;
-    }
+      const sesionData = await sesionResponse.json();
 
-    // Traer productos con los dos precios
-    const { data, error: productosError } = await supabase
-      .from("productos")
-      .select(`
-        id,
-        referencia,
-        nombre,
-        foto_url,
-        foto_url_2,
-        costo,
-        precio_detal,
-        activo,
-        created_at
-      `)
-      .eq("activo", true)
-      .order("created_at", { ascending: false });
+      if (!sesionResponse.ok || !sesionData.autenticado) {
+        router.replace("/login");
+        return;
+      }
 
-    if (productosError) {
-      console.error(productosError);
-      setError("No se pudieron cargar los productos.");
+      // Si todavía no tiene tienda, debe crearla primero
+      if (!sesionData.cliente?.tienda_id) {
+        router.replace("/crear-tienda");
+        return;
+      }
+
+      // 2. Cargar los productos mediante una API privada
+      const productosResponse = await fetch(
+        "/api/productos/mayoristas",
+        {
+          method: "GET",
+          cache: "no-store",
+        }
+      );
+
+      const productosData = await productosResponse.json();
+
+      if (!productosResponse.ok || !productosData.ok) {
+        setError(
+          productosData.mensaje ||
+            "No se pudieron cargar los productos."
+        );
+
+        setCargando(false);
+        return;
+      }
+
+      setProductos(productosData.productos || []);
       setCargando(false);
-      return;
-    }
+    } catch (error) {
+      console.error(error);
 
-    setProductos(data || []);
-    setCargando(false);
+      setError(
+        "Ocurrió un error al cargar los productos."
+      );
+
+      setCargando(false);
+    }
   }
 
   function formatoPrecio(valor) {
@@ -84,7 +98,12 @@ export default function ProductosMayoristaPage() {
           padding: "20px",
         }}
       >
-        <p style={{ fontSize: "18px", color: "#666" }}>
+        <p
+          style={{
+            fontSize: "18px",
+            color: "#666",
+          }}
+        >
           Cargando productos...
         </p>
       </main>
@@ -231,7 +250,10 @@ export default function ProductosMayoristaPage() {
                   {producto.foto_url ? (
                     <img
                       src={producto.foto_url}
-                      alt={producto.nombre || producto.referencia}
+                      alt={
+                        producto.nombre ||
+                        producto.referencia
+                      }
                       style={{
                         width: "100%",
                         height: "100%",
@@ -356,7 +378,10 @@ export default function ProductosMayoristaPage() {
                         display: "block",
                         marginTop: "3px",
                         fontSize: "18px",
-                        color: ganancia >= 0 ? "#318553" : "#c43b3b",
+                        color:
+                          ganancia >= 0
+                            ? "#318553"
+                            : "#c43b3b",
                       }}
                     >
                       {formatoPrecio(ganancia)}
