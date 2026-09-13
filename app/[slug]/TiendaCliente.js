@@ -1063,18 +1063,17 @@ export default function TiendaCliente({
           gap: 4px;
         }
 
-        .store-logo,
-        .store-logo-placeholder {
-          width: 58px;
-          height: 58px;
+       .store-logo,
+.store-logo-placeholder {
+  width: 72px;
+  height: 72px;
 
-          border-radius: 14px;
+  border-radius: 16px;
 
-          display: block;
+  display: block;
 
-          background: #f5f5f5;
-        }
-
+  background: #f5f5f5;
+}
         .store-logo {
           object-fit: contain;
         }
