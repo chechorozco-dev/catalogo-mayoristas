@@ -209,10 +209,12 @@ export default function TiendaCliente({
   const [carrito, setCarrito] = useState({});
   const [agregadoId, setAgregadoId] =
     useState(null);
+
   const [visor, setVisor] = useState(null);
 
   const [buscando, setBuscando] =
     useState(false);
+
   const [busqueda, setBusqueda] =
     useState("");
 
@@ -272,11 +274,13 @@ export default function TiendaCliente({
   function agregar(producto) {
     setCarrito((actual) => ({
       ...actual,
+
       [producto.id]: {
         ...producto,
+
         cantidad:
-          (actual[producto.id]?.cantidad ||
-            0) + 1,
+          (actual[producto.id]?.cantidad || 0) +
+          1,
       },
     }));
 
@@ -298,12 +302,15 @@ export default function TiendaCliente({
 
       if (nuevaCantidad <= 0) {
         const copia = { ...actual };
+
         delete copia[id];
+
         return copia;
       }
 
       return {
         ...actual,
+
         [id]: {
           ...producto,
           cantidad: nuevaCantidad,
@@ -318,7 +325,10 @@ export default function TiendaCliente({
   const productosFiltrados = useMemo(() => {
     let lista = [...productos];
 
-    if (categoriaActiva === "Accesorios en Rodio") {
+    if (
+      categoriaActiva ===
+      "Accesorios en Rodio"
+    ) {
       lista = lista.filter((producto) => {
         const texto = normalizar(
           `${producto.nombre} ${producto.referencia}`
@@ -328,7 +338,10 @@ export default function TiendaCliente({
       });
     }
 
-    if (categoriaActiva === "Accesorios en Acero") {
+    if (
+      categoriaActiva ===
+      "Accesorios en Acero"
+    ) {
       lista = lista.filter((producto) => {
         const texto = normalizar(
           `${producto.nombre} ${producto.referencia}`
@@ -354,7 +367,9 @@ export default function TiendaCliente({
 
     if (categoriaActiva === "Aretes") {
       lista = lista.filter((producto) => {
-        const texto = normalizar(producto.nombre);
+        const texto = normalizar(
+          producto.nombre
+        );
 
         return (
           texto.includes("arete") ||
@@ -365,7 +380,9 @@ export default function TiendaCliente({
 
     if (categoriaActiva === "Candongas") {
       lista = lista.filter((producto) => {
-        const texto = normalizar(producto.nombre);
+        const texto = normalizar(
+          producto.nombre
+        );
 
         return (
           texto.includes("candonga") ||
@@ -376,7 +393,9 @@ export default function TiendaCliente({
 
     if (categoriaActiva === "Collares") {
       lista = lista.filter((producto) => {
-        const texto = normalizar(producto.nombre);
+        const texto = normalizar(
+          producto.nombre
+        );
 
         return (
           texto.includes("collar") ||
@@ -389,7 +408,9 @@ export default function TiendaCliente({
 
     if (categoriaActiva === "Pulseras") {
       lista = lista.filter((producto) => {
-        const texto = normalizar(producto.nombre);
+        const texto = normalizar(
+          producto.nombre
+        );
 
         return (
           texto.includes("pulsera") ||
@@ -400,7 +421,9 @@ export default function TiendaCliente({
 
     if (categoriaActiva === "Anillos") {
       lista = lista.filter((producto) => {
-        const texto = normalizar(producto.nombre);
+        const texto = normalizar(
+          producto.nombre
+        );
 
         return (
           texto.includes("anillo") ||
@@ -409,9 +432,14 @@ export default function TiendaCliente({
       });
     }
 
-    if (categoriaActiva === "Topos y maxitopos") {
+    if (
+      categoriaActiva ===
+      "Topos y maxitopos"
+    ) {
       lista = lista.filter((producto) => {
-        const texto = normalizar(producto.nombre);
+        const texto = normalizar(
+          producto.nombre
+        );
 
         return (
           texto.includes("topo") ||
@@ -422,7 +450,9 @@ export default function TiendaCliente({
       });
     }
 
-    const textoBusqueda = normalizar(busqueda.trim());
+    const textoBusqueda = normalizar(
+      busqueda.trim()
+    );
 
     if (textoBusqueda) {
       lista = lista.filter((producto) => {
@@ -430,12 +460,18 @@ export default function TiendaCliente({
           `${producto.nombre} ${producto.referencia}`
         );
 
-        return texto.includes(textoBusqueda);
+        return texto.includes(
+          textoBusqueda
+        );
       });
     }
 
     return lista;
-  }, [productos, categoriaActiva, busqueda]);
+  }, [
+    productos,
+    categoriaActiva,
+    busqueda,
+  ]);
 
   const total = useMemo(() => {
     return productosCarrito.reduce(
@@ -462,7 +498,9 @@ export default function TiendaCliente({
     });
   }
 
-  function seleccionarCategoria(categoria) {
+  function seleccionarCategoria(
+    categoria
+  ) {
     setCategoriaActiva(categoria);
     setMenuAbierto(false);
     setBusqueda("");
@@ -473,40 +511,39 @@ export default function TiendaCliente({
       alert(
         "Agrega al menos un producto al pedido."
       );
+
       return;
     }
 
-    const numero = (whatsapp || "").replace(
-      /\D/g,
-      ""
-    );
+    const numero = (
+      whatsapp || ""
+    ).replace(/\D/g, "");
 
     if (!numero) {
       alert(
         "Esta tienda todavía no tiene WhatsApp configurado."
       );
+
       return;
     }
 
     const productosTexto =
-      productosCarrito.map(
-        (producto) => {
-          const subtotal =
-            Number(producto.precio || 0) *
-            producto.cantidad;
+      productosCarrito.map((producto) => {
+        const subtotal =
+          Number(producto.precio || 0) *
+          producto.cantidad;
 
-          return (
-            `*${producto.referencia} — ${producto.nombre}*\n` +
-            `Cantidad: ${producto.cantidad}\n` +
-            `Precio unitario: ${formatoPrecio(
-              producto.precio
-            )}\n` +
-            `Subtotal: ${formatoPrecio(
-              subtotal
-            )}`
-          );
-        }
-      );
+        return (
+          `*${producto.referencia} — ${producto.nombre}*\n` +
+          `Cantidad: ${producto.cantidad}\n` +
+          `Precio unitario: ${formatoPrecio(
+            producto.precio
+          )}\n` +
+          `Subtotal: ${formatoPrecio(
+            subtotal
+          )}`
+        );
+      });
 
     const mensaje =
       `🛍️ *NUEVO PEDIDO*\n\n` +
@@ -551,11 +588,20 @@ export default function TiendaCliente({
           background: white !important;
         }
 
+        /* =========================
+           ENCABEZADO
+        ========================= */
+
         .store-header {
           position: sticky;
           top: 0;
           z-index: 100;
-          background: rgba(255,255,255,0.97);
+          background: rgba(
+            255,
+            255,
+            255,
+            0.97
+          );
           border-bottom: 1px solid #eeeeee;
           backdrop-filter: blur(10px);
         }
@@ -565,7 +611,8 @@ export default function TiendaCliente({
           margin: 0 auto;
           min-height: 76px;
           display: grid;
-          grid-template-columns: 1fr auto 1fr;
+          grid-template-columns:
+            1fr auto 1fr;
           align-items: center;
           padding: 0 20px;
         }
@@ -606,18 +653,26 @@ export default function TiendaCliente({
           position: absolute;
           top: 1px;
           right: 0;
+
           min-width: 19px;
           height: 19px;
           padding: 0 5px;
+
           border-radius: 20px;
           background: #111;
           color: white;
+
           display: flex;
           align-items: center;
           justify-content: center;
+
           font-size: 11px;
           font-weight: 700;
         }
+
+        /* =========================
+           BUSCADOR
+        ========================= */
 
         .search-wrapper {
           max-width: 1400px;
@@ -629,33 +684,46 @@ export default function TiendaCliente({
           width: 100%;
           border: 1px solid #dedede;
           border-radius: 8px;
+
           padding: 13px 16px;
+
           font-size: 16px;
           outline: none;
+
           background: #fafafa;
         }
 
         .category-title {
           max-width: 1400px;
           margin: 0 auto;
+
           padding: 18px 20px 0;
+
           font-size: 19px;
           font-weight: 600;
         }
 
+        /* =========================
+           CATÁLOGO
+        ========================= */
+
         .catalog-container {
           width: 100%;
           max-width: 1400px;
+
           margin: 0 auto;
+
           padding: 18px 20px 120px;
         }
 
         .product-grid {
           display: grid;
+
           grid-template-columns: repeat(
             4,
             minmax(0, 1fr)
           );
+
           column-gap: 18px;
           row-gap: 34px;
         }
@@ -667,44 +735,61 @@ export default function TiendaCliente({
 
         .product-image-container {
           position: relative;
+
           width: 100%;
           aspect-ratio: 1 / 1;
+
           overflow: hidden;
+
           background: #f5f5f5;
+
           cursor: zoom-in;
         }
 
         .product-image {
           width: 100%;
           height: 100%;
+
           display: block;
+
           object-fit: cover;
         }
 
         .no-image {
           width: 100%;
           height: 100%;
+
           display: flex;
           align-items: center;
           justify-content: center;
+
           color: #999;
         }
 
         .quick-add {
           position: absolute;
+
           right: 10px;
           bottom: 10px;
+
           width: 46px;
           height: 46px;
+
           border-radius: 50%;
+
           border: 1px solid #d1d1d1;
+
           background: white;
           color: #111;
+
           font-size: 27px;
+
           display: flex;
           align-items: center;
           justify-content: center;
+
           cursor: pointer;
+
           z-index: 5;
         }
 
@@ -716,16 +801,31 @@ export default function TiendaCliente({
 
         .gallery-arrow {
           position: absolute;
+
           top: 50%;
+
           transform: translateY(-50%);
+
           width: 32px;
           height: 32px;
+
           border-radius: 50%;
+
           border: none;
-          background: rgba(255,255,255,0.88);
+
+          background: rgba(
+            255,
+            255,
+            255,
+            0.88
+          );
+
           font-size: 21px;
+
           cursor: pointer;
+
           opacity: 0;
+
           z-index: 4;
         }
 
@@ -744,19 +844,30 @@ export default function TiendaCliente({
 
         .gallery-dots {
           position: absolute;
+
           left: 50%;
           bottom: 10px;
+
           transform: translateX(-50%);
+
           display: flex;
           gap: 5px;
+
           z-index: 3;
         }
 
         .dot {
           width: 6px;
           height: 6px;
+
           border-radius: 50%;
-          background: rgba(255,255,255,0.65);
+
+          background: rgba(
+            255,
+            255,
+            255,
+            0.65
+          );
         }
 
         .dot-active {
@@ -769,86 +880,129 @@ export default function TiendaCliente({
 
         .product-name {
           margin: 0;
+
           font-size: 17px;
           font-weight: 400;
+
           color: #222;
         }
 
         .product-reference {
           display: block;
+
           margin-top: 5px;
+
           color: #929292;
+
           font-size: 12px;
         }
 
         .product-price {
           margin: 5px 0 0;
+
           font-size: 16px;
           font-weight: 600;
         }
 
         .empty-results {
           grid-column: 1 / -1;
+
           text-align: center;
+
           padding: 60px 20px;
+
           color: #777;
         }
+
+        /* =========================
+           MENÚ LATERAL
+        ========================= */
 
         .menu-overlay {
           position: fixed;
           inset: 0;
-          background: rgba(0,0,0,0.35);
+
+          background: rgba(
+            0,
+            0,
+            0,
+            0.35
+          );
+
           z-index: 9998;
         }
 
         .side-menu {
           position: fixed;
+
           top: 0;
           left: 0;
+
           width: min(330px, 86vw);
           height: 100vh;
+
           background: white;
+
           z-index: 9999;
-          box-shadow: 6px 0 25px rgba(0,0,0,0.18);
+
+          box-shadow:
+            6px 0 25px
+            rgba(0, 0, 0, 0.18);
+
           padding: 24px 18px;
+
           overflow-y: auto;
         }
 
         .menu-header {
           display: flex;
+
           justify-content: space-between;
           align-items: center;
+
           padding-bottom: 18px;
+
           border-bottom: 1px solid #eee;
         }
 
         .menu-header h2 {
           margin: 0;
+
           font-size: 22px;
         }
 
         .menu-close {
           border: none;
           background: transparent;
+
           font-size: 25px;
+
           cursor: pointer;
         }
 
         .menu-list {
           margin-top: 15px;
+
           display: flex;
           flex-direction: column;
+
           gap: 4px;
         }
 
         .menu-item {
           width: 100%;
+
           text-align: left;
+
           border: none;
           background: transparent;
+
           padding: 14px 12px;
+
           border-radius: 8px;
+
           font-size: 16px;
+
           cursor: pointer;
         }
 
@@ -858,39 +1012,64 @@ export default function TiendaCliente({
 
         .menu-item-active {
           background: #fff0f2;
+
           color: #d97883;
+
           font-weight: 700;
         }
+
+        /* =========================
+           VISOR DE IMAGEN
+        ========================= */
 
         .viewer {
           position: fixed;
           inset: 0;
-          background: rgba(0,0,0,0.9);
+
+          background: rgba(
+            0,
+            0,
+            0,
+            0.9
+          );
+
           z-index: 10000;
+
           display: flex;
           align-items: center;
           justify-content: center;
+
           padding: 20px;
         }
 
         .viewer-close {
           position: absolute;
+
           top: 18px;
           right: 18px;
+
           width: 44px;
           height: 44px;
+
           border-radius: 50%;
+
           border: none;
+
           background: white;
+
           font-size: 22px;
+
           cursor: pointer;
         }
 
         .viewer-content {
           position: relative;
+
           width: 100%;
           max-width: 900px;
+
           max-height: 92vh;
+
           display: flex;
           align-items: center;
           justify-content: center;
@@ -899,19 +1078,28 @@ export default function TiendaCliente({
         .viewer-image {
           max-width: 100%;
           max-height: 88vh;
+
           object-fit: contain;
         }
 
         .viewer-arrow {
           position: absolute;
+
           top: 50%;
+
           transform: translateY(-50%);
+
           width: 46px;
           height: 46px;
+
           border-radius: 50%;
+
           border: none;
+
           background: white;
+
           font-size: 27px;
+
           cursor: pointer;
         }
 
@@ -925,101 +1113,253 @@ export default function TiendaCliente({
 
         .viewer-count {
           position: absolute;
+
           left: 50%;
           bottom: 14px;
+
           transform: translateX(-50%);
+
           color: white;
-          background: rgba(0,0,0,0.55);
+
+          background: rgba(
+            0,
+            0,
+            0,
+            0.55
+          );
+
           padding: 7px 12px;
+
           border-radius: 20px;
         }
 
+        /* =========================
+           PEDIDO / COTIZACIÓN
+        ========================= */
+
         .cart-section {
           max-width: 900px;
+
           margin: 50px auto 0;
+
           border-top: 1px solid #eee;
+
           padding-top: 35px;
         }
 
+        /*
+          AQUÍ ESTÁ EL CAMBIO:
+          ahora cada producto tiene
+          FOTO + INFORMACIÓN + CANTIDAD
+        */
+
         .cart-row {
           display: grid;
-          grid-template-columns: 1fr auto;
-          gap: 20px;
+
+          grid-template-columns:
+            82px minmax(0, 1fr) auto;
+
+          gap: 16px;
+
           align-items: center;
+
           padding: 18px 0;
+
           border-bottom: 1px solid #eee;
+        }
+
+        .cart-product-image {
+          width: 82px;
+          height: 82px;
+
+          border-radius: 10px;
+
+          overflow: hidden;
+
+          background: #f5f5f5;
+
+          border: 1px solid #eeeeee;
+        }
+
+        .cart-product-image img {
+          width: 100%;
+          height: 100%;
+
+          display: block;
+
+          object-fit: cover;
+        }
+
+        .cart-product-no-image {
+          width: 100%;
+          height: 100%;
+
+          display: flex;
+
+          align-items: center;
+          justify-content: center;
+
+          padding: 6px;
+
+          text-align: center;
+
+          color: #999;
+
+          font-size: 11px;
+        }
+
+        .cart-product-info {
+          min-width: 0;
+        }
+
+        .cart-product-name {
+          display: block;
+
+          font-size: 16px;
+
+          line-height: 1.35;
+
+          word-break: break-word;
+        }
+
+        .cart-unit-price {
+          margin-top: 6px;
+
+          color: #777;
+
+          font-size: 15px;
+        }
+
+        .cart-subtotal {
+          margin-top: 5px;
+
+          font-weight: 700;
+
+          font-size: 15px;
         }
 
         .quantity-control {
           display: flex;
+
           align-items: center;
+
           gap: 14px;
+
+          flex-shrink: 0;
         }
 
         .quantity-button {
           width: 35px;
           height: 35px;
+
           border-radius: 50%;
+
           border: 1px solid #ddd;
+
           background: white;
+
           font-size: 20px;
+
+          cursor: pointer;
+        }
+
+        .quantity-button:hover {
+          background: #f7f7f7;
         }
 
         .order-summary {
           margin-top: 28px;
+
           padding-top: 20px;
+
           border-top: 1px solid #eee;
         }
 
         .summary-row,
         .summary-total {
           display: flex;
+
           justify-content: space-between;
+
           gap: 20px;
         }
 
         .summary-row {
           margin-bottom: 10px;
+
           color: #555;
         }
 
         .summary-total {
           margin-top: 18px;
+
           font-size: 25px;
+
           font-weight: 700;
         }
 
         .whatsapp-button {
           width: 100%;
+
           margin-top: 20px;
+
           padding: 17px;
+
           border: none;
+
           border-radius: 8px;
+
           background: #25d366;
+
           color: white;
+
           font-size: 17px;
+
           font-weight: 700;
+
+          cursor: pointer;
         }
 
         .floating-cart {
           position: fixed;
+
           left: 50%;
           bottom: 18px;
+
           transform: translateX(-50%);
+
           width: calc(100% - 32px);
+
           max-width: 520px;
+
           border: none;
+
           border-radius: 8px;
+
           padding: 16px 20px;
+
           background: #171717;
+
           color: white;
+
           font-size: 15px;
+
           font-weight: 700;
+
           z-index: 999;
+
           display: flex;
+
           justify-content: space-between;
+
           gap: 15px;
+
+          cursor: pointer;
         }
+
+        /* =========================
+           TABLET
+        ========================= */
 
         @media (max-width: 900px) {
           .product-grid {
@@ -1030,9 +1370,14 @@ export default function TiendaCliente({
           }
         }
 
+        /* =========================
+           CELULAR
+        ========================= */
+
         @media (max-width: 600px) {
           .header-inner {
             min-height: 66px;
+
             padding: 0 14px;
           }
 
@@ -1043,20 +1388,26 @@ export default function TiendaCliente({
 
           .store-name {
             font-size: 21px;
+
             max-width: 210px;
+
             overflow: hidden;
+
             text-overflow: ellipsis;
+
             white-space: nowrap;
           }
 
           .icon-button {
             width: 38px;
             height: 38px;
+
             font-size: 22px;
           }
 
           .category-title {
             padding: 14px 12px 0;
+
             font-size: 17px;
           }
 
@@ -1069,7 +1420,9 @@ export default function TiendaCliente({
               2,
               minmax(0, 1fr)
             );
+
             column-gap: 10px;
+
             row-gap: 26px;
           }
 
@@ -1080,6 +1433,7 @@ export default function TiendaCliente({
           .quick-add {
             width: 42px;
             height: 42px;
+
             right: 8px;
             bottom: 8px;
           }
@@ -1092,11 +1446,49 @@ export default function TiendaCliente({
             padding: 8px 12px 10px;
           }
 
+          /*
+            PEDIDO EN CELULAR
+          */
+
           .cart-row {
-            grid-template-columns: 1fr;
+            grid-template-columns:
+              68px minmax(0, 1fr);
+
+            gap: 12px;
+
+            align-items: start;
+          }
+
+          .cart-product-image {
+            width: 68px;
+            height: 68px;
+          }
+
+          .cart-product-name {
+            font-size: 14px;
+          }
+
+          .cart-unit-price,
+          .cart-subtotal {
+            font-size: 14px;
+          }
+
+          .quantity-control {
+            grid-column: 2;
+
+            justify-content: flex-start;
+
+            margin-top: 4px;
+          }
+
+          .quantity-button {
+            width: 34px;
+            height: 34px;
           }
         }
       `}</style>
+
+      {/* MENÚ LATERAL */}
 
       {menuAbierto && (
         <>
@@ -1123,28 +1515,33 @@ export default function TiendaCliente({
             </div>
 
             <div className="menu-list">
-              {categorias.map((categoria) => (
-                <button
-                  key={categoria}
-                  type="button"
-                  className={
-                    categoriaActiva === categoria
-                      ? "menu-item menu-item-active"
-                      : "menu-item"
-                  }
-                  onClick={() =>
-                    seleccionarCategoria(
+              {categorias.map(
+                (categoria) => (
+                  <button
+                    key={categoria}
+                    type="button"
+                    className={
+                      categoriaActiva ===
                       categoria
-                    )
-                  }
-                >
-                  {categoria}
-                </button>
-              ))}
+                        ? "menu-item menu-item-active"
+                        : "menu-item"
+                    }
+                    onClick={() =>
+                      seleccionarCategoria(
+                        categoria
+                      )
+                    }
+                  >
+                    {categoria}
+                  </button>
+                )
+              )}
             </div>
           </aside>
         </>
       )}
+
+      {/* VISOR GRANDE */}
 
       <VisorImagen
         visor={visor}
@@ -1152,6 +1549,8 @@ export default function TiendaCliente({
         anterior={imagenAnterior}
         siguiente={imagenSiguiente}
       />
+
+      {/* ENCABEZADO */}
 
       <header className="store-header">
         <div className="header-inner">
@@ -1172,7 +1571,9 @@ export default function TiendaCliente({
               className="icon-button"
               aria-label="Buscar"
               onClick={() =>
-                setBuscando((actual) => !actual)
+                setBuscando(
+                  (actual) => !actual
+                )
               }
             >
               ⌕
@@ -1200,6 +1601,7 @@ export default function TiendaCliente({
               onClick={irAlCarrito}
             >
               🛍
+
               {cantidadTotal > 0 && (
                 <span className="cart-badge">
                   {cantidadTotal}
@@ -1225,15 +1627,21 @@ export default function TiendaCliente({
         )}
       </header>
 
+      {/* TÍTULO DE CATEGORÍA */}
+
       <div className="category-title">
         {categoriaActiva}
       </div>
 
       <main className="catalog-container">
+        {/* PRODUCTOS */}
+
         <section className="product-grid">
-          {productosFiltrados.length === 0 ? (
+          {productosFiltrados.length ===
+          0 ? (
             <div className="empty-results">
-              No encontramos productos en esta categoría.
+              No encontramos productos en esta
+              categoría.
             </div>
           ) : (
             productosFiltrados.map(
@@ -1270,6 +1678,8 @@ export default function TiendaCliente({
           )}
         </section>
 
+        {/* PEDIDO / COTIZACIÓN */}
+
         {productosCarrito.length > 0 && (
           <section
             ref={carritoRef}
@@ -1283,44 +1693,59 @@ export default function TiendaCliente({
                   key={producto.id}
                   className="cart-row"
                 >
-                  <div>
-                    <strong>
+                  {/* FOTO */}
+
+                  <div className="cart-product-image">
+                    {producto.foto_url ? (
+                      <img
+                        src={
+                          producto.foto_url
+                        }
+                        alt={
+                          producto.nombre
+                        }
+                      />
+                    ) : (
+                      <div className="cart-product-no-image">
+                        Sin imagen
+                      </div>
+                    )}
+                  </div>
+
+                  {/* INFORMACIÓN */}
+
+                  <div className="cart-product-info">
+                    <strong className="cart-product-name">
                       {producto.referencia} —{" "}
                       {producto.nombre}
                     </strong>
 
-                    <div
-                      style={{
-                        marginTop: "6px",
-                        color: "#777",
-                      }}
-                    >
+                    <div className="cart-unit-price">
                       Precio unitario:{" "}
                       {formatoPrecio(
                         producto.precio
                       )}
                     </div>
 
-                    <div
-                      style={{
-                        marginTop: "5px",
-                        fontWeight: "600",
-                      }}
-                    >
+                    <div className="cart-subtotal">
                       Subtotal:{" "}
                       {formatoPrecio(
                         Number(
-                          producto.precio || 0
+                          producto.precio ||
+                            0
                         ) *
                           producto.cantidad
                       )}
                     </div>
                   </div>
 
+                  {/* CANTIDAD */}
+
                   <div className="quantity-control">
                     <button
                       type="button"
                       className="quantity-button"
+                      aria-label="Disminuir cantidad"
                       onClick={() =>
                         cambiarCantidad(
                           producto.id,
@@ -1338,6 +1763,7 @@ export default function TiendaCliente({
                     <button
                       type="button"
                       className="quantity-button"
+                      aria-label="Aumentar cantidad"
                       onClick={() =>
                         cambiarCantidad(
                           producto.id,
@@ -1352,6 +1778,8 @@ export default function TiendaCliente({
               )
             )}
 
+            {/* RESUMEN */}
+
             <div className="order-summary">
               <div className="summary-row">
                 <span>
@@ -1364,7 +1792,9 @@ export default function TiendaCliente({
               </div>
 
               <div className="summary-row">
-                <span>Total unidades</span>
+                <span>
+                  Total unidades
+                </span>
 
                 <strong>
                   {cantidadTotal}
@@ -1390,6 +1820,8 @@ export default function TiendaCliente({
           </section>
         )}
       </main>
+
+      {/* CARRITO FLOTANTE */}
 
       {productosCarrito.length > 0 && (
         <button
