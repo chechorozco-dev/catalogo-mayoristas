@@ -348,7 +348,7 @@ export default function ProductosMayoristaPage() {
                         fontSize: "13px",
                       }}
                     >
-                      Ganancia sugerida
+                      Ganancia
                     </p>
 
                     <strong
