@@ -35,46 +35,85 @@ function limpiarWhatsapp(numero = "") {
 }
 
 /* =========================================================
-   CATEGORÍAS
+   CATEGORÍAS PRINCIPALES
 ========================================================= */
 
-const CATEGORIAS = [
-  "Todos los productos",
-  "Nuevos",
-  "Accesorios en Rodio",
-  "Accesorios en Acero",
+const CATEGORIAS_PRINCIPALES = [
+  "Todos",
   "Aretes",
-  "Candongas",
-  "Collares",
-  "Pulseras",
+  "Juegos",
   "Anillos",
-  "Topos y maxitopos",
+  "Pulseras",
+  "Earcuff",
 ];
 
-function productoPerteneceCategoria(producto, categoria) {
-  if (categoria === "Todos los productos") {
-    return true;
-  }
+/* =========================================================
+   CATEGORÍAS DEL MENÚ LATERAL
+========================================================= */
 
+const CATEGORIAS_MENU = [
+  "Todos",
+  "Nuevos",
+  "Aretes",
+  "Juegos",
+  "Anillos",
+  "Pulseras",
+  "Earcuff",
+  "Collares",
+  "Accesorios en Rodio",
+  "Accesorios en Acero",
+];
+
+/* =========================================================
+   FILTRADO POR CATEGORÍA
+========================================================= */
+
+function productoPerteneceCategoria(producto, categoria) {
   const nombre = limpiarTexto(producto.nombre);
   const referencia = limpiarTexto(producto.referencia);
 
   const texto = `${nombre} ${referencia}`;
 
-  if (categoria === "Accesorios en Rodio") {
-    return texto.includes("rodio");
+  if (categoria === "Todos") {
+    return true;
   }
 
-  if (categoria === "Accesorios en Acero") {
-    return texto.includes("acero");
-  }
+  /* ARETES:
+     Incluye aretes, candongas, topos y maxitopos
+  */
 
   if (categoria === "Aretes") {
-    return nombre.includes("arete");
+    return (
+      nombre.includes("arete") ||
+      nombre.includes("candonga") ||
+      nombre.includes("topo") ||
+      nombre.includes("maxitopo")
+    );
   }
 
-  if (categoria === "Candongas") {
-    return nombre.includes("candonga");
+  if (categoria === "Juegos") {
+    return (
+      nombre.includes("juego") ||
+      nombre.includes("set")
+    );
+  }
+
+  if (categoria === "Anillos") {
+    return nombre.includes("anillo");
+  }
+
+  if (categoria === "Pulseras") {
+    return (
+      nombre.includes("pulsera") ||
+      nombre.includes("brazalete")
+    );
+  }
+
+  if (categoria === "Earcuff") {
+    return (
+      nombre.includes("earcuff") ||
+      nombre.includes("ear cuff")
+    );
   }
 
   if (categoria === "Collares") {
@@ -84,19 +123,12 @@ function productoPerteneceCategoria(producto, categoria) {
     );
   }
 
-  if (categoria === "Pulseras") {
-    return nombre.includes("pulsera");
+  if (categoria === "Accesorios en Rodio") {
+    return texto.includes("rodio");
   }
 
-  if (categoria === "Anillos") {
-    return nombre.includes("anillo");
-  }
-
-  if (categoria === "Topos y maxitopos") {
-    return (
-      nombre.includes("topo") ||
-      nombre.includes("maxitopo")
-    );
+  if (categoria === "Accesorios en Acero") {
+    return texto.includes("acero");
   }
 
   return true;
@@ -114,9 +146,7 @@ export default function TiendaCliente({
 }) {
   const [busqueda, setBusqueda] = useState("");
 
-  const [categoria, setCategoria] = useState(
-    "Todos los productos"
-  );
+  const [categoria, setCategoria] = useState("Todos");
 
   const [menuAbierto, setMenuAbierto] = useState(false);
 
@@ -149,10 +179,7 @@ export default function TiendaCliente({
       });
     } else {
       lista = lista.filter((producto) =>
-        productoPerteneceCategoria(
-          producto,
-          categoria
-        )
+        productoPerteneceCategoria(producto, categoria)
       );
     }
 
@@ -255,9 +282,7 @@ export default function TiendaCliente({
   ========================================================= */
 
   function enviarPedidoWhatsapp() {
-    if (carrito.length === 0) {
-      return;
-    }
+    if (carrito.length === 0) return;
 
     const numero = limpiarWhatsapp(whatsapp);
 
@@ -296,6 +321,7 @@ export default function TiendaCliente({
 
     mensaje += `--------------------------\n`;
     mensaje += `Productos: ${cantidadTotal}\n`;
+
     mensaje += `*TOTAL: ${formatoPrecio(
       totalCarrito
     )}*`;
@@ -308,7 +334,7 @@ export default function TiendaCliente({
   }
 
   /* =========================================================
-     VISOR DE PRODUCTOS
+     VISOR
   ========================================================= */
 
   function abrirProducto(producto) {
@@ -398,8 +424,6 @@ export default function TiendaCliente({
             </button>
           </div>
 
-          {/* LOGO + NOMBRE */}
-
           <div className="store-brand">
             {logoUrl ? (
               <img
@@ -438,6 +462,27 @@ export default function TiendaCliente({
           </div>
         </div>
 
+        {/* =================================================
+            CATEGORÍAS SUPERIORES
+        ================================================= */}
+
+        <nav className="top-categories">
+          {CATEGORIAS_PRINCIPALES.map((item) => (
+            <button
+              key={item}
+              type="button"
+              className={
+                categoria === item
+                  ? "top-category active"
+                  : "top-category"
+              }
+              onClick={() => seleccionarCategoria(item)}
+            >
+              {item}
+            </button>
+          ))}
+        </nav>
+
         {/* BUSCADOR */}
 
         {buscadorAbierto && (
@@ -454,7 +499,7 @@ export default function TiendaCliente({
                 onChange={(e) =>
                   setBusqueda(e.target.value)
                 }
-                placeholder="Buscar por nombre o referencia..."
+                placeholder="Buscar producto..."
               />
 
               {busqueda && (
@@ -472,16 +517,18 @@ export default function TiendaCliente({
       </header>
 
       {/* =====================================================
-          CONTENIDO
+          CATÁLOGO
       ====================================================== */}
 
       <main className="catalog-container">
         <div className="catalog-heading">
-          <p className="category-label">
-            {categoria}
-          </p>
+          <h2>
+            {categoria === "Todos"
+              ? "Todos los productos"
+              : categoria}
+          </h2>
 
-          <p className="product-count">
+          <p>
             {productosFiltrados.length}{" "}
             {productosFiltrados.length === 1
               ? "producto"
@@ -491,25 +538,20 @@ export default function TiendaCliente({
 
         {productosFiltrados.length === 0 ? (
           <div className="empty-products">
-            <div className="empty-icon">⌕</div>
-
-            <h2>
-              No encontramos productos
-            </h2>
+            <h2>No encontramos productos</h2>
 
             <p>
-              Prueba buscando otra referencia o seleccionando
-              otra categoría.
+              Prueba con otra categoría o búsqueda.
             </p>
 
             <button
               type="button"
               onClick={() => {
                 setBusqueda("");
-                setCategoria("Todos los productos");
+                setCategoria("Todos");
               }}
             >
-              Ver todos los productos
+              Ver todos
             </button>
           </div>
         ) : (
@@ -522,63 +564,72 @@ export default function TiendaCliente({
                   key={producto.id}
                   className="product-card"
                 >
-                  <button
-                    type="button"
-                    className="product-image-button"
-                    onClick={() =>
-                      abrirProducto(producto)
-                    }
-                  >
-                    {producto.foto_url ? (
-                      <img
-                        src={producto.foto_url}
-                        alt={
-                          producto.nombre ||
-                          producto.referencia ||
-                          "Producto"
-                        }
-                        className="product-image"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="no-image">
-                        Sin imagen
-                      </div>
-                    )}
+                  <div className="product-image-wrapper">
+                    <button
+                      type="button"
+                      className="product-image-button"
+                      onClick={() =>
+                        abrirProducto(producto)
+                      }
+                    >
+                      {producto.foto_url ? (
+                        <img
+                          src={producto.foto_url}
+                          alt={
+                            producto.nombre ||
+                            "Producto"
+                          }
+                          className="product-image"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="no-image">
+                          Sin imagen
+                        </div>
+                      )}
+                    </button>
+
+                    {/* BOTÓN AGREGAR TIPO CORNALINA */}
+
+                    <button
+                      type="button"
+                      className="quick-add-button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        agregarAlCarrito(producto);
+                      }}
+                      aria-label="Agregar al carrito"
+                    >
+                      <span className="bag-symbol">
+                        ♡
+                      </span>
+
+                      <span className="plus-symbol">
+                        +
+                      </span>
+                    </button>
 
                     {fotos.length > 1 && (
                       <span className="photo-count">
                         1/{fotos.length}
                       </span>
                     )}
-                  </button>
+                  </div>
+
+                  {/* YA NO MOSTRAMOS LA REFERENCIA */}
 
                   <div className="product-info">
-                    {producto.referencia && (
-                      <p className="product-reference">
-                        {producto.referencia}
-                      </p>
-                    )}
-
                     {producto.nombre && (
-                      <h2 className="product-name">
+                      <h3 className="product-name">
                         {producto.nombre}
-                      </h2>
+                      </h3>
                     )}
 
                     <p className="product-price">
-                      {formatoPrecio(producto.precio)}
+                      {formatoPrecio(
+                        producto.precio
+                      )}
                     </p>
-
-                    <button
-                      type="button"
-                      className="add-button"
-                      onClick={() =>
-                        agregarAlCarrito(producto)
-                      }
-                    >
-                      Agregar
-                    </button>
                   </div>
                 </article>
               );
@@ -588,7 +639,7 @@ export default function TiendaCliente({
       </main>
 
       {/* =====================================================
-          BARRA FLOTANTE CARRITO
+          CARRITO FLOTANTE
       ====================================================== */}
 
       {cantidadTotal > 0 && (
@@ -611,7 +662,7 @@ export default function TiendaCliente({
       )}
 
       {/* =====================================================
-          MENÚ CATEGORÍAS
+          MENÚ LATERAL
       ====================================================== */}
 
       {menuAbierto && (
@@ -633,9 +684,7 @@ export default function TiendaCliente({
                   />
                 )}
 
-                <strong>
-                  {nombreTienda}
-                </strong>
+                <strong>{nombreTienda}</strong>
               </div>
 
               <button
@@ -652,7 +701,7 @@ export default function TiendaCliente({
             </p>
 
             <nav className="categories-list">
-              {CATEGORIAS.map((item) => (
+              {CATEGORIAS_MENU.map((item) => (
                 <button
                   key={item}
                   type="button"
@@ -690,7 +739,8 @@ export default function TiendaCliente({
 
           <div className="modal-content">
             <div className="modal-gallery">
-              {fotosProducto(productoVisor).length > 0 ? (
+              {fotosProducto(productoVisor).length >
+              0 ? (
                 <img
                   src={
                     fotosProducto(productoVisor)[
@@ -699,7 +749,6 @@ export default function TiendaCliente({
                   }
                   alt={
                     productoVisor.nombre ||
-                    productoVisor.referencia ||
                     "Producto"
                   }
                   className="modal-image"
@@ -752,13 +801,7 @@ export default function TiendaCliente({
             </div>
 
             <div className="modal-product-info">
-              <p className="modal-reference">
-                {productoVisor.referencia}
-              </p>
-
-              <h2>
-                {productoVisor.nombre}
-              </h2>
+              <h2>{productoVisor.nombre}</h2>
 
               <p className="modal-price">
                 {formatoPrecio(
@@ -856,11 +899,7 @@ export default function TiendaCliente({
                         {item.foto_url ? (
                           <img
                             src={item.foto_url}
-                            alt={
-                              item.nombre ||
-                              item.referencia ||
-                              ""
-                            }
+                            alt={item.nombre || ""}
                           />
                         ) : (
                           <span>Sin foto</span>
@@ -868,10 +907,6 @@ export default function TiendaCliente({
                       </div>
 
                       <div className="cart-item-info">
-                        <p className="cart-reference">
-                          {item.referencia}
-                        </p>
-
                         <h3>{item.nombre}</h3>
 
                         <strong>
@@ -944,15 +979,8 @@ export default function TiendaCliente({
                   >
                     <span>WhatsApp</span>
 
-                    <span>
-                      Enviar pedido
-                    </span>
+                    <span>Enviar pedido</span>
                   </button>
-
-                  <p className="cart-note">
-                    Al continuar, tu pedido será enviado
-                    directamente a la tienda por WhatsApp.
-                  </p>
                 </div>
               </>
             )}
@@ -987,36 +1015,43 @@ export default function TiendaCliente({
           -webkit-tap-highlight-color: transparent;
         }
 
-        /* ==============================
+        /* ======================================
            HEADER
-        ============================== */
+        ====================================== */
 
         .header {
           position: sticky;
           top: 0;
           z-index: 100;
-          background: rgba(255, 255, 255, 0.97);
-          border-bottom: 1px solid #eeeeee;
+
+          background: rgba(255, 255, 255, 0.98);
+
+          border-bottom: 1px solid #eee;
+
           backdrop-filter: blur(10px);
         }
 
         .header-inner {
           min-height: 105px;
+
           max-width: 1400px;
+
           margin: 0 auto;
-          padding: 8px 20px;
+
+          padding: 7px 18px;
 
           display: grid;
-          grid-template-columns: 1fr auto 1fr;
+
+          grid-template-columns:
+            1fr auto 1fr;
+
           align-items: center;
-          gap: 15px;
         }
 
         .header-left,
         .header-right {
           display: flex;
           align-items: center;
-          gap: 4px;
         }
 
         .header-right {
@@ -1030,73 +1065,72 @@ export default function TiendaCliente({
           height: 44px;
 
           border: none;
+
           border-radius: 50%;
 
           background: transparent;
-          color: #1c1c1c;
 
-          font-size: 25px;
+          color: #111;
+
+          font-size: 24px;
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
 
           cursor: pointer;
-
-          display: flex;
-          align-items: center;
-          justify-content: center;
         }
 
-        .icon-button:hover {
-          background: #f6f6f6;
-        }
-
-        /* ==============================
-           LOGO DE LA TIENDA
-        ============================== */
+        /* ======================================
+           LOGO
+        ====================================== */
 
         .store-brand {
-          min-width: 0;
-
           display: flex;
+
           flex-direction: column;
+
           align-items: center;
+
           justify-content: center;
 
-          gap: 4px;
+          gap: 3px;
         }
 
-       .store-logo,
-.store-logo-placeholder {
-  width: 72px;
-  height: 72px;
+        .store-logo,
+        .store-logo-placeholder {
+          width: 72px;
+          height: 72px;
 
-  border-radius: 16px;
+          border-radius: 14px;
 
-  display: block;
+          display: block;
+        }
 
-  background: #f5f5f5;
-}
         .store-logo {
           object-fit: contain;
         }
 
         .store-logo-placeholder {
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          background: #111;
 
-          background: #181818;
           color: white;
 
-          font-size: 23px;
-          font-weight: 700;
+          display: flex;
+
+          align-items: center;
+
+          justify-content: center;
+
+          font-size: 25px;
+
+          font-weight: bold;
         }
 
         .store-name {
           margin: 0;
 
-          max-width: 320px;
-
-          font-size: 20px;
-          line-height: 1.15;
+          font-size: 17px;
 
           font-weight: 600;
 
@@ -1105,8 +1139,9 @@ export default function TiendaCliente({
 
         .cart-count {
           position: absolute;
-          top: 1px;
-          right: 0px;
+
+          top: 0;
+          right: 0;
 
           min-width: 18px;
           height: 18px;
@@ -1116,71 +1151,130 @@ export default function TiendaCliente({
           border-radius: 10px;
 
           background: #111;
+
           color: white;
 
           font-size: 11px;
-          font-weight: 700;
 
           display: flex;
+
           align-items: center;
+
           justify-content: center;
         }
 
-        /* ==============================
+        /* ======================================
+           CATEGORÍAS ARRIBA
+        ====================================== */
+
+        .top-categories {
+          width: 100%;
+
+          max-width: 800px;
+
+          margin: 0 auto;
+
+          padding: 6px 12px 13px;
+
+          display: flex;
+
+          justify-content: center;
+
+          gap: 27px;
+
+          overflow-x: auto;
+
+          scrollbar-width: none;
+        }
+
+        .top-categories::-webkit-scrollbar {
+          display: none;
+        }
+
+        .top-category {
+          flex-shrink: 0;
+
+          padding: 6px 0;
+
+          border: none;
+
+          border-bottom:
+            2px solid transparent;
+
+          background: transparent;
+
+          color: #333;
+
+          font-size: 15px;
+
+          cursor: pointer;
+        }
+
+        .top-category.active {
+          color: #000;
+
+          font-weight: 700;
+
+          border-bottom-color: #111;
+        }
+
+        /* ======================================
            BUSCADOR
-        ============================== */
+        ====================================== */
 
         .search-area {
           max-width: 700px;
 
-          margin: 0 auto;
+          margin: auto;
 
-          padding: 0 18px 15px;
+          padding:
+            0 15px 14px;
         }
 
         .search-box {
           position: relative;
 
           display: flex;
+
           align-items: center;
 
-          background: #f5f5f5;
+          background: #f4f4f4;
 
-          border-radius: 12px;
-
-          overflow: hidden;
+          border-radius: 8px;
         }
 
         .search-symbol {
-          padding-left: 15px;
-
-          font-size: 22px;
+          padding-left: 14px;
 
           color: #777;
+
+          font-size: 20px;
         }
 
         .search-box input {
           width: 100%;
 
+          padding:
+            13px 40px 13px 9px;
+
           border: none;
+
           outline: none;
 
           background: transparent;
-
-          padding: 14px 40px 14px 10px;
 
           font-size: 16px;
         }
 
         .clear-search {
           position: absolute;
-          right: 8px;
+
+          right: 6px;
 
           width: 32px;
           height: 32px;
 
           border: none;
-          border-radius: 50%;
 
           background: transparent;
 
@@ -1189,38 +1283,47 @@ export default function TiendaCliente({
           cursor: pointer;
         }
 
-        /* ==============================
+        /* ======================================
            CATÁLOGO
-        ============================== */
+        ====================================== */
 
         .catalog-container {
           width: 100%;
 
-          max-width: 1400px;
+          max-width: 1450px;
 
-          margin: 0 auto;
+          margin: auto;
 
-          padding: 28px 18px 130px;
+          padding:
+            24px 8px 120px;
         }
 
         .catalog-heading {
-          margin-bottom: 22px;
+          padding: 0 10px;
+
+          margin-bottom: 18px;
         }
 
-        .category-label {
+        .catalog-heading h2 {
           margin: 0;
 
-          font-size: 25px;
-          font-weight: 600;
+          font-size: 27px;
+
+          font-weight: 500;
         }
 
-        .product-count {
-          margin: 7px 0 0;
+        .catalog-heading p {
+          margin:
+            6px 0 0;
 
           color: #888;
 
-          font-size: 13px;
+          font-size: 12px;
         }
+
+        /* ======================================
+           PRODUCTOS
+        ====================================== */
 
         .products-grid {
           display: grid;
@@ -1228,27 +1331,30 @@ export default function TiendaCliente({
           grid-template-columns:
             repeat(4, minmax(0, 1fr));
 
-          gap: 28px 16px;
+          gap:
+            18px 8px;
         }
 
         .product-card {
           min-width: 0;
         }
 
-        .product-image-button {
+        .product-image-wrapper {
           position: relative;
+        }
 
+        .product-image-button {
           width: 100%;
 
           aspect-ratio: 1 / 1;
 
           padding: 0;
 
-          overflow: hidden;
-
           border: none;
 
-          background: #f5f5f5;
+          overflow: hidden;
+
+          background: #f6f6f6;
 
           cursor: pointer;
         }
@@ -1260,189 +1366,208 @@ export default function TiendaCliente({
           display: block;
 
           object-fit: cover;
-
-          transition: transform 0.3s ease;
-        }
-
-        .product-image-button:hover
-          .product-image {
-          transform: scale(1.025);
         }
 
         .no-image {
-          width: 100%;
           height: 100%;
 
           display: flex;
+
           align-items: center;
+
           justify-content: center;
 
           color: #aaa;
+        }
 
-          font-size: 13px;
+        /* BOTÓN PEQUEÑO SOBRE LA FOTO */
+
+        .quick-add-button {
+          position: absolute;
+
+          right: 10px;
+          bottom: 10px;
+
+          width: 46px;
+          height: 46px;
+
+          padding: 0;
+
+          border:
+            2px solid white;
+
+          border-radius: 50%;
+
+          background: white;
+
+          color: #111;
+
+          box-shadow:
+            0 2px 8px
+            rgba(0, 0, 0, 0.17);
+
+          display: flex;
+
+          align-items: center;
+
+          justify-content: center;
+
+          cursor: pointer;
+
+          z-index: 3;
+        }
+
+        .bag-symbol {
+          font-size: 23px;
+
+          line-height: 1;
+        }
+
+        .plus-symbol {
+          position: absolute;
+
+          right: 7px;
+          bottom: 5px;
+
+          width: 17px;
+          height: 17px;
+
+          border-radius: 50%;
+
+          background: #111;
+
+          color: white;
+
+          font-size: 14px;
+
+          line-height: 17px;
+
+          text-align: center;
         }
 
         .photo-count {
           position: absolute;
-          right: 8px;
+
+          left: 8px;
           bottom: 8px;
 
-          padding: 5px 8px;
+          padding:
+            4px 7px;
 
           border-radius: 20px;
 
-          background: rgba(0, 0, 0, 0.66);
+          background:
+            rgba(0, 0, 0, 0.62);
+
           color: white;
 
-          font-size: 11px;
+          font-size: 10px;
         }
 
         .product-info {
-          padding: 11px 2px 0;
-        }
-
-        .product-reference {
-          margin: 0 0 4px;
-
-          font-size: 11px;
-          font-weight: 700;
-
-          color: #888;
-
-          letter-spacing: 0.5px;
-
-          text-transform: uppercase;
+          padding:
+            7px 2px 0;
         }
 
         .product-name {
           margin: 0;
 
-          min-height: 36px;
-
           font-size: 14px;
-          line-height: 1.3;
+
+          line-height: 1.25;
 
           font-weight: 400;
         }
 
         .product-price {
-          margin: 8px 0 10px;
+          margin:
+            4px 0 0;
 
-          font-size: 16px;
+          font-size: 14px;
+
           font-weight: 700;
         }
 
-        .add-button {
-          width: 100%;
-
-          padding: 10px;
-
-          border: 1px solid #222;
-
-          border-radius: 4px;
-
-          background: white;
-          color: #222;
-
-          font-size: 13px;
-          font-weight: 600;
-
-          cursor: pointer;
-        }
-
-        .add-button:hover {
-          background: #222;
-          color: white;
-        }
-
-        /* ==============================
-           SIN RESULTADOS
-        ============================== */
+        /* ======================================
+           VACÍO
+        ====================================== */
 
         .empty-products {
-          max-width: 480px;
-
-          margin: 70px auto;
-
           text-align: center;
-        }
 
-        .empty-icon {
-          font-size: 45px;
-
-          color: #aaa;
-        }
-
-        .empty-products h2 {
-          margin-bottom: 8px;
+          padding:
+            70px 20px;
         }
 
         .empty-products p {
           color: #777;
-
-          line-height: 1.5;
         }
 
         .empty-products button {
-          margin-top: 12px;
-
-          padding: 13px 18px;
+          padding:
+            12px 20px;
 
           border: none;
-          border-radius: 8px;
 
           background: #111;
+
           color: white;
+
+          border-radius: 6px;
 
           cursor: pointer;
         }
 
-        /* ==============================
+        /* ======================================
            CARRITO FLOTANTE
-        ============================== */
+        ====================================== */
 
         .floating-cart {
           position: fixed;
 
+          left: 50%;
+          bottom: 14px;
+
+          transform:
+            translateX(-50%);
+
           z-index: 150;
 
-          left: 50%;
-          bottom: 18px;
+          width:
+            calc(100% - 24px);
 
-          transform: translateX(-50%);
-
-          width: calc(100% - 28px);
           max-width: 600px;
 
-          min-height: 58px;
+          min-height: 56px;
 
-          padding: 12px 18px;
+          padding:
+            12px 18px;
 
           border: none;
-          border-radius: 9px;
+
+          border-radius: 8px;
 
           background: #111;
+
           color: white;
 
-          box-shadow:
-            0 10px 30px rgba(0, 0, 0, 0.24);
-
           display: flex;
-          align-items: center;
-          justify-content: space-between;
 
-          font-size: 14px;
+          align-items: center;
+
+          justify-content:
+            space-between;
+
+          box-shadow:
+            0 8px 25px
+            rgba(0, 0, 0, 0.2);
 
           cursor: pointer;
         }
 
-        .floating-cart strong {
-          font-size: 16px;
-        }
-
-        /* ==============================
+        /* ======================================
            OVERLAY
-        ============================== */
+        ====================================== */
 
         .overlay {
           position: fixed;
@@ -1451,15 +1576,18 @@ export default function TiendaCliente({
 
           z-index: 500;
 
-          background: rgba(0, 0, 0, 0.42);
+          background:
+            rgba(0, 0, 0, 0.42);
         }
 
-        /* ==============================
+        /* ======================================
            MENÚ
-        ============================== */
+        ====================================== */
 
         .side-menu {
-          width: min(88vw, 370px);
+          width:
+            min(88vw, 370px);
+
           height: 100%;
 
           padding: 22px;
@@ -1467,100 +1595,85 @@ export default function TiendaCliente({
           background: white;
 
           overflow-y: auto;
-
-          animation: menuEntrada 0.2s ease;
-        }
-
-        @keyframes menuEntrada {
-          from {
-            transform: translateX(-100%);
-          }
-
-          to {
-            transform: translateX(0);
-          }
         }
 
         .side-menu-header {
           display: flex;
-          align-items: center;
-          justify-content: space-between;
 
-          gap: 15px;
+          justify-content:
+            space-between;
+
+          align-items: center;
         }
 
         .side-menu-header > div {
           display: flex;
+
           align-items: center;
 
           gap: 10px;
-
-          min-width: 0;
         }
 
         .menu-logo {
-          width: 42px;
-          height: 42px;
+          width: 45px;
+          height: 45px;
 
           object-fit: contain;
 
-          border-radius: 9px;
-        }
-
-        .side-menu-header strong {
-          font-size: 17px;
+          border-radius: 8px;
         }
 
         .close-button {
-          width: 42px;
-          height: 42px;
-
-          flex-shrink: 0;
+          width: 40px;
+          height: 40px;
 
           border: none;
+
           border-radius: 50%;
 
           background: #f4f4f4;
 
-          font-size: 28px;
-          line-height: 1;
+          font-size: 27px;
 
           cursor: pointer;
         }
 
         .menu-title {
-          margin: 35px 0 10px;
+          margin:
+            30px 0 10px;
 
           color: #888;
 
           font-size: 12px;
-          font-weight: 700;
 
           text-transform: uppercase;
 
-          letter-spacing: 1px;
+          font-weight: 700;
         }
 
         .categories-list {
           display: flex;
+
           flex-direction: column;
         }
 
         .category-button {
           width: 100%;
 
-          padding: 15px 0;
+          padding:
+            15px 0;
 
           border: none;
-          border-bottom: 1px solid #eeeeee;
+
+          border-bottom:
+            1px solid #eee;
 
           background: white;
 
           display: flex;
-          align-items: center;
-          justify-content: space-between;
 
-          text-align: left;
+          justify-content:
+            space-between;
 
           font-size: 15px;
 
@@ -1571,9 +1684,9 @@ export default function TiendaCliente({
           font-weight: 700;
         }
 
-        /* ==============================
-           VISOR PRODUCTO
-        ============================== */
+        /* ======================================
+           MODAL
+        ====================================== */
 
         .product-modal {
           position: fixed;
@@ -1582,46 +1695,50 @@ export default function TiendaCliente({
 
           z-index: 600;
 
-          padding: 25px;
-
           overflow-y: auto;
 
-          background: rgba(255, 255, 255, 0.98);
+          background:
+            rgba(255, 255, 255, 0.99);
+
+          padding: 20px;
         }
 
         .modal-close {
           position: fixed;
 
+          top: 12px;
+          right: 12px;
+
           z-index: 10;
 
-          top: 16px;
-          right: 16px;
-
-          width: 45px;
-          height: 45px;
+          width: 44px;
+          height: 44px;
 
           border: none;
+
           border-radius: 50%;
 
-          background: #f1f1f1;
+          background: #f2f2f2;
 
-          font-size: 30px;
+          font-size: 28px;
 
           cursor: pointer;
         }
 
         .modal-content {
           width: 100%;
-          max-width: 1050px;
 
-          margin: 25px auto;
+          max-width: 1000px;
+
+          margin:
+            35px auto;
 
           display: grid;
 
-          grid-template-columns: minmax(0, 1.3fr)
-            minmax(280px, 0.7fr);
+          grid-template-columns:
+            1.3fr 0.7fr;
 
-          gap: 45px;
+          gap: 40px;
 
           align-items: center;
         }
@@ -1629,28 +1746,23 @@ export default function TiendaCliente({
         .modal-gallery {
           position: relative;
 
-          width: 100%;
-
           min-height: 500px;
 
           background: #f7f7f7;
 
           display: flex;
+
           align-items: center;
+
           justify-content: center;
         }
 
         .modal-image {
           width: 100%;
-          max-height: 78vh;
+
+          max-height: 80vh;
 
           object-fit: contain;
-
-          display: block;
-        }
-
-        .modal-no-image {
-          color: #999;
         }
 
         .gallery-arrow {
@@ -1658,39 +1770,41 @@ export default function TiendaCliente({
 
           top: 50%;
 
-          transform: translateY(-50%);
+          transform:
+            translateY(-50%);
 
           width: 44px;
           height: 44px;
 
           border: none;
+
           border-radius: 50%;
 
-          background: rgba(255, 255, 255, 0.92);
+          background:
+            rgba(255, 255, 255, 0.92);
 
-          box-shadow:
-            0 3px 12px rgba(0, 0, 0, 0.15);
-
-          font-size: 33px;
+          font-size: 30px;
 
           cursor: pointer;
         }
 
         .gallery-prev {
-          left: 12px;
+          left: 10px;
         }
 
         .gallery-next {
-          right: 12px;
+          right: 10px;
         }
 
         .gallery-dots {
           position: absolute;
 
-          bottom: 13px;
+          bottom: 12px;
+
           left: 50%;
 
-          transform: translateX(-50%);
+          transform:
+            translateX(-50%);
 
           display: flex;
 
@@ -1704,11 +1818,10 @@ export default function TiendaCliente({
           padding: 0;
 
           border: none;
+
           border-radius: 50%;
 
           background: #bbb;
-
-          cursor: pointer;
         }
 
         .gallery-dot.active {
@@ -1716,25 +1829,17 @@ export default function TiendaCliente({
         }
 
         .modal-product-info h2 {
-          margin: 5px 0 13px;
+          margin:
+            0 0 12px;
 
-          font-size: 28px;
+          font-size: 25px;
+
           font-weight: 500;
         }
 
-        .modal-reference {
-          margin: 0;
-
-          color: #888;
-
-          font-size: 13px;
-          font-weight: 700;
-        }
-
         .modal-price {
-          margin: 0 0 20px;
+          font-size: 22px;
 
-          font-size: 24px;
           font-weight: 700;
         }
 
@@ -1751,97 +1856,97 @@ export default function TiendaCliente({
 
           margin-top: 20px;
 
-          padding: 16px;
+          padding: 15px;
 
           border: none;
 
           background: #111;
+
           color: white;
 
-          font-size: 15px;
           font-weight: 700;
 
           cursor: pointer;
         }
 
-        /* ==============================
-           CARRITO LATERAL
-        ============================== */
+        /* ======================================
+           CARRITO
+        ====================================== */
 
         .cart-overlay {
           display: flex;
-          justify-content: flex-end;
+
+          justify-content:
+            flex-end;
         }
 
         .cart-drawer {
-          width: min(100%, 470px);
+          width:
+            min(100%, 470px);
+
           height: 100%;
 
           background: white;
 
           display: flex;
+
           flex-direction: column;
-
-          animation: carritoEntrada 0.2s ease;
-        }
-
-        @keyframes carritoEntrada {
-          from {
-            transform: translateX(100%);
-          }
-
-          to {
-            transform: translateX(0);
-          }
         }
 
         .cart-header {
-          padding: 21px;
+          padding: 20px;
 
-          border-bottom: 1px solid #eeeeee;
+          border-bottom:
+            1px solid #eee;
 
           display: flex;
+
+          justify-content:
+            space-between;
+
           align-items: center;
-          justify-content: space-between;
         }
 
         .cart-header h2 {
           margin: 0;
-
-          font-size: 23px;
         }
 
         .cart-header p {
-          margin: 5px 0 0;
+          margin:
+            4px 0 0;
 
           color: #888;
 
-          font-size: 13px;
+          font-size: 12px;
         }
 
         .cart-items {
           flex: 1;
 
-          padding: 0 20px;
-
           overflow-y: auto;
+
+          padding:
+            0 18px;
         }
 
         .cart-item {
-          padding: 20px 0;
+          padding:
+            18px 0;
 
-          border-bottom: 1px solid #eeeeee;
+          border-bottom:
+            1px solid #eee;
 
           display: grid;
 
-          grid-template-columns: 90px 1fr;
+          grid-template-columns:
+            85px 1fr;
 
-          gap: 14px;
+          gap: 12px;
         }
 
         .cart-thumb {
-          width: 90px;
-          height: 90px;
+          width: 85px;
+          height: 85px;
 
           overflow: hidden;
 
@@ -1853,200 +1958,131 @@ export default function TiendaCliente({
           height: 100%;
 
           object-fit: cover;
-
-          display: block;
-        }
-
-        .cart-thumb span {
-          width: 100%;
-          height: 100%;
-
-          display: flex;
-          align-items: center;
-          justify-content: center;
-
-          color: #999;
-
-          font-size: 11px;
-        }
-
-        .cart-item-info {
-          min-width: 0;
-        }
-
-        .cart-reference {
-          margin: 0 0 3px;
-
-          color: #888;
-
-          font-size: 11px;
-          font-weight: 700;
         }
 
         .cart-item h3 {
-          margin: 0 0 7px;
+          margin:
+            0 0 7px;
 
           font-size: 14px;
-          line-height: 1.3;
 
           font-weight: 500;
-        }
-
-        .cart-item strong {
-          font-size: 14px;
         }
 
         .quantity-row {
           margin-top: 12px;
 
           display: flex;
-          align-items: center;
-          justify-content: space-between;
 
-          gap: 10px;
+          justify-content:
+            space-between;
+
+          align-items: center;
         }
 
         .quantity-control {
-          border: 1px solid #dddddd;
+          border:
+            1px solid #ddd;
 
           display: flex;
+
           align-items: center;
         }
 
         .quantity-control button {
-          width: 33px;
+          width: 32px;
           height: 32px;
 
           border: none;
 
           background: white;
 
-          font-size: 19px;
-
-          cursor: pointer;
+          font-size: 18px;
         }
 
         .quantity-control span {
-          min-width: 27px;
+          min-width: 28px;
 
           text-align: center;
-
-          font-size: 13px;
         }
 
         .remove-item {
-          padding: 5px 0;
-
           border: none;
 
           background: transparent;
-          color: #888;
 
-          font-size: 11px;
+          color: #888;
 
           text-decoration: underline;
 
-          cursor: pointer;
+          font-size: 11px;
         }
 
         .cart-footer {
           padding: 20px;
 
-          border-top: 1px solid #eeeeee;
-
-          background: white;
+          border-top:
+            1px solid #eee;
         }
 
         .cart-total-row {
-          margin-bottom: 17px;
+          margin-bottom: 15px;
 
           display: flex;
-          align-items: center;
-          justify-content: space-between;
+
+          justify-content:
+            space-between;
 
           font-size: 18px;
-        }
-
-        .cart-total-row strong {
-          font-size: 22px;
         }
 
         .whatsapp-button {
           width: 100%;
 
-          min-height: 56px;
-
-          padding: 10px 16px;
+          min-height: 55px;
 
           border: none;
-          border-radius: 7px;
+
+          border-radius: 6px;
 
           background: #25d366;
+
           color: white;
 
-          font-size: 14px;
+          padding:
+            10px 15px;
+
+          display: flex;
+
+          justify-content:
+            space-between;
+
+          align-items: center;
+
           font-weight: 700;
 
           cursor: pointer;
-
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-
-        .cart-note {
-          margin: 11px 0 0;
-
-          color: #999;
-
-          font-size: 11px;
-          line-height: 1.4;
-
-          text-align: center;
         }
 
         .empty-cart {
           flex: 1;
 
-          padding: 50px 25px;
-
           display: flex;
-          flex-direction: column;
+
           align-items: center;
+
           justify-content: center;
 
+          flex-direction: column;
+
           text-align: center;
+
+          padding: 30px;
         }
 
-        .empty-cart-icon {
-          font-size: 50px;
-        }
-
-        .empty-cart h3 {
-          margin-bottom: 5px;
-        }
-
-        .empty-cart p {
-          color: #888;
-        }
-
-        .empty-cart button {
-          margin-top: 15px;
-
-          padding: 13px 20px;
-
-          border: none;
-          border-radius: 7px;
-
-          background: #111;
-          color: white;
-
-          cursor: pointer;
-        }
-
-        /* ==============================
+        /* ======================================
            TABLET
-        ============================== */
+        ====================================== */
 
         @media (max-width: 950px) {
           .products-grid {
@@ -2055,92 +2091,91 @@ export default function TiendaCliente({
           }
 
           .modal-content {
-            grid-template-columns: 1fr;
+            grid-template-columns:
+              1fr;
 
             max-width: 650px;
           }
-
-          .modal-gallery {
-            min-height: 400px;
-          }
         }
 
-        /* ==============================
+        /* ======================================
            CELULAR
-        ============================== */
+        ====================================== */
 
         @media (max-width: 650px) {
           .header-inner {
-            min-height: 88px;
+            min-height: 105px;
 
-            padding: 5px 8px;
+            padding:
+              5px 8px;
 
             grid-template-columns:
-              78px minmax(0, 1fr) 78px;
-
-            gap: 2px;
-          }
-
-          .header-left {
-            gap: 0;
-          }
-
-          .header-right {
-            gap: 0;
+              78px
+              minmax(0, 1fr)
+              55px;
           }
 
           .icon-button {
             width: 38px;
             height: 38px;
 
-            font-size: 22px;
-          }
-
-          .store-brand {
-            gap: 3px;
+            font-size: 21px;
           }
 
           .store-logo,
-.store-logo-placeholder {
-  width: 60px;
-  height: 60px;
-
-  border-radius: 12px;
-}
-
           .store-logo-placeholder {
-            font-size: 18px;
+            width: 68px;
+            height: 68px;
+
+            border-radius: 12px;
           }
 
           .store-name {
-            max-width: 160px;
-
-            overflow: hidden;
+            max-width: 170px;
 
             font-size: 13px;
 
-            text-overflow: ellipsis;
+            overflow: hidden;
+
             white-space: nowrap;
+
+            text-overflow: ellipsis;
           }
 
-          .search-area {
+          /* CATEGORÍAS COMO CORNALINA */
+
+          .top-categories {
+            justify-content:
+              flex-start;
+
+            gap: 24px;
+
             padding:
-              0 10px 10px;
+              7px 14px 12px;
+
+            overflow-x: auto;
           }
+
+          .top-category {
+            font-size: 14px;
+          }
+
+          /* PRODUCTOS GRANDES */
 
           .catalog-container {
             padding:
-              20px 8px 120px;
-          }
-
-          .category-label {
-            font-size: 20px;
+              18px 4px 110px;
           }
 
           .catalog-heading {
-            padding: 0 4px;
+            padding:
+              0 7px;
 
-            margin-bottom: 14px;
+            margin-bottom: 12px;
+          }
+
+          .catalog-heading h2 {
+            font-size: 21px;
           }
 
           .products-grid {
@@ -2148,59 +2183,53 @@ export default function TiendaCliente({
               repeat(2, minmax(0, 1fr));
 
             gap:
-              24px 8px;
+              16px 5px;
           }
 
           .product-info {
             padding:
-              9px 3px 0;
-          }
-
-          .product-reference {
-            font-size: 10px;
+              6px 4px 0;
           }
 
           .product-name {
-            min-height: 34px;
+            font-size: 13px;
 
-            font-size: 12px;
+            line-height: 1.2;
           }
 
           .product-price {
-            margin:
-              6px 0 9px;
+            margin-top: 4px;
 
-            font-size: 14px;
+            font-size: 13px;
           }
 
-          .add-button {
-            padding: 9px;
+          .quick-add-button {
+            width: 42px;
+            height: 42px;
+
+            right: 8px;
+            bottom: 8px;
+          }
+
+          .bag-symbol {
+            font-size: 21px;
+          }
+
+          .plus-symbol {
+            right: 5px;
+
+            bottom: 4px;
+
+            width: 16px;
+            height: 16px;
+
+            line-height: 16px;
 
             font-size: 12px;
-          }
-
-          .floating-cart {
-            bottom: 10px;
-
-            min-height: 55px;
           }
 
           .product-modal {
             padding: 0;
-
-            background: white;
-          }
-
-          .modal-close {
-            position: fixed;
-
-            top: 10px;
-            right: 10px;
-
-            width: 40px;
-            height: 40px;
-
-            font-size: 27px;
           }
 
           .modal-content {
@@ -2212,8 +2241,6 @@ export default function TiendaCliente({
           .modal-gallery {
             min-height: auto;
 
-            width: 100%;
-
             aspect-ratio: 1 / 1;
           }
 
@@ -2221,51 +2248,16 @@ export default function TiendaCliente({
             width: 100%;
             height: 100%;
 
-            max-height: none;
-
             object-fit: contain;
           }
 
           .modal-product-info {
             padding:
-              22px 18px 40px;
-          }
-
-          .modal-product-info h2 {
-            font-size: 21px;
-          }
-
-          .modal-price {
-            font-size: 20px;
+              20px 16px 40px;
           }
 
           .cart-drawer {
             width: 100%;
-          }
-
-          .cart-item {
-            grid-template-columns:
-              82px 1fr;
-          }
-
-          .cart-thumb {
-            width: 82px;
-            height: 82px;
-          }
-        }
-
-        @media (max-width: 360px) {
-          .header-inner {
-            grid-template-columns:
-              72px minmax(0, 1fr) 50px;
-          }
-
-          .header-left .icon-button {
-            width: 34px;
-          }
-
-          .store-name {
-            max-width: 130px;
           }
         }
       `}</style>
