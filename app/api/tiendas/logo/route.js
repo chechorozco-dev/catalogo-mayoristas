@@ -15,20 +15,28 @@ function verificarToken(token, secreto) {
 
     const partes = token.split(".");
 
-    if (partes.length !== 2) return null;
+    if (partes.length !== 2) {
+      return null;
+    }
 
-    const [payload, firmaRecibida] = partes;
+    const [payload, firmaRecibida] =
+      partes;
 
-    const firmaCorrecta = crearFirma(
-      payload,
-      secreto
-    );
+    const firmaCorrecta =
+      crearFirma(
+        payload,
+        secreto
+      );
 
     const bufferRecibido =
-      Buffer.from(firmaRecibida);
+      Buffer.from(
+        firmaRecibida
+      );
 
     const bufferCorrecto =
-      Buffer.from(firmaCorrecta);
+      Buffer.from(
+        firmaCorrecta
+      );
 
     if (
       bufferRecibido.length !==
@@ -46,16 +54,18 @@ function verificarToken(token, secreto) {
       return null;
     }
 
-    const datos = JSON.parse(
-      Buffer.from(
-        payload,
-        "base64url"
-      ).toString("utf8")
-    );
+    const datos =
+      JSON.parse(
+        Buffer.from(
+          payload,
+          "base64url"
+        ).toString("utf8")
+      );
 
-    const ahora = Math.floor(
-      Date.now() / 1000
-    );
+    const ahora =
+      Math.floor(
+        Date.now() / 1000
+      );
 
     if (
       !datos.exp ||
@@ -76,9 +86,20 @@ function verificarToken(token, secreto) {
 }
 
 function extensionDesdeTipo(tipo) {
-  if (tipo === "image/png") return "png";
-  if (tipo === "image/webp") return "webp";
-  if (tipo === "image/jpeg") return "jpg";
+  if (tipo === "image/png") {
+    return "png";
+  }
+
+  if (tipo === "image/webp") {
+    return "webp";
+  }
+
+  if (
+    tipo === "image/jpeg" ||
+    tipo === "image/jpg"
+  ) {
+    return "jpg";
+  }
 
   return null;
 }
@@ -105,7 +126,9 @@ export async function POST(request) {
           mensaje:
             "El servicio no está configurado correctamente.",
         },
-        { status: 500 }
+        {
+          status: 500,
+        }
       );
     }
 
@@ -130,17 +153,16 @@ export async function POST(request) {
           mensaje:
             "Debes iniciar sesión.",
         },
-        { status: 401 }
+        {
+          status: 401,
+        }
       );
     }
 
-    const headersSupabase = {
-      apikey: supabaseSecretKey,
-      "Content-Type":
-        "application/json",
-    };
+    /*
+      Buscar el cliente autorizado.
+    */
 
-    // Verificar cliente y obtener su tienda
     const clienteResponse =
       await fetch(
         `${supabaseUrl}/rest/v1/clientes_autorizados?id=eq.${encodeURIComponent(
@@ -148,20 +170,34 @@ export async function POST(request) {
         )}&activo=eq.true&select=id,tienda_id`,
         {
           method: "GET",
-          headers:
-            headersSupabase,
+          headers: {
+            apikey:
+              supabaseSecretKey,
+            "Content-Type":
+              "application/json",
+          },
           cache: "no-store",
         }
       );
 
     if (!clienteResponse.ok) {
+      const detalle =
+        await clienteResponse.text();
+
+      console.error(
+        "Error buscando cliente:",
+        detalle
+      );
+
       return NextResponse.json(
         {
           ok: false,
           mensaje:
             "No pudimos validar tu cuenta.",
         },
-        { status: 500 }
+        {
+          status: 500,
+        }
       );
     }
 
@@ -181,9 +217,15 @@ export async function POST(request) {
           mensaje:
             "No encontramos tu tienda.",
         },
-        { status: 404 }
+        {
+          status: 404,
+        }
       );
     }
+
+    /*
+      Recibir imagen.
+    */
 
     const formData =
       await request.formData();
@@ -201,12 +243,20 @@ export async function POST(request) {
           mensaje:
             "Selecciona una imagen.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
+    /*
+      El navegador normalmente enviará WEBP
+      después de comprimir.
+    */
+
     const tiposPermitidos = [
       "image/jpeg",
+      "image/jpg",
       "image/png",
       "image/webp",
     ];
@@ -220,14 +270,22 @@ export async function POST(request) {
         {
           ok: false,
           mensaje:
-            "La imagen debe ser JPG, PNG o WEBP.",
+            "No pudimos procesar este formato de imagen.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
+    /*
+      Máximo final de 5 MB.
+      La imagen normalmente llegará
+      muchísimo más pequeña.
+    */
+
     const maximoBytes =
-      2 * 1024 * 1024;
+      5 * 1024 * 1024;
 
     if (
       archivo.size >
@@ -237,9 +295,11 @@ export async function POST(request) {
         {
           ok: false,
           mensaje:
-            "La imagen no puede pesar más de 2 MB.",
+            "La imagen es demasiado pesada.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
@@ -255,17 +315,27 @@ export async function POST(request) {
           mensaje:
             "Formato de imagen no permitido.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
     const bytes =
       await archivo.arrayBuffer();
 
+    /*
+      Utilizamos siempre el mismo nombre
+      lógico por tienda.
+    */
+
     const nombreArchivo =
       `${cliente.tienda_id}/logo.${extension}`;
 
-    // Subir / reemplazar logo
+    /*
+      Subir / reemplazar en Storage.
+    */
+
     const storageResponse =
       await fetch(
         `${supabaseUrl}/storage/v1/object/logos-tiendas/${nombreArchivo}`,
@@ -307,14 +377,23 @@ export async function POST(request) {
           mensaje:
             "No pudimos subir el logo.",
         },
-        { status: 500 }
+        {
+          status: 500,
+        }
       );
     }
+
+    /*
+      URL pública.
+    */
 
     const logoUrl =
       `${supabaseUrl}/storage/v1/object/public/logos-tiendas/${nombreArchivo}`;
 
-    // Guardar URL en la tienda
+    /*
+      Guardar URL en tiendas.
+    */
+
     const tiendaResponse =
       await fetch(
         `${supabaseUrl}/rest/v1/tiendas?id=eq.${encodeURIComponent(
@@ -324,15 +403,21 @@ export async function POST(request) {
           method: "PATCH",
 
           headers: {
-            ...headersSupabase,
+            apikey:
+              supabaseSecretKey,
+
+            "Content-Type":
+              "application/json",
+
             Prefer:
               "return=representation",
           },
 
-          body: JSON.stringify({
-            logo_url:
-              logoUrl,
-          }),
+          body:
+            JSON.stringify({
+              logo_url:
+                logoUrl,
+            }),
         }
       );
 
@@ -351,7 +436,9 @@ export async function POST(request) {
           mensaje:
             "Subimos el logo, pero no pudimos vincularlo a tu tienda.",
         },
-        { status: 500 }
+        {
+          status: 500,
+        }
       );
     }
 
@@ -372,7 +459,7 @@ export async function POST(request) {
     });
   } catch (error) {
     console.error(
-      "Error subiendo logo:",
+      "Error general subiendo logo:",
       error
     );
 
@@ -380,9 +467,11 @@ export async function POST(request) {
       {
         ok: false,
         mensaje:
-          "Ocurrió un error inesperado.",
+          "Ocurrió un error inesperado al subir el logo.",
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
   }
 }
