@@ -1,54 +1,26 @@
 "use client";
 
-import {
-  useEffect,
-  useState,
-} from "react";
-
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function AdminPage() {
   const router = useRouter();
 
-  const [cliente, setCliente] =
-    useState(null);
+  const [cliente, setCliente] = useState(null);
+  const [tienda, setTienda] = useState(null);
 
-  const [tienda, setTienda] =
-    useState(null);
+  const [cargando, setCargando] = useState(true);
+  const [guardando, setGuardando] = useState(false);
+  const [cerrando, setCerrando] = useState(false);
+  const [subiendoLogo, setSubiendoLogo] = useState(false);
 
-  const [cargando, setCargando] =
-    useState(true);
+  const [previewLogo, setPreviewLogo] = useState("");
+  const [mensaje, setMensaje] = useState("");
+  const [copiado, setCopiado] = useState(false);
+  const [editando, setEditando] = useState(false);
 
-  const [guardando, setGuardando] =
-    useState(false);
-
-  const [cerrando, setCerrando] =
-    useState(false);
-
-  const [subiendoLogo, setSubiendoLogo] =
-    useState(false);
-
-  const [previewLogo, setPreviewLogo] =
-    useState("");
-
-  const [mensaje, setMensaje] =
-    useState("");
-
-  const [copiado, setCopiado] =
-    useState(false);
-
-  const [editando, setEditando] =
-    useState(false);
-
-  const [
-    nombreEditado,
-    setNombreEditado,
-  ] = useState("");
-
-  const [
-    whatsappEditado,
-    setWhatsappEditado,
-  ] = useState("");
+  const [nombreEditado, setNombreEditado] = useState("");
+  const [whatsappEditado, setWhatsappEditado] = useState("");
 
   useEffect(() => {
     cargarDatos();
@@ -63,18 +35,15 @@ export default function AdminPage() {
     setMensaje("");
 
     try {
-      // 1. Verificar sesión por WhatsApp
-      const sesionResponse =
-        await fetch(
-          "/api/auth/sesion",
-          {
-            method: "GET",
-            cache: "no-store",
-          }
-        );
+      const sesionResponse = await fetch(
+        "/api/auth/sesion",
+        {
+          method: "GET",
+          cache: "no-store",
+        }
+      );
 
-      const sesionData =
-        await sesionResponse.json();
+      const sesionData = await sesionResponse.json();
 
       if (
         !sesionResponse.ok ||
@@ -84,37 +53,23 @@ export default function AdminPage() {
         return;
       }
 
-      // 2. Si todavía no tiene tienda
-      if (
-        !sesionData.cliente?.tienda_id
-      ) {
-        router.replace(
-          "/crear-tienda"
-        );
-
+      if (!sesionData.cliente?.tienda_id) {
+        router.replace("/crear-tienda");
         return;
       }
 
-      // 3. Cargar tienda
-      const tiendaResponse =
-        await fetch(
-          "/api/tiendas/mi-tienda",
-          {
-            method: "GET",
-            cache: "no-store",
-          }
-        );
+      const tiendaResponse = await fetch(
+        "/api/tiendas/mi-tienda",
+        {
+          method: "GET",
+          cache: "no-store",
+        }
+      );
 
-      const tiendaData =
-        await tiendaResponse.json();
+      const tiendaData = await tiendaResponse.json();
 
-      if (
-        tiendaData.necesita_tienda
-      ) {
-        router.replace(
-          "/crear-tienda"
-        );
-
+      if (tiendaData.necesita_tienda) {
+        router.replace("/crear-tienda");
         return;
       }
 
@@ -131,22 +86,15 @@ export default function AdminPage() {
         return;
       }
 
-      setCliente(
-        tiendaData.cliente
-      );
-
-      setTienda(
-        tiendaData.tienda
-      );
+      setCliente(tiendaData.cliente);
+      setTienda(tiendaData.tienda);
 
       setNombreEditado(
-        tiendaData.tienda
-          .nombre_tienda || ""
+        tiendaData.tienda.nombre_tienda || ""
       );
 
       setWhatsappEditado(
-        tiendaData.tienda
-          .whatsapp || ""
+        tiendaData.tienda.whatsapp || ""
       );
 
       setCargando(false);
@@ -229,13 +177,129 @@ export default function AdminPage() {
   }
 
   /* =========================================
-     PRECIOS MAYORISTAS
+     VER PRECIOS
   ========================================= */
 
   function verProductosYPrecios() {
-    router.push(
-      "/admin/productos"
-    );
+    router.push("/admin/productos");
+  }
+
+  /* =========================================
+     COMPRIMIR IMAGEN
+  ========================================= */
+
+  async function comprimirImagen(archivo) {
+    return new Promise((resolve, reject) => {
+      const lector = new FileReader();
+
+      lector.onload = (evento) => {
+        const imagen = new Image();
+
+        imagen.onload = () => {
+          const canvas =
+            document.createElement("canvas");
+
+          const MAXIMO = 1200;
+
+          let ancho = imagen.width;
+          let alto = imagen.height;
+
+          if (
+            ancho > alto &&
+            ancho > MAXIMO
+          ) {
+            alto = Math.round(
+              (alto * MAXIMO) / ancho
+            );
+
+            ancho = MAXIMO;
+          } else if (
+            alto >= ancho &&
+            alto > MAXIMO
+          ) {
+            ancho = Math.round(
+              (ancho * MAXIMO) / alto
+            );
+
+            alto = MAXIMO;
+          }
+
+          canvas.width = ancho;
+          canvas.height = alto;
+
+          const contexto =
+            canvas.getContext("2d");
+
+          if (!contexto) {
+            reject(
+              new Error(
+                "No pudimos procesar la imagen."
+              )
+            );
+
+            return;
+          }
+
+          contexto.drawImage(
+            imagen,
+            0,
+            0,
+            ancho,
+            alto
+          );
+
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                reject(
+                  new Error(
+                    "No pudimos comprimir la imagen."
+                  )
+                );
+
+                return;
+              }
+
+              const archivoComprimido =
+                new File(
+                  [blob],
+                  `logo-${Date.now()}.webp`,
+                  {
+                    type: "image/webp",
+                  }
+                );
+
+              resolve(
+                archivoComprimido
+              );
+            },
+            "image/webp",
+            0.82
+          );
+        };
+
+        imagen.onerror = () => {
+          reject(
+            new Error(
+              "No pudimos leer la imagen."
+            )
+          );
+        };
+
+        imagen.src =
+          evento.target.result;
+      };
+
+      lector.onerror = () => {
+        reject(
+          new Error(
+            "No pudimos leer el archivo."
+          )
+        );
+      };
+
+      lector.readAsDataURL(archivo);
+    });
   }
 
   /* =========================================
@@ -243,63 +307,94 @@ export default function AdminPage() {
   ========================================= */
 
   async function subirLogo(e) {
-    const archivo =
+    const archivoOriginal =
       e.target.files?.[0];
 
-    if (!archivo) return;
+    if (!archivoOriginal) return;
 
     setMensaje("");
-
-    const tiposPermitidos = [
-      "image/jpeg",
-      "image/png",
-      "image/webp",
-    ];
-
-    if (
-      !tiposPermitidos.includes(
-        archivo.type
-      )
-    ) {
-      setMensaje(
-        "El logo debe ser JPG, PNG o WEBP."
-      );
-
-      e.target.value = "";
-      return;
-    }
-
-    if (
-      archivo.size >
-      2 * 1024 * 1024
-    ) {
-      setMensaje(
-        "El logo no puede pesar más de 2 MB."
-      );
-
-      e.target.value = "";
-      return;
-    }
-
-    // Vista previa inmediata
-    const vistaPrevia =
-      URL.createObjectURL(
-        archivo
-      );
-
-    setPreviewLogo(
-      vistaPrevia
-    );
-
     setSubiendoLogo(true);
 
     try {
+      if (
+        !archivoOriginal.type.startsWith(
+          "image/"
+        )
+      ) {
+        setMensaje(
+          "Selecciona una imagen válida."
+        );
+
+        return;
+      }
+
+      /*
+        Permitimos elegir fotos grandes.
+        Luego la reducimos automáticamente.
+      */
+
+      let archivoFinal =
+        archivoOriginal;
+
+      try {
+        archivoFinal =
+          await comprimirImagen(
+            archivoOriginal
+          );
+      } catch (error) {
+        console.error(
+          "No se pudo comprimir:",
+          error
+        );
+
+        /*
+          Si por alguna razón el navegador
+          no puede comprimirla, intentamos
+          usar el archivo original.
+        */
+
+        archivoFinal =
+          archivoOriginal;
+      }
+
+      /*
+        Esta es solo una segunda protección.
+        Normalmente después de comprimir,
+        el logo pesará mucho menos.
+      */
+
+      if (
+        archivoFinal.size >
+        5 * 1024 * 1024
+      ) {
+        setMensaje(
+          "La imagen sigue siendo demasiado pesada. Prueba con otra foto."
+        );
+
+        return;
+      }
+
+      if (previewLogo) {
+        URL.revokeObjectURL(
+          previewLogo
+        );
+      }
+
+      const vistaPrevia =
+        URL.createObjectURL(
+          archivoFinal
+        );
+
+      setPreviewLogo(
+        vistaPrevia
+      );
+
       const formData =
         new FormData();
 
       formData.append(
         "logo",
-        archivo
+        archivoFinal
       );
 
       const response =
@@ -311,8 +406,17 @@ export default function AdminPage() {
           }
         );
 
-      const data =
-        await response.json();
+      let data = {};
+
+      try {
+        data =
+          await response.json();
+      } catch (error) {
+        console.error(
+          "Respuesta inválida:",
+          error
+        );
+      }
 
       if (
         !response.ok ||
@@ -324,8 +428,6 @@ export default function AdminPage() {
         );
 
         setPreviewLogo("");
-
-        e.target.value = "";
 
         return;
       }
@@ -350,14 +452,16 @@ export default function AdminPage() {
       );
 
       setMensaje(
-        "No pudimos subir el logo."
+        "No pudimos procesar la foto. Prueba con otra imagen."
       );
 
       setPreviewLogo("");
     } finally {
       setSubiendoLogo(false);
 
-      e.target.value = "";
+      if (e.target) {
+        e.target.value = "";
+      }
     }
   }
 
@@ -377,7 +481,6 @@ export default function AdminPage() {
     );
 
     setMensaje("");
-
     setEditando(true);
   }
 
@@ -393,7 +496,6 @@ export default function AdminPage() {
     );
 
     setMensaje("");
-
     setEditando(false);
   }
 
@@ -401,9 +503,7 @@ export default function AdminPage() {
      GUARDAR CAMBIOS
   ========================================= */
 
-  async function guardarCambios(
-    e
-  ) {
+  async function guardarCambios(e) {
     e.preventDefault();
 
     if (!tienda) return;
@@ -456,13 +556,13 @@ export default function AdminPage() {
       );
 
       setNombreEditado(
-        tiendaActualizada
-          .nombre_tienda || ""
+        tiendaActualizada.nombre_tienda ||
+          ""
       );
 
       setWhatsappEditado(
-        tiendaActualizada
-          .whatsapp || ""
+        tiendaActualizada.whatsapp ||
+          ""
       );
 
       setEditando(false);
@@ -485,9 +585,7 @@ export default function AdminPage() {
      MOSTRAR WHATSAPP
   ========================================= */
 
-  function mostrarWhatsapp(
-    numero
-  ) {
+  function mostrarWhatsapp(numero) {
     if (!numero) return "";
 
     let limpio =
@@ -509,14 +607,8 @@ export default function AdminPage() {
     ) {
       return (
         `+57 ` +
-        `${limpio.slice(
-          0,
-          3
-        )} ` +
-        `${limpio.slice(
-          3,
-          6
-        )} ` +
+        `${limpio.slice(0, 3)} ` +
+        `${limpio.slice(3, 6)} ` +
         `${limpio.slice(6)}`
       );
     }
@@ -533,24 +625,16 @@ export default function AdminPage() {
       <main
         style={{
           minHeight: "100vh",
-
           display: "flex",
-
           alignItems: "center",
-
-          justifyContent:
-            "center",
-
-          background:
-            "#fff8f6",
-
+          justifyContent: "center",
+          background: "#fff8f6",
           padding: "20px",
         }}
       >
         <p
           style={{
             fontSize: "18px",
-
             color: "#666",
           }}
         >
@@ -564,49 +648,35 @@ export default function AdminPage() {
     <main
       style={{
         minHeight: "100vh",
-
-        background:
-          "#fff8f6",
-
-        padding:
-          "25px 18px 50px",
+        background: "#fff8f6",
+        padding: "25px 18px 50px",
       }}
     >
       <div
         style={{
           maxWidth: "800px",
-
           margin: "0 auto",
         }}
       >
         <div
           style={{
             background: "white",
-
             borderRadius: "20px",
-
             padding: "25px",
-
             boxShadow:
               "0 10px 35px rgba(0,0,0,0.08)",
           }}
         >
-          {/* =========================
-              ENCABEZADO
-          ========================= */}
+          {/* ENCABEZADO */}
 
           <div
             style={{
               display: "flex",
-
               justifyContent:
                 "space-between",
-
               alignItems:
                 "flex-start",
-
               gap: "20px",
-
               flexWrap: "wrap",
             }}
           >
@@ -614,9 +684,7 @@ export default function AdminPage() {
               <h1
                 style={{
                   margin: 0,
-
-                  fontSize:
-                    "32px",
+                  fontSize: "32px",
                 }}
               >
                 Mi catálogo
@@ -624,17 +692,10 @@ export default function AdminPage() {
 
               <p
                 style={{
-                  marginTop:
-                    "8px",
-
-                  marginBottom:
-                    0,
-
-                  color:
-                    "#777",
-
-                  fontSize:
-                    "16px",
+                  marginTop: "8px",
+                  marginBottom: 0,
+                  color: "#777",
+                  fontSize: "16px",
                 }}
               >
                 {cliente?.nombre
@@ -647,36 +708,27 @@ export default function AdminPage() {
 
             <button
               type="button"
-
               onClick={
                 cerrarSesion
               }
-
               disabled={
                 cerrando
               }
-
               style={{
                 border:
                   "1px solid #ddd",
-
                 background:
                   "white",
-
                 padding:
                   "11px 16px",
-
                 borderRadius:
                   "10px",
-
                 cursor:
                   cerrando
                     ? "not-allowed"
                     : "pointer",
-
                 fontSize:
                   "15px",
-
                 opacity:
                   cerrando
                     ? 0.6
@@ -689,36 +741,29 @@ export default function AdminPage() {
             </button>
           </div>
 
-          {/* =========================
-              MENSAJES
-          ========================= */}
+          {/* MENSAJE */}
 
           {mensaje && (
             <div
               style={{
                 marginTop:
                   "22px",
-
                 padding:
                   "14px",
-
                 borderRadius:
                   "10px",
-
                 background:
                   mensaje.startsWith(
                     "✅"
                   )
                     ? "#eef9f1"
                     : "#ffeaea",
-
                 color:
                   mensaje.startsWith(
                     "✅"
                   )
                     ? "#287a42"
                     : "#a33",
-
                 lineHeight:
                   "1.5",
               }}
@@ -729,22 +774,15 @@ export default function AdminPage() {
 
           {tienda && (
             <>
-              {/* =========================
-                  DATOS DE TIENDA
-              ========================= */}
-
               {!editando && (
                 <div
                   style={{
                     marginTop:
                       "30px",
-
                     padding:
                       "24px",
-
                     background:
                       "#f7f7f7",
-
                     borderRadius:
                       "16px",
                   }}
@@ -752,10 +790,8 @@ export default function AdminPage() {
                   <p
                     style={{
                       margin: 0,
-
                       color:
                         "#777",
-
                       fontSize:
                         "14px",
                     }}
@@ -767,10 +803,8 @@ export default function AdminPage() {
                     style={{
                       marginTop:
                         "5px",
-
                       marginBottom:
                         "8px",
-
                       fontSize:
                         "27px",
                     }}
@@ -783,7 +817,6 @@ export default function AdminPage() {
                   <p
                     style={{
                       margin: 0,
-
                       color:
                         "#666",
                     }}
@@ -794,27 +827,20 @@ export default function AdminPage() {
                     )}
                   </p>
 
-                  {/* =========================
-                      LOGO
-                  ========================= */}
+                  {/* LOGO */}
 
                   <div
                     style={{
                       marginTop:
                         "22px",
-
                       padding:
                         "20px",
-
                       borderRadius:
                         "14px",
-
                       background:
                         "white",
-
                       border:
                         "1px solid #eee",
-
                       textAlign:
                         "center",
                     }}
@@ -823,13 +849,10 @@ export default function AdminPage() {
                       style={{
                         marginTop:
                           0,
-
                         marginBottom:
                           "14px",
-
                         fontWeight:
                           "700",
-
                         fontSize:
                           "16px",
                       }}
@@ -840,32 +863,23 @@ export default function AdminPage() {
                     <div
                       style={{
                         width:
-                          "130px",
-
+                          "150px",
                         height:
-                          "130px",
-
+                          "150px",
                         margin:
-                          "0 auto 16px",
-
+                          "0 auto 18px",
                         borderRadius:
-                          "18px",
-
+                          "20px",
                         overflow:
                           "hidden",
-
                         border:
                           "1px solid #ddd",
-
                         background:
                           "#f7f7f7",
-
                         display:
                           "flex",
-
                         alignItems:
                           "center",
-
                         justifyContent:
                           "center",
                       }}
@@ -877,19 +891,14 @@ export default function AdminPage() {
                             previewLogo ||
                             tienda.logo_url
                           }
-
                           alt="Logo de la tienda"
-
                           style={{
                             width:
                               "100%",
-
                             height:
                               "100%",
-
                             objectFit:
-                              "cover",
-
+                              "contain",
                             display:
                               "block",
                           }}
@@ -899,13 +908,10 @@ export default function AdminPage() {
                           style={{
                             textAlign:
                               "center",
-
                             color:
                               "#999",
-
                             fontSize:
                               "13px",
-
                             padding:
                               "10px",
                           }}
@@ -914,7 +920,6 @@ export default function AdminPage() {
                             style={{
                               fontSize:
                                 "30px",
-
                               marginBottom:
                                 "5px",
                             }}
@@ -931,27 +936,20 @@ export default function AdminPage() {
                       style={{
                         display:
                           "inline-block",
-
                         padding:
-                          "12px 18px",
-
+                          "13px 20px",
                         borderRadius:
                           "10px",
-
                         background:
                           "#222",
-
                         color:
                           "white",
-
                         fontWeight:
                           "700",
-
                         cursor:
                           subiendoLogo
                             ? "not-allowed"
                             : "pointer",
-
                         opacity:
                           subiendoLogo
                             ? 0.7
@@ -959,24 +957,20 @@ export default function AdminPage() {
                       }}
                     >
                       {subiendoLogo
-                        ? "Subiendo..."
+                        ? "Procesando foto..."
                         : tienda.logo_url
                           ? "📷 Cambiar logo"
                           : "📷 Subir logo"}
 
                       <input
                         type="file"
-
-                        accept="image/jpeg,image/png,image/webp"
-
+                        accept="image/*"
                         onChange={
                           subirLogo
                         }
-
                         disabled={
                           subiendoLogo
                         }
-
                         style={{
                           display:
                             "none",
@@ -988,59 +982,45 @@ export default function AdminPage() {
                       style={{
                         marginTop:
                           "12px",
-
                         marginBottom:
                           0,
-
                         color:
                           "#888",
-
                         fontSize:
                           "12px",
+                        lineHeight:
+                          "1.5",
                       }}
                     >
-                      Elige una foto desde tu celular.
-                      JPG, PNG o WEBP. Máximo 2 MB.
+                      Selecciona una foto desde tu galería.
+                      La ajustaremos automáticamente.
                     </p>
                   </div>
 
-                  {/* BOTÓN EDITAR */}
-
                   <button
                     type="button"
-
                     onClick={
                       empezarEdicion
                     }
-
                     style={{
                       width:
                         "100%",
-
                       marginTop:
                         "18px",
-
                       border:
                         "1px solid #d97883",
-
                       padding:
                         "13px",
-
                       borderRadius:
                         "10px",
-
                       background:
                         "white",
-
                       color:
                         "#d97883",
-
                       fontSize:
                         "16px",
-
                       fontWeight:
                         "700",
-
                       cursor:
                         "pointer",
                     }}
@@ -1050,22 +1030,15 @@ export default function AdminPage() {
                 </div>
               )}
 
-              {/* =========================
-                  EDICIÓN
-              ========================= */}
-
               {editando && (
                 <div
                   style={{
                     marginTop:
                       "30px",
-
                     padding:
                       "24px",
-
                     background:
                       "#f7f7f7",
-
                     borderRadius:
                       "16px",
                   }}
@@ -1074,10 +1047,8 @@ export default function AdminPage() {
                     style={{
                       marginTop:
                         0,
-
                       marginBottom:
                         "20px",
-
                       fontSize:
                         "24px",
                     }}
@@ -1101,11 +1072,9 @@ export default function AdminPage() {
 
                     <input
                       type="text"
-
                       value={
                         nombreEditado
                       }
-
                       onChange={(
                         e
                       ) =>
@@ -1114,9 +1083,7 @@ export default function AdminPage() {
                             .value
                         )
                       }
-
                       required
-
                       style={
                         estiloInput
                       }
@@ -1133,11 +1100,9 @@ export default function AdminPage() {
 
                     <input
                       type="tel"
-
                       value={
                         whatsappEditado
                       }
-
                       onChange={(
                         e
                       ) =>
@@ -1146,9 +1111,7 @@ export default function AdminPage() {
                             .value
                         )
                       }
-
                       required
-
                       style={
                         estiloInput
                       }
@@ -1156,41 +1119,30 @@ export default function AdminPage() {
 
                     <button
                       type="submit"
-
                       disabled={
                         guardando
                       }
-
                       style={{
                         width:
                           "100%",
-
                         border:
                           "none",
-
                         padding:
                           "14px",
-
                         borderRadius:
                           "10px",
-
                         background:
                           "#d97883",
-
                         color:
                           "white",
-
                         fontSize:
                           "16px",
-
                         fontWeight:
                           "700",
-
                         cursor:
                           guardando
                             ? "not-allowed"
                             : "pointer",
-
                         opacity:
                           guardando
                             ? 0.7
@@ -1204,43 +1156,31 @@ export default function AdminPage() {
 
                     <button
                       type="button"
-
                       onClick={
                         cancelarEdicion
                       }
-
                       disabled={
                         guardando
                       }
-
                       style={{
                         width:
                           "100%",
-
                         marginTop:
                           "10px",
-
                         border:
                           "1px solid #ddd",
-
                         padding:
                           "14px",
-
                         borderRadius:
                           "10px",
-
                         background:
                           "white",
-
                         color:
                           "#666",
-
                         fontSize:
                           "16px",
-
                         fontWeight:
                           "600",
-
                         cursor:
                           "pointer",
                       }}
@@ -1251,24 +1191,18 @@ export default function AdminPage() {
                 </div>
               )}
 
-              {/* =========================
-                  PRECIOS MAYORISTAS
-              ========================= */}
+              {/* PRECIOS MAYORISTAS */}
 
               <div
                 style={{
                   marginTop:
                     "20px",
-
                   padding:
                     "24px",
-
                   background:
                     "#222",
-
                   color:
                     "white",
-
                   borderRadius:
                     "16px",
                 }}
@@ -1277,10 +1211,8 @@ export default function AdminPage() {
                   style={{
                     marginTop:
                       0,
-
                     marginBottom:
                       "8px",
-
                     fontSize:
                       "22px",
                   }}
@@ -1292,13 +1224,10 @@ export default function AdminPage() {
                   style={{
                     marginTop:
                       0,
-
                     marginBottom:
                       "18px",
-
                     color:
                       "#ddd",
-
                     lineHeight:
                       "1.5",
                   }}
@@ -1308,36 +1237,26 @@ export default function AdminPage() {
 
                 <button
                   type="button"
-
                   onClick={
                     verProductosYPrecios
                   }
-
                   style={{
                     width:
                       "100%",
-
                     border:
                       "none",
-
                     padding:
                       "15px",
-
                     borderRadius:
                       "10px",
-
                     background:
                       "#d97883",
-
                     color:
                       "white",
-
                     fontSize:
                       "16px",
-
                     fontWeight:
                       "700",
-
                     cursor:
                       "pointer",
                   }}
@@ -1346,21 +1265,16 @@ export default function AdminPage() {
                 </button>
               </div>
 
-              {/* =========================
-                  ENLACE CATÁLOGO
-              ========================= */}
+              {/* ENLACE */}
 
               <div
                 style={{
                   marginTop:
                     "20px",
-
                   padding:
                     "24px",
-
                   border:
                     "1px solid #eee",
-
                   borderRadius:
                     "16px",
                 }}
@@ -1369,10 +1283,8 @@ export default function AdminPage() {
                   style={{
                     marginTop:
                       0,
-
                     marginBottom:
                       "8px",
-
                     fontSize:
                       "22px",
                   }}
@@ -1384,34 +1296,27 @@ export default function AdminPage() {
                   style={{
                     color:
                       "#666",
-
                     lineHeight:
                       "1.5",
-
                     marginTop:
                       0,
                   }}
                 >
-                  Este es el enlace que debes compartir con tus clientes para que puedan ver tus productos y el precio de venta.
+                  Este es el enlace que debes compartir con tus clientes.
                 </p>
 
                 <div
                   style={{
                     background:
                       "#f7f7f7",
-
                     padding:
                       "14px",
-
                     borderRadius:
                       "10px",
-
                     wordBreak:
                       "break-all",
-
                     fontWeight:
                       "600",
-
                     marginTop:
                       "15px",
                   }}
@@ -1426,48 +1331,36 @@ export default function AdminPage() {
                   style={{
                     display:
                       "grid",
-
                     gridTemplateColumns:
                       "repeat(auto-fit, minmax(180px, 1fr))",
-
                     gap:
                       "10px",
-
                     marginTop:
                       "14px",
                   }}
                 >
                   <button
                     type="button"
-
                     onClick={
                       copiarEnlace
                     }
-
                     style={{
                       border:
                         "none",
-
                       padding:
                         "14px",
-
                       borderRadius:
                         "10px",
-
                       background:
                         copiado
                           ? "#50a773"
                           : "#d97883",
-
                       color:
                         "white",
-
                       fontSize:
                         "16px",
-
                       fontWeight:
                         "700",
-
                       cursor:
                         "pointer",
                     }}
@@ -1479,33 +1372,24 @@ export default function AdminPage() {
 
                   <button
                     type="button"
-
                     onClick={
                       verCatalogo
                     }
-
                     style={{
                       border:
                         "1px solid #d97883",
-
                       padding:
                         "14px",
-
                       borderRadius:
                         "10px",
-
                       background:
                         "white",
-
                       color:
                         "#d97883",
-
                       fontSize:
                         "16px",
-
                       fontWeight:
                         "700",
-
                       cursor:
                         "pointer",
                     }}
@@ -1513,45 +1397,6 @@ export default function AdminPage() {
                     👁️ Ver mi catálogo
                   </button>
                 </div>
-              </div>
-
-              {/* =========================
-                  INFORMACIÓN
-              ========================= */}
-
-              <div
-                style={{
-                  marginTop:
-                    "20px",
-
-                  padding:
-                    "20px",
-
-                  background:
-                    "#fff8f6",
-
-                  borderRadius:
-                    "16px",
-
-                  lineHeight:
-                    "1.5",
-                }}
-              >
-                <strong>
-                  Tu catálogo está listo para compartir.
-                </strong>
-
-                <p
-                  style={{
-                    color:
-                      "#666",
-
-                    marginBottom:
-                      0,
-                  }}
-                >
-                  Los productos del catálogo son administrados por la plataforma. Desde aquí puedes consultar tus precios, actualizar los datos de tu tienda, subir tu logo y compartir tu catálogo con tus clientes.
-                </p>
               </div>
             </>
           )}
@@ -1563,18 +1408,11 @@ export default function AdminPage() {
 
 const estiloInput = {
   width: "100%",
-
   padding: "14px",
-
   marginTop: "7px",
-
   marginBottom: "18px",
-
   borderRadius: "10px",
-
   border: "1px solid #ddd",
-
   fontSize: "16px",
-
   boxSizing: "border-box",
 };
