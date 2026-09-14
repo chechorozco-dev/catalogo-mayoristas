@@ -2101,12 +2101,12 @@ export default function TiendaCliente({
           }
 
           .store-logo,
-          .store-logo-placeholder {
-            width: 46px;
-            height: 46px;
+.store-logo-placeholder {
+  width: 60px;
+  height: 60px;
 
-            border-radius: 10px;
-          }
+  border-radius: 12px;
+}
 
           .store-logo-placeholder {
             font-size: 18px;
