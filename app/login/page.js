@@ -35,6 +35,36 @@ export default function LoginPage() {
     revisarSesion();
   }, []);
 
+  // =====================================================
+  // REDIRIGIR SEGÚN TIPO DE USUARIO
+  // =====================================================
+
+  function redirigirUsuario(cliente) {
+    if (!cliente) {
+      router.replace("/login");
+      return;
+    }
+
+    // PRIMERO REVISAMOS SI ES MAESTRO
+    if (cliente.rol === "MAESTRO") {
+      router.replace("/admin-maestro");
+      return;
+    }
+
+    // CLIENTE NORMAL QUE YA TIENE TIENDA
+    if (cliente.tienda_id) {
+      router.replace("/admin");
+      return;
+    }
+
+    // CLIENTE NORMAL QUE TODAVÍA NO TIENE TIENDA
+    router.replace("/crear-tienda");
+  }
+
+  // =====================================================
+  // REVISAR SI YA EXISTE SESIÓN
+  // =====================================================
+
   async function revisarSesion() {
     try {
       const response = await fetch("/api/auth/sesion", {
@@ -45,26 +75,29 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok && data.autenticado) {
-        if (data.cliente?.tienda_id) {
-          router.replace("/admin");
-        } else {
-          router.replace("/crear-tienda");
-        }
-
+        redirigirUsuario(data.cliente);
         return;
       }
     } catch (error) {
-      console.error(error);
+      console.error("Error revisando sesión:", error);
     }
 
     setCargandoSesion(false);
   }
+
+  // =====================================================
+  // TELÉFONO COMPLETO
+  // =====================================================
 
   function telefonoCompleto() {
     const numero = String(telefono || "").replace(/\D/g, "");
 
     return `${codigoPais}${numero}`;
   }
+
+  // =====================================================
+  // ENVIAR CÓDIGO
+  // =====================================================
 
   async function enviarCodigo(e) {
     e.preventDefault();
@@ -84,6 +117,7 @@ export default function LoginPage() {
       setMensaje(
         "Para Colombia escribe los 10 dígitos de tu celular."
       );
+
       setTipoMensaje("error");
       return;
     }
@@ -93,9 +127,11 @@ export default function LoginPage() {
     try {
       const response = await fetch("/api/auth/enviar-codigo", {
         method: "POST",
+
         headers: {
           "Content-Type": "application/json",
         },
+
         body: JSON.stringify({
           telefono: telefonoCompleto(),
         }),
@@ -107,8 +143,8 @@ export default function LoginPage() {
         setMensaje(
           data.mensaje || "No pudimos enviar el código."
         );
+
         setTipoMensaje("error");
-        setEnviando(false);
         return;
       }
 
@@ -120,7 +156,7 @@ export default function LoginPage() {
 
       setTipoMensaje("exito");
     } catch (error) {
-      console.error(error);
+      console.error("Error enviando código:", error);
 
       setMensaje(
         "Ocurrió un error. Intenta nuevamente."
@@ -132,10 +168,17 @@ export default function LoginPage() {
     }
   }
 
+  // =====================================================
+  // VERIFICAR CÓDIGO
+  // =====================================================
+
   async function verificarCodigo(e) {
     e.preventDefault();
 
-    const codigoLimpio = String(codigo || "").replace(/\D/g, "");
+    const codigoLimpio = String(codigo || "").replace(
+      /\D/g,
+      ""
+    );
 
     setMensaje("");
     setTipoMensaje("");
@@ -153,9 +196,11 @@ export default function LoginPage() {
         "/api/auth/verificar-codigo",
         {
           method: "POST",
+
           headers: {
             "Content-Type": "application/json",
           },
+
           body: JSON.stringify({
             telefono: telefonoCompleto(),
             codigo: codigoLimpio,
@@ -171,22 +216,64 @@ export default function LoginPage() {
         );
 
         setTipoMensaje("error");
-        setVerificando(false);
         return;
       }
 
       setMensaje("Código correcto. Ingresando...");
       setTipoMensaje("exito");
 
-      if (data.cliente?.tienda_id) {
-        router.replace("/admin");
-      } else {
-        router.replace("/crear-tienda");
+      // =================================================
+      // IMPORTANTE:
+      // CONSULTAMOS LA SESIÓN QUE ACABA DE CREARSE
+      // PARA OBTENER EL ROL REAL DEL USUARIO
+      // =================================================
+
+      const responseSesion = await fetch(
+        "/api/auth/sesion",
+        {
+          method: "GET",
+          cache: "no-store",
+        }
+      );
+
+      const dataSesion = await responseSesion.json();
+
+      if (
+        !responseSesion.ok ||
+        !dataSesion.autenticado ||
+        !dataSesion.cliente
+      ) {
+        setMensaje(
+          "La sesión se creó, pero no pudimos comprobar el acceso."
+        );
+
+        setTipoMensaje("error");
+        return;
       }
 
+      // =================================================
+      // REDIRECCIÓN CORRECTA
+      // =================================================
+
+      if (dataSesion.cliente.rol === "MAESTRO") {
+        router.replace("/admin-maestro");
+        router.refresh();
+        return;
+      }
+
+      if (dataSesion.cliente.tienda_id) {
+        router.replace("/admin");
+        router.refresh();
+        return;
+      }
+
+      router.replace("/crear-tienda");
       router.refresh();
     } catch (error) {
-      console.error(error);
+      console.error(
+        "Error verificando código:",
+        error
+      );
 
       setMensaje(
         "Ocurrió un error al verificar el código."
@@ -198,12 +285,20 @@ export default function LoginPage() {
     }
   }
 
+  // =====================================================
+  // CAMBIAR NÚMERO
+  // =====================================================
+
   function cambiarNumero() {
     setCodigoEnviado(false);
     setCodigo("");
     setMensaje("");
     setTipoMensaje("");
   }
+
+  // =====================================================
+  // CARGANDO
+  // =====================================================
 
   if (cargandoSesion) {
     return (
@@ -229,6 +324,10 @@ export default function LoginPage() {
     );
   }
 
+  // =====================================================
+  // PÁGINA
+  // =====================================================
+
   return (
     <main
       style={{
@@ -248,7 +347,8 @@ export default function LoginPage() {
             background: "white",
             borderRadius: "24px",
             padding: "38px",
-            boxShadow: "0 12px 40px rgba(0,0,0,0.08)",
+            boxShadow:
+              "0 12px 40px rgba(0,0,0,0.08)",
           }}
         >
           <p
@@ -283,12 +383,15 @@ export default function LoginPage() {
               lineHeight: "1.5",
             }}
           >
-            Usa el número de WhatsApp que tienes registrado con nosotros.
+            Usa el número de WhatsApp que tienes registrado
+            con nosotros.
           </p>
 
           {!codigoEnviado ? (
             <form onSubmit={enviarCodigo}>
-              {/* SELECTOR DE CÓDIGO DE PAÍS */}
+
+              {/* PAÍS */}
+
               <select
                 value={codigoPais}
                 onChange={(e) =>
@@ -309,7 +412,8 @@ export default function LoginPage() {
                     key={pais.codigo}
                     value={pais.codigo}
                   >
-                    {pais.bandera} {pais.nombre} (+{pais.codigo})
+                    {pais.bandera} {pais.nombre} (+
+                    {pais.codigo})
                   </option>
                 ))}
               </select>
@@ -389,6 +493,7 @@ export default function LoginPage() {
             </form>
           ) : (
             <form onSubmit={verificarCodigo}>
+
               <div
                 style={{
                   background: "#f7f7f7",
@@ -480,7 +585,9 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={verificando}
-                style={estiloBotonPrincipal(verificando)}
+                style={estiloBotonPrincipal(
+                  verificando
+                )}
               >
                 {verificando
                   ? "Verificando..."
@@ -522,13 +629,18 @@ export default function LoginPage() {
               lineHeight: "1.5",
             }}
           >
-            El acceso está disponible únicamente para clientes registrados con nosotros.
+            El acceso está disponible únicamente para
+            clientes registrados con nosotros.
           </div>
         </div>
       </div>
     </main>
   );
 }
+
+// =====================================================
+// MENSAJE
+// =====================================================
 
 function Mensaje({ tipo, texto }) {
   const exito = tipo === "exito";
@@ -539,8 +651,12 @@ function Mensaje({ tipo, texto }) {
         marginTop: "18px",
         padding: "13px",
         borderRadius: "10px",
-        background: exito ? "#eef9f1" : "#ffeaea",
-        color: exito ? "#287a42" : "#a33",
+        background: exito
+          ? "#eef9f1"
+          : "#ffeaea",
+        color: exito
+          ? "#287a42"
+          : "#a33",
         lineHeight: "1.4",
       }}
     >
@@ -548,6 +664,10 @@ function Mensaje({ tipo, texto }) {
     </div>
   );
 }
+
+// =====================================================
+// BOTÓN PRINCIPAL
+// =====================================================
 
 function estiloBotonPrincipal(deshabilitado) {
   return {
@@ -560,7 +680,9 @@ function estiloBotonPrincipal(deshabilitado) {
     color: "white",
     fontSize: "17px",
     fontWeight: "700",
-    cursor: deshabilitado ? "not-allowed" : "pointer",
+    cursor: deshabilitado
+      ? "not-allowed"
+      : "pointer",
     opacity: deshabilitado ? 0.7 : 1,
   };
 }
