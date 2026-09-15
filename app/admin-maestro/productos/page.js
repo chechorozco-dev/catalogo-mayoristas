@@ -1,22 +1,33 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function ProductosMaestroPage() {
   const router = useRouter();
 
+  const inputFoto1Ref = useRef(null);
+  const inputFoto2Ref = useRef(null);
+
   const [productos, setProductos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [busqueda, setBusqueda] = useState("");
   const [mensaje, setMensaje] = useState("");
+
   const [editando, setEditando] = useState(null);
   const [guardando, setGuardando] = useState(false);
   const [eliminando, setEliminando] = useState(null);
 
+  const [subiendoFoto1, setSubiendoFoto1] = useState(false);
+  const [subiendoFoto2, setSubiendoFoto2] = useState(false);
+
   useEffect(() => {
     cargarProductos();
   }, []);
+
+  // ======================================================
+  // CARGAR PRODUCTOS
+  // ======================================================
 
   async function cargarProductos() {
     try {
@@ -45,7 +56,8 @@ export default function ProductosMaestroPage() {
 
       if (!response.ok || !data.ok) {
         setMensaje(
-          data.mensaje || "No pudimos cargar los productos."
+          data.mensaje ||
+            "No pudimos cargar los productos."
         );
         return;
       }
@@ -58,6 +70,10 @@ export default function ProductosMaestroPage() {
       setCargando(false);
     }
   }
+
+  // ======================================================
+  // BUSCADOR
+  // ======================================================
 
   const productosFiltrados = useMemo(() => {
     const texto = busqueda.trim().toLowerCase();
@@ -78,6 +94,10 @@ export default function ProductosMaestroPage() {
     });
   }, [productos, busqueda]);
 
+  // ======================================================
+  // DINERO
+  // ======================================================
+
   function dinero(valor) {
     const numero = Number(valor || 0);
 
@@ -88,35 +108,253 @@ export default function ProductosMaestroPage() {
     }).format(numero);
   }
 
+  // ======================================================
+  // ABRIR EDITOR
+  // ======================================================
+
   function abrirEditar(producto) {
     setMensaje("");
 
     setEditando({
       ...producto,
-      costo: producto.costo ?? "",
-      precio_detal: producto.precio_detal ?? "",
-      precio_minimo: producto.precio_minimo ?? "",
-      categoria: producto.categoria ?? "",
-      descripcion: producto.descripcion ?? "",
-      foto_url: producto.foto_url ?? "",
-      foto_url_2: producto.foto_url_2 ?? "",
-      infoimagen: producto.infoimagen ?? "",
+
+      costo:
+        producto.costo ?? "",
+
+      precio_detal:
+        producto.precio_detal ?? "",
+
+      precio_minimo:
+        producto.precio_minimo ?? "",
+
+      categoria:
+        producto.categoria ?? "",
+
+      descripcion:
+        producto.descripcion ?? "",
+
+      foto_url:
+        producto.foto_url ?? "",
+
+      foto_url_2:
+        producto.foto_url_2 ?? "",
+
+      infoimagen:
+        producto.infoimagen ?? "",
+
+      activo:
+        producto.activo !== false,
     });
   }
 
+  function cerrarEditor() {
+    if (
+      guardando ||
+      subiendoFoto1 ||
+      subiendoFoto2
+    ) {
+      return;
+    }
+
+    setEditando(null);
+  }
+
+  // ======================================================
+  // CAMBIAR CAMPOS
+  // ======================================================
+
   function cambiarEdicion(e) {
-    const { name, value, type, checked } = e.target;
+    const {
+      name,
+      value,
+      type,
+      checked,
+    } = e.target;
 
     setEditando((actual) => ({
       ...actual,
-      [name]: type === "checkbox" ? checked : value,
+      [name]:
+        type === "checkbox"
+          ? checked
+          : value,
     }));
   }
+
+  // ======================================================
+  // SUBIR FOTO
+  // ======================================================
+
+  async function subirFotografia(
+    archivo,
+    campo
+  ) {
+    if (!archivo) return;
+
+    if (!archivo.type?.startsWith("image/")) {
+      setMensaje(
+        "Selecciona un archivo de imagen."
+      );
+      return;
+    }
+
+    const esFotoPrincipal =
+      campo === "foto_url";
+
+    try {
+      if (esFotoPrincipal) {
+        setSubiendoFoto1(true);
+      } else {
+        setSubiendoFoto2(true);
+      }
+
+      setMensaje("");
+
+      const formData = new FormData();
+
+      formData.append("foto", archivo);
+
+      const response = await fetch(
+        "/api/admin-maestro/productos/subir-foto",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      let data;
+
+      try {
+        data = await response.json();
+      } catch {
+        data = {
+          ok: false,
+          mensaje:
+            "El servidor devolvió una respuesta inválida.",
+        };
+      }
+
+      if (response.status === 401) {
+        router.replace("/login");
+        return;
+      }
+
+      if (response.status === 403) {
+        setMensaje(
+          data.mensaje ||
+            "No tienes permiso para subir fotografías."
+        );
+        return;
+      }
+
+      if (!response.ok || !data.ok) {
+        setMensaje(
+          data.mensaje ||
+            "No pudimos subir la fotografía."
+        );
+        return;
+      }
+
+      if (!data.url) {
+        setMensaje(
+          "La fotografía se subió, pero no recibimos su dirección."
+        );
+        return;
+      }
+
+      setEditando((actual) => ({
+        ...actual,
+        [campo]: data.url,
+      }));
+
+      setMensaje(
+        esFotoPrincipal
+          ? "✅ Foto principal cargada. Recuerda guardar los cambios."
+          : "✅ Segunda foto cargada. Recuerda guardar los cambios."
+      );
+    } catch (error) {
+      console.error(
+        "Error subiendo fotografía:",
+        error
+      );
+
+      setMensaje(
+        "No pudimos subir la fotografía."
+      );
+    } finally {
+      if (esFotoPrincipal) {
+        setSubiendoFoto1(false);
+      } else {
+        setSubiendoFoto2(false);
+      }
+    }
+  }
+
+  // ======================================================
+  // FOTO PRINCIPAL
+  // ======================================================
+
+  function seleccionarFotoPrincipal(e) {
+    const archivo =
+      e.target.files?.[0];
+
+    if (archivo) {
+      subirFotografia(
+        archivo,
+        "foto_url"
+      );
+    }
+
+    e.target.value = "";
+  }
+
+  // ======================================================
+  // SEGUNDA FOTO
+  // ======================================================
+
+  function seleccionarSegundaFoto(e) {
+    const archivo =
+      e.target.files?.[0];
+
+    if (archivo) {
+      subirFotografia(
+        archivo,
+        "foto_url_2"
+      );
+    }
+
+    e.target.value = "";
+  }
+
+  // ======================================================
+  // QUITAR SEGUNDA FOTO
+  // ======================================================
+
+  function quitarSegundaFoto() {
+    setEditando((actual) => ({
+      ...actual,
+      foto_url_2: "",
+    }));
+
+    setMensaje(
+      "✅ Segunda foto quitada. Recuerda guardar los cambios."
+    );
+  }
+
+  // ======================================================
+  // GUARDAR CAMBIOS
+  // ======================================================
 
   async function guardarCambios(e) {
     e.preventDefault();
 
-    if (guardando || !editando) return;
+    if (
+      guardando ||
+      !editando ||
+      subiendoFoto1 ||
+      subiendoFoto2
+    ) {
+      return;
+    }
 
     setGuardando(true);
     setMensaje("");
@@ -126,18 +364,36 @@ export default function ProductosMaestroPage() {
         "/api/admin-maestro/productos",
         {
           method: "PATCH",
+
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
+
           body: JSON.stringify(editando),
         }
       );
 
-      const data = await response.json();
+      const data =
+        await response.json();
+
+      if (response.status === 401) {
+        router.replace("/login");
+        return;
+      }
+
+      if (response.status === 403) {
+        setMensaje(
+          data.mensaje ||
+            "No tienes permiso para editar productos."
+        );
+        return;
+      }
 
       if (!response.ok || !data.ok) {
         setMensaje(
-          data.mensaje || "No pudimos actualizar el producto."
+          data.mensaje ||
+            "No pudimos actualizar el producto."
         );
         return;
       }
@@ -151,19 +407,30 @@ export default function ProductosMaestroPage() {
       );
 
       setEditando(null);
-      setMensaje("✅ Producto actualizado correctamente.");
+
+      setMensaje(
+        "✅ Producto actualizado correctamente."
+      );
     } catch (error) {
       console.error(error);
-      setMensaje("No pudimos actualizar el producto.");
+
+      setMensaje(
+        "No pudimos actualizar el producto."
+      );
     } finally {
       setGuardando(false);
     }
   }
 
+  // ======================================================
+  // ELIMINAR PRODUCTO
+  // ======================================================
+
   async function eliminarProducto(producto) {
-    const confirmar = window.confirm(
-      `¿Seguro que deseas eliminar ${producto.referencia} - ${producto.nombre}?\n\nEsta acción eliminará el producto de la base de datos.`
-    );
+    const confirmar =
+      window.confirm(
+        `¿Seguro que deseas eliminar ${producto.referencia} - ${producto.nombre}?\n\nEsta acción eliminará el producto de la base de datos.`
+      );
 
     if (!confirmar) return;
 
@@ -175,74 +442,121 @@ export default function ProductosMaestroPage() {
         "/api/admin-maestro/productos",
         {
           method: "DELETE",
+
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
+
           body: JSON.stringify({
             id: producto.id,
           }),
         }
       );
 
-      const data = await response.json();
+      const data =
+        await response.json();
+
+      if (response.status === 401) {
+        router.replace("/login");
+        return;
+      }
 
       if (!response.ok || !data.ok) {
         setMensaje(
-          data.mensaje || "No pudimos eliminar el producto."
+          data.mensaje ||
+            "No pudimos eliminar el producto."
         );
         return;
       }
 
       setProductos((actuales) =>
-        actuales.filter((item) => item.id !== producto.id)
+        actuales.filter(
+          (item) =>
+            item.id !== producto.id
+        )
       );
 
-      setMensaje("✅ Producto eliminado correctamente.");
+      setMensaje(
+        "✅ Producto eliminado correctamente."
+      );
     } catch (error) {
       console.error(error);
-      setMensaje("No pudimos eliminar el producto.");
+
+      setMensaje(
+        "No pudimos eliminar el producto."
+      );
     } finally {
       setEliminando(null);
     }
   }
 
+  // ======================================================
+  // CARGANDO
+  // ======================================================
+
   if (cargando) {
     return (
       <main style={estilos.cargando}>
         <div>
-          <div style={estilos.spinner}>💎</div>
+          <div style={estilos.spinner}>
+            💎
+          </div>
+
           <p>Cargando productos...</p>
         </div>
       </main>
     );
   }
 
+  // ======================================================
+  // PÁGINA
+  // ======================================================
+
   return (
     <main style={estilos.pagina}>
       <div style={estilos.contenedor}>
+
         <button
-          onClick={() => router.push("/admin-maestro")}
+          onClick={() =>
+            router.push(
+              "/admin-maestro"
+            )
+          }
           style={estilos.volver}
         >
           ← Volver al Panel Maestro
         </button>
 
-        <section style={estilos.encabezado}>
+        {/* ENCABEZADO */}
+
+        <section
+          style={estilos.encabezado}
+        >
           <div>
-            <div style={estilos.etiqueta}>
+            <div
+              style={estilos.etiqueta}
+            >
               ADMINISTRADOR MAESTRO
             </div>
 
-            <h1 style={estilos.titulo}>Productos</h1>
+            <h1 style={estilos.titulo}>
+              Productos
+            </h1>
 
-            <p style={estilos.subtitulo}>
-              Administra el catálogo central.
+            <p
+              style={estilos.subtitulo}
+            >
+              Administra el catálogo
+              central.
             </p>
           </div>
 
           <button
             onClick={() =>
-              router.push("/admin-maestro/productos/nuevo")
+              router.push(
+                "/admin-maestro/productos/nuevo"
+              )
             }
             style={estilos.nuevo}
           >
@@ -250,29 +564,51 @@ export default function ProductosMaestroPage() {
           </button>
         </section>
 
+        {/* MENSAJE */}
+
         {mensaje && (
           <div
             style={{
               ...estilos.mensaje,
-              background: mensaje.startsWith("✅")
-                ? "#e9f8ee"
-                : "#ffe8e8",
-              color: mensaje.startsWith("✅")
-                ? "#20733c"
-                : "#a52828",
+
+              background:
+                mensaje.startsWith(
+                  "✅"
+                )
+                  ? "#e9f8ee"
+                  : "#ffe8e8",
+
+              color:
+                mensaje.startsWith(
+                  "✅"
+                )
+                  ? "#20733c"
+                  : "#a52828",
             }}
           >
             {mensaje}
           </div>
         )}
 
-        <section style={estilos.herramientas}>
+        {/* BUSCADOR */}
+
+        <section
+          style={estilos.herramientas}
+        >
           <div>
-            <strong style={estilos.contador}>
-              {productosFiltrados.length}
+            <strong
+              style={estilos.contador}
+            >
+              {
+                productosFiltrados.length
+              }
             </strong>
 
-            <span style={estilos.textoContador}>
+            <span
+              style={
+                estilos.textoContador
+              }
+            >
               {" "}
               productos
             </span>
@@ -280,161 +616,281 @@ export default function ProductosMaestroPage() {
 
           <input
             value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
+            onChange={(e) =>
+              setBusqueda(
+                e.target.value
+              )
+            }
             placeholder="🔍 Buscar referencia, nombre o categoría..."
             style={estilos.buscar}
           />
         </section>
 
-        {productosFiltrados.length === 0 ? (
-          <section style={estilos.vacio}>
-            <div style={{ fontSize: "45px" }}>📦</div>
+        {/* PRODUCTOS */}
 
-            <h2>No encontramos productos</h2>
+        {productosFiltrados.length ===
+        0 ? (
+          <section
+            style={estilos.vacio}
+          >
+            <div
+              style={{
+                fontSize: "45px",
+              }}
+            >
+              📦
+            </div>
+
+            <h2>
+              No encontramos productos
+            </h2>
 
             <p>
-              Prueba con otra búsqueda o agrega un producto.
+              Prueba con otra búsqueda o
+              agrega un producto.
             </p>
           </section>
         ) : (
           <div style={estilos.grid}>
-            {productosFiltrados.map((producto) => (
-              <article
-                key={producto.id}
-                style={estilos.tarjeta}
-              >
-                <div style={estilos.imagenContenedor}>
-                  {producto.foto_url ? (
-                    <img
-                      src={producto.foto_url}
-                      alt={producto.nombre}
-                      style={estilos.imagen}
-                    />
-                  ) : (
-                    <div style={estilos.sinFoto}>
-                      📷
-                      <span>Sin fotografía</span>
-                    </div>
-                  )}
-
-                  <span
-                    style={{
-                      ...estilos.estado,
-                      background: producto.activo
-                        ? "#e5f7ea"
-                        : "#eeeeee",
-                      color: producto.activo
-                        ? "#17773b"
-                        : "#666",
-                    }}
+            {productosFiltrados.map(
+              (producto) => (
+                <article
+                  key={producto.id}
+                  style={
+                    estilos.tarjeta
+                  }
+                >
+                  <div
+                    style={
+                      estilos.imagenContenedor
+                    }
                   >
-                    {producto.activo
-                      ? "● Activo"
-                      : "● Inactivo"}
-                  </span>
-                </div>
+                    {producto.foto_url ? (
+                      <img
+                        src={
+                          producto.foto_url
+                        }
+                        alt={
+                          producto.nombre
+                        }
+                        style={
+                          estilos.imagen
+                        }
+                      />
+                    ) : (
+                      <div
+                        style={
+                          estilos.sinFoto
+                        }
+                      >
+                        📷
 
-                <div style={estilos.contenido}>
-                  <div style={estilos.referencia}>
-                    {producto.referencia}
-                  </div>
+                        <span>
+                          Sin fotografía
+                        </span>
+                      </div>
+                    )}
 
-                  <h2 style={estilos.nombre}>
-                    {producto.nombre}
-                  </h2>
-
-                  {producto.categoria && (
-                    <div style={estilos.categoria}>
-                      {producto.categoria}
-                    </div>
-                  )}
-
-                  <div style={estilos.precios}>
-                    <Fila
-                      nombre="Tu costo"
-                      valor={dinero(producto.costo)}
-                    />
-
-                    <Fila
-                      nombre="Precio sugerido"
-                      valor={dinero(producto.precio_detal)}
-                      destacado
-                    />
-
-                    {producto.precio_minimo !== null &&
-                      producto.precio_minimo !== undefined && (
-                        <Fila
-                          nombre="Precio mínimo"
-                          valor={dinero(
-                            producto.precio_minimo
-                          )}
-                        />
-                      )}
-                  </div>
-
-                  <div style={estilos.botones}>
-                    <button
-                      onClick={() => abrirEditar(producto)}
-                      style={estilos.editar}
-                    >
-                      ✏️ Editar
-                    </button>
-
-                    <button
-                      onClick={() =>
-                        eliminarProducto(producto)
-                      }
-                      disabled={
-                        eliminando === producto.id
-                      }
+                    <span
                       style={{
-                        ...estilos.eliminar,
-                        opacity:
-                          eliminando === producto.id
-                            ? 0.5
-                            : 1,
+                        ...estilos.estado,
+
+                        background:
+                          producto.activo
+                            ? "#e5f7ea"
+                            : "#eeeeee",
+
+                        color:
+                          producto.activo
+                            ? "#17773b"
+                            : "#666",
                       }}
                     >
-                      {eliminando === producto.id
-                        ? "Eliminando..."
-                        : "🗑️ Eliminar"}
-                    </button>
+                      {producto.activo
+                        ? "● Activo"
+                        : "● Inactivo"}
+                    </span>
                   </div>
-                </div>
-              </article>
-            ))}
+
+                  <div
+                    style={
+                      estilos.contenido
+                    }
+                  >
+                    <div
+                      style={
+                        estilos.referencia
+                      }
+                    >
+                      {
+                        producto.referencia
+                      }
+                    </div>
+
+                    <h2
+                      style={
+                        estilos.nombre
+                      }
+                    >
+                      {producto.nombre}
+                    </h2>
+
+                    {producto.categoria && (
+                      <div
+                        style={
+                          estilos.categoria
+                        }
+                      >
+                        {
+                          producto.categoria
+                        }
+                      </div>
+                    )}
+
+                    <div
+                      style={
+                        estilos.precios
+                      }
+                    >
+                      <Fila
+                        nombre="Tu costo"
+                        valor={dinero(
+                          producto.costo
+                        )}
+                      />
+
+                      <Fila
+                        nombre="Precio sugerido"
+                        valor={dinero(
+                          producto.precio_detal
+                        )}
+                        destacado
+                      />
+
+                      {producto.precio_minimo !==
+                        null &&
+                        producto.precio_minimo !==
+                          undefined && (
+                          <Fila
+                            nombre="Precio mínimo"
+                            valor={dinero(
+                              producto.precio_minimo
+                            )}
+                          />
+                        )}
+                    </div>
+
+                    <div
+                      style={
+                        estilos.botones
+                      }
+                    >
+                      <button
+                        onClick={() =>
+                          abrirEditar(
+                            producto
+                          )
+                        }
+                        style={
+                          estilos.editar
+                        }
+                      >
+                        ✏️ Editar
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          eliminarProducto(
+                            producto
+                          )
+                        }
+                        disabled={
+                          eliminando ===
+                          producto.id
+                        }
+                        style={{
+                          ...estilos.eliminar,
+
+                          opacity:
+                            eliminando ===
+                            producto.id
+                              ? 0.5
+                              : 1,
+                        }}
+                      >
+                        {eliminando ===
+                        producto.id
+                          ? "Eliminando..."
+                          : "🗑️ Eliminar"}
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              )
+            )}
           </div>
         )}
       </div>
 
+      {/* ==================================================
+          MODAL EDITAR
+      ================================================== */}
+
       {editando && (
         <div style={estilos.overlay}>
           <div style={estilos.modal}>
-            <div style={estilos.modalCabecera}>
+
+            {/* CABECERA */}
+
+            <div
+              style={
+                estilos.modalCabecera
+              }
+            >
               <div>
-                <div style={estilos.modalReferencia}>
+                <div
+                  style={
+                    estilos.modalReferencia
+                  }
+                >
                   {editando.referencia}
                 </div>
 
-                <h2 style={estilos.modalTitulo}>
+                <h2
+                  style={
+                    estilos.modalTitulo
+                  }
+                >
                   Editar producto
                 </h2>
               </div>
 
               <button
-                onClick={() => setEditando(null)}
+                type="button"
+                onClick={cerrarEditor}
                 style={estilos.cerrar}
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={guardarCambios}>
+            <form
+              onSubmit={
+                guardarCambios
+              }
+            >
+
+              {/* INFORMACIÓN */}
+
               <Campo titulo="Referencia *">
                 <input
                   name="referencia"
-                  value={editando.referencia}
-                  onChange={cambiarEdicion}
+                  value={
+                    editando.referencia
+                  }
+                  onChange={
+                    cambiarEdicion
+                  }
                   style={estilos.input}
                   required
                 />
@@ -443,8 +899,12 @@ export default function ProductosMaestroPage() {
               <Campo titulo="Nombre *">
                 <input
                   name="nombre"
-                  value={editando.nombre}
-                  onChange={cambiarEdicion}
+                  value={
+                    editando.nombre
+                  }
+                  onChange={
+                    cambiarEdicion
+                  }
                   style={estilos.input}
                   required
                 />
@@ -453,8 +913,12 @@ export default function ProductosMaestroPage() {
               <Campo titulo="Categoría">
                 <input
                   name="categoria"
-                  value={editando.categoria}
-                  onChange={cambiarEdicion}
+                  value={
+                    editando.categoria
+                  }
+                  onChange={
+                    cambiarEdicion
+                  }
                   style={estilos.input}
                 />
               </Campo>
@@ -462,8 +926,12 @@ export default function ProductosMaestroPage() {
               <Campo titulo="Descripción">
                 <textarea
                   name="descripcion"
-                  value={editando.descripcion}
-                  onChange={cambiarEdicion}
+                  value={
+                    editando.descripcion
+                  }
+                  onChange={
+                    cambiarEdicion
+                  }
                   rows={3}
                   style={{
                     ...estilos.input,
@@ -472,15 +940,27 @@ export default function ProductosMaestroPage() {
                 />
               </Campo>
 
-              <div style={estilos.dosColumnas}>
+              {/* PRECIOS */}
+
+              <div
+                style={
+                  estilos.dosColumnas
+                }
+              >
                 <Campo titulo="Tu costo">
                   <input
                     type="number"
                     name="costo"
-                    value={editando.costo}
-                    onChange={cambiarEdicion}
+                    value={
+                      editando.costo
+                    }
+                    onChange={
+                      cambiarEdicion
+                    }
                     min="0"
-                    style={estilos.input}
+                    style={
+                      estilos.input
+                    }
                   />
                 </Campo>
 
@@ -488,11 +968,17 @@ export default function ProductosMaestroPage() {
                   <input
                     type="number"
                     name="precio_detal"
-                    value={editando.precio_detal}
-                    onChange={cambiarEdicion}
+                    value={
+                      editando.precio_detal
+                    }
+                    onChange={
+                      cambiarEdicion
+                    }
                     min="0"
                     required
-                    style={estilos.input}
+                    style={
+                      estilos.input
+                    }
                   />
                 </Campo>
               </div>
@@ -501,38 +987,319 @@ export default function ProductosMaestroPage() {
                 <input
                   type="number"
                   name="precio_minimo"
-                  value={editando.precio_minimo}
-                  onChange={cambiarEdicion}
+                  value={
+                    editando.precio_minimo
+                  }
+                  onChange={
+                    cambiarEdicion
+                  }
                   min="0"
                   style={estilos.input}
                 />
               </Campo>
 
-              <Campo titulo="URL foto principal">
-                <input
-                  name="foto_url"
-                  value={editando.foto_url}
-                  onChange={cambiarEdicion}
-                  placeholder="https://..."
-                  style={estilos.input}
-                />
-              </Campo>
+              {/* ==========================================
+                  FOTOGRAFÍAS
+              ========================================== */}
 
-              <Campo titulo="URL segunda foto">
-                <input
-                  name="foto_url_2"
-                  value={editando.foto_url_2}
-                  onChange={cambiarEdicion}
-                  placeholder="https://..."
-                  style={estilos.input}
-                />
-              </Campo>
+              <div
+                style={
+                  estilos.seccionFotos
+                }
+              >
+                <div
+                  style={
+                    estilos.tituloFotos
+                  }
+                >
+                  <div
+                    style={
+                      estilos.iconoFotos
+                    }
+                  >
+                    📸
+                  </div>
+
+                  <div>
+                    <h3
+                      style={{
+                        margin: 0,
+                        fontSize: "20px",
+                      }}
+                    >
+                      Fotografías del
+                      producto
+                    </h3>
+
+                    <p
+                      style={{
+                        margin:
+                          "4px 0 0",
+                        color: "#777",
+                        fontSize:
+                          "13px",
+                      }}
+                    >
+                      Puedes reemplazar
+                      las fotografías
+                      directamente desde
+                      tu celular o
+                      computador.
+                    </p>
+                  </div>
+                </div>
+
+                <div
+                  style={
+                    estilos.gridFotos
+                  }
+                >
+
+                  {/* FOTO PRINCIPAL */}
+
+                  <div
+                    style={
+                      estilos.tarjetaFoto
+                    }
+                  >
+                    <div
+                      style={
+                        estilos.nombreFoto
+                      }
+                    >
+                      Foto principal
+                    </div>
+
+                    <div
+                      style={
+                        estilos.previewFoto
+                      }
+                    >
+                      {editando.foto_url ? (
+                        <img
+                          src={
+                            editando.foto_url
+                          }
+                          alt="Foto principal"
+                          style={
+                            estilos.imagenPreview
+                          }
+                        />
+                      ) : (
+                        <div
+                          style={
+                            estilos.sinFotoPreview
+                          }
+                        >
+                          <div
+                            style={{
+                              fontSize:
+                                "35px",
+                            }}
+                          >
+                            📷
+                          </div>
+
+                          <span>
+                            Sin foto
+                          </span>
+                        </div>
+                      )}
+
+                      <span
+                        style={
+                          estilos.badgePrincipal
+                        }
+                      >
+                        PRINCIPAL
+                      </span>
+                    </div>
+
+                    <input
+                      ref={
+                        inputFoto1Ref
+                      }
+                      type="file"
+                      accept="image/*"
+                      onChange={
+                        seleccionarFotoPrincipal
+                      }
+                      style={{
+                        display: "none",
+                      }}
+                    />
+
+                    <button
+                      type="button"
+                      disabled={
+                        subiendoFoto1
+                      }
+                      onClick={() =>
+                        inputFoto1Ref.current?.click()
+                      }
+                      style={{
+                        ...estilos.botonFoto,
+
+                        opacity:
+                          subiendoFoto1
+                            ? 0.6
+                            : 1,
+                      }}
+                    >
+                      {subiendoFoto1
+                        ? "⏳ Subiendo..."
+                        : editando.foto_url
+                        ? "📷 Cambiar foto"
+                        : "📷 Agregar foto"}
+                    </button>
+                  </div>
+
+                  {/* SEGUNDA FOTO */}
+
+                  <div
+                    style={
+                      estilos.tarjetaFoto
+                    }
+                  >
+                    <div
+                      style={
+                        estilos.nombreFoto
+                      }
+                    >
+                      Segunda foto
+                    </div>
+
+                    <div
+                      style={
+                        estilos.previewFoto
+                      }
+                    >
+                      {editando.foto_url_2 ? (
+                        <img
+                          src={
+                            editando.foto_url_2
+                          }
+                          alt="Segunda foto"
+                          style={
+                            estilos.imagenPreview
+                          }
+                        />
+                      ) : (
+                        <div
+                          style={
+                            estilos.sinFotoPreview
+                          }
+                        >
+                          <div
+                            style={{
+                              fontSize:
+                                "35px",
+                            }}
+                          >
+                            ＋
+                          </div>
+
+                          <span>
+                            Sin segunda foto
+                          </span>
+                        </div>
+                      )}
+
+                      <span
+                        style={
+                          estilos.badgeSecundaria
+                        }
+                      >
+                        OPCIONAL
+                      </span>
+                    </div>
+
+                    <input
+                      ref={
+                        inputFoto2Ref
+                      }
+                      type="file"
+                      accept="image/*"
+                      onChange={
+                        seleccionarSegundaFoto
+                      }
+                      style={{
+                        display: "none",
+                      }}
+                    />
+
+                    <button
+                      type="button"
+                      disabled={
+                        subiendoFoto2
+                      }
+                      onClick={() =>
+                        inputFoto2Ref.current?.click()
+                      }
+                      style={{
+                        ...estilos.botonFoto,
+
+                        opacity:
+                          subiendoFoto2
+                            ? 0.6
+                            : 1,
+                      }}
+                    >
+                      {subiendoFoto2
+                        ? "⏳ Subiendo..."
+                        : editando.foto_url_2
+                        ? "📷 Cambiar foto"
+                        : "＋ Agregar segunda foto"}
+                    </button>
+
+                    {editando.foto_url_2 && (
+                      <button
+                        type="button"
+                        onClick={
+                          quitarSegundaFoto
+                        }
+                        disabled={
+                          subiendoFoto2
+                        }
+                        style={
+                          estilos.quitarFoto
+                        }
+                      >
+                        🗑️ Quitar segunda
+                        foto
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div
+                  style={
+                    estilos.avisoFotos
+                  }
+                >
+                  💡 Las fotos nuevas se
+                  mostrarán aquí
+                  inmediatamente. Después
+                  debes presionar{" "}
+                  <strong>
+                    Guardar cambios
+                  </strong>{" "}
+                  para asociarlas al
+                  producto.
+                </div>
+              </div>
+
+              {/* INFOIMAGEN */}
 
               <Campo titulo="INFOIMAGEN">
                 <textarea
                   name="infoimagen"
-                  value={editando.infoimagen}
-                  onChange={cambiarEdicion}
+                  value={
+                    editando.infoimagen
+                  }
+                  onChange={
+                    cambiarEdicion
+                  }
                   rows={3}
                   style={{
                     ...estilos.input,
@@ -541,12 +1308,22 @@ export default function ProductosMaestroPage() {
                 />
               </Campo>
 
-              <label style={estilos.activoFila}>
+              {/* ACTIVO */}
+
+              <label
+                style={
+                  estilos.activoFila
+                }
+              >
                 <input
                   type="checkbox"
                   name="activo"
-                  checked={editando.activo}
-                  onChange={cambiarEdicion}
+                  checked={
+                    editando.activo
+                  }
+                  onChange={
+                    cambiarEdicion
+                  }
                   style={{
                     width: "21px",
                     height: "21px",
@@ -554,34 +1331,69 @@ export default function ProductosMaestroPage() {
                 />
 
                 <div>
-                  <strong>Producto activo</strong>
+                  <strong>
+                    Producto activo
+                  </strong>
 
-                  <div style={estilos.ayuda}>
-                    Si lo desactivas dejará de aparecer en
+                  <div
+                    style={
+                      estilos.ayuda
+                    }
+                  >
+                    Si lo desactivas
+                    dejará de aparecer en
                     los catálogos.
                   </div>
                 </div>
               </label>
 
-              <div style={estilos.modalBotones}>
+              {/* BOTONES */}
+
+              <div
+                style={
+                  estilos.modalBotones
+                }
+              >
                 <button
                   type="button"
-                  onClick={() => setEditando(null)}
-                  style={estilos.cancelar}
+                  onClick={
+                    cerrarEditor
+                  }
+                  disabled={
+                    guardando ||
+                    subiendoFoto1 ||
+                    subiendoFoto2
+                  }
+                  style={
+                    estilos.cancelar
+                  }
                 >
                   Cancelar
                 </button>
 
                 <button
                   type="submit"
-                  disabled={guardando}
+                  disabled={
+                    guardando ||
+                    subiendoFoto1 ||
+                    subiendoFoto2
+                  }
                   style={{
                     ...estilos.guardar,
-                    opacity: guardando ? 0.6 : 1,
+
+                    opacity:
+                      guardando ||
+                      subiendoFoto1 ||
+                      subiendoFoto2
+                        ? 0.6
+                        : 1,
                   }}
                 >
                   {guardando
                     ? "Guardando..."
+                    : subiendoFoto1 ||
+                      subiendoFoto2
+                    ? "Esperando fotografía..."
                     : "Guardar cambios"}
                 </button>
               </div>
@@ -593,14 +1405,28 @@ export default function ProductosMaestroPage() {
   );
 }
 
-function Fila({ nombre, valor, destacado }) {
+// ======================================================
+// COMPONENTE FILA
+// ======================================================
+
+function Fila({
+  nombre,
+  valor,
+  destacado,
+}) {
   return (
     <div style={estilos.fila}>
-      <span style={estilos.filaNombre}>{nombre}</span>
+      <span
+        style={estilos.filaNombre}
+      >
+        {nombre}
+      </span>
 
       <strong
         style={{
-          color: destacado ? "#111" : "#555",
+          color: destacado
+            ? "#111"
+            : "#555",
         }}
       >
         {valor}
@@ -609,14 +1435,30 @@ function Fila({ nombre, valor, destacado }) {
   );
 }
 
-function Campo({ titulo, children }) {
+// ======================================================
+// COMPONENTE CAMPO
+// ======================================================
+
+function Campo({
+  titulo,
+  children,
+}) {
   return (
     <div style={estilos.campo}>
-      <label style={estilos.label}>{titulo}</label>
+      <label
+        style={estilos.label}
+      >
+        {titulo}
+      </label>
+
       {children}
     </div>
   );
 }
+
+// ======================================================
+// ESTILOS
+// ======================================================
 
 const estilos = {
   pagina: {
@@ -658,7 +1500,8 @@ const estilos = {
     borderRadius: "24px",
     padding: "28px",
     display: "flex",
-    justifyContent: "space-between",
+    justifyContent:
+      "space-between",
     alignItems: "center",
     gap: "20px",
     flexWrap: "wrap",
@@ -708,7 +1551,8 @@ const estilos = {
     borderRadius: "18px",
     display: "flex",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent:
+      "space-between",
     gap: "15px",
     flexWrap: "wrap",
   },
@@ -742,7 +1586,8 @@ const estilos = {
     background: "white",
     borderRadius: "19px",
     overflow: "hidden",
-    boxShadow: "0 5px 20px rgba(0,0,0,0.05)",
+    boxShadow:
+      "0 5px 20px rgba(0,0,0,0.05)",
   },
 
   imagenContenedor: {
@@ -806,14 +1651,17 @@ const estilos = {
   },
 
   precios: {
-    borderTop: "1px solid #eee",
-    borderBottom: "1px solid #eee",
+    borderTop:
+      "1px solid #eee",
+    borderBottom:
+      "1px solid #eee",
     padding: "10px 0",
   },
 
   fila: {
     display: "flex",
-    justifyContent: "space-between",
+    justifyContent:
+      "space-between",
     gap: "10px",
     padding: "5px 0",
     fontSize: "13px",
@@ -825,7 +1673,8 @@ const estilos = {
 
   botones: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr",
+    gridTemplateColumns:
+      "1fr 1fr",
     gap: "8px",
     marginTop: "14px",
   },
@@ -840,7 +1689,8 @@ const estilos = {
   },
 
   eliminar: {
-    border: "1px solid #ffd3d3",
+    border:
+      "1px solid #ffd3d3",
     background: "#fff2f2",
     color: "#b82c2c",
     borderRadius: "10px",
@@ -861,13 +1711,15 @@ const estilos = {
     position: "fixed",
     inset: 0,
     zIndex: 9999,
-    background: "rgba(0,0,0,.6)",
+    background:
+      "rgba(0,0,0,.62)",
     padding: "20px",
     overflowY: "auto",
   },
 
   modal: {
-    width: "min(650px, 100%)",
+    width:
+      "min(720px, 100%)",
     margin: "20px auto",
     background: "white",
     borderRadius: "22px",
@@ -877,7 +1729,8 @@ const estilos = {
 
   modalCabecera: {
     display: "flex",
-    justifyContent: "space-between",
+    justifyContent:
+      "space-between",
     alignItems: "flex-start",
     marginBottom: "22px",
   },
@@ -929,6 +1782,143 @@ const estilos = {
     gap: "12px",
   },
 
+  // FOTOS
+
+  seccionFotos: {
+    margin: "25px 0",
+    padding: "18px",
+    borderRadius: "18px",
+    background: "#f8f8f8",
+    border: "1px solid #ededed",
+  },
+
+  tituloFotos: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    marginBottom: "18px",
+  },
+
+  iconoFotos: {
+    width: "45px",
+    height: "45px",
+    borderRadius: "13px",
+    background: "#ffe9ed",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "22px",
+    flexShrink: 0,
+  },
+
+  gridFotos: {
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(230px, 1fr))",
+    gap: "14px",
+  },
+
+  tarjetaFoto: {
+    background: "white",
+    border:
+      "1px solid #e5e5e5",
+    borderRadius: "16px",
+    padding: "12px",
+  },
+
+  nombreFoto: {
+    fontWeight: "900",
+    marginBottom: "9px",
+    fontSize: "14px",
+  },
+
+  previewFoto: {
+    width: "100%",
+    aspectRatio: "1 / 1",
+    background: "#eee",
+    borderRadius: "13px",
+    overflow: "hidden",
+    position: "relative",
+  },
+
+  imagenPreview: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    display: "block",
+  },
+
+  sinFotoPreview: {
+    width: "100%",
+    height: "100%",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#999",
+    gap: "7px",
+  },
+
+  badgePrincipal: {
+    position: "absolute",
+    top: "9px",
+    left: "9px",
+    padding: "6px 9px",
+    borderRadius: "999px",
+    background: "#111",
+    color: "white",
+    fontWeight: "900",
+    fontSize: "9px",
+  },
+
+  badgeSecundaria: {
+    position: "absolute",
+    top: "9px",
+    left: "9px",
+    padding: "6px 9px",
+    borderRadius: "999px",
+    background:
+      "rgba(255,255,255,.92)",
+    color: "#555",
+    fontWeight: "900",
+    fontSize: "9px",
+  },
+
+  botonFoto: {
+    width: "100%",
+    border: 0,
+    background: "#111",
+    color: "white",
+    borderRadius: "11px",
+    padding: "12px",
+    marginTop: "10px",
+    fontWeight: "900",
+    cursor: "pointer",
+  },
+
+  quitarFoto: {
+    width: "100%",
+    border:
+      "1px solid #ffd2d2",
+    background: "#fff2f2",
+    color: "#b62c2c",
+    borderRadius: "11px",
+    padding: "11px",
+    marginTop: "8px",
+    fontWeight: "800",
+    cursor: "pointer",
+  },
+
+  avisoFotos: {
+    marginTop: "14px",
+    padding: "12px 14px",
+    background: "#fff5df",
+    color: "#6b5423",
+    borderRadius: "11px",
+    fontSize: "12px",
+    lineHeight: 1.5,
+  },
+
   activoFila: {
     display: "flex",
     alignItems: "center",
@@ -946,7 +1936,8 @@ const estilos = {
 
   modalBotones: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr",
+    gridTemplateColumns:
+      "1fr 1fr",
     gap: "10px",
     marginTop: "22px",
   },
