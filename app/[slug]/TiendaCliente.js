@@ -1171,16 +1171,15 @@ export default function TiendaCliente({
                 <p>{productoModal.descripcion}</p>
               )}
 
-              <button
-                className="agregar-modal"
-                onClick={() =>
-                  agregarAlCarrito(
-                    productoSeleccionado
-                  )
-                }
-              >
-                Agregar al carrito
-              </button>
+            <button
+  className="agregar-modal"
+  onClick={() => {
+    agregarAlCarrito(productoSeleccionado);
+    setProductoModal(null);
+  }}
+>
+  Agregar al carrito
+</button>
             </div>
 
             {/* RECOMENDACIONES */}
