@@ -1,70 +1,110 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import crypto from "crypto";
 
-function crearFirma(valor, secreto) {
-  return crypto
-    .createHmac("sha256", secreto)
-    .update(valor)
-    .digest("base64url");
+export const dynamic = "force-dynamic";
+
+// =========================================
+// CONFIGURACIÓN
+// =========================================
+
+const COOKIE_NAME = "ra_session";
+
+// =========================================
+// BASE64 URL
+// =========================================
+
+function base64UrlEncode(valor) {
+  return Buffer.from(valor)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
 }
 
-function verificarToken(token, secreto) {
+function base64UrlDecode(valor) {
+  let texto = String(valor || "")
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
+
+  while (texto.length % 4) {
+    texto += "=";
+  }
+
+  return Buffer.from(texto, "base64").toString(
+    "utf8"
+  );
+}
+
+// =========================================
+// VERIFICAR SESIÓN
+// =========================================
+
+function verificarSesion(cookieValue) {
   try {
-    if (!token || !secreto) return null;
+    if (!cookieValue) {
+      return null;
+    }
 
-    const partes = token.split(".");
+    const partes = cookieValue.split(".");
 
-    if (partes.length !== 2) return null;
+    if (partes.length !== 2) {
+      return null;
+    }
 
-    const [payload, firmaRecibida] = partes;
+    const [payloadCodificado, firmaRecibida] =
+      partes;
 
-    const firmaCorrecta = crearFirma(
-      payload,
-      secreto
+    const secret =
+      process.env.AUTH_SESSION_SECRET;
+
+    if (!secret) {
+      console.error(
+        "Falta AUTH_SESSION_SECRET"
+      );
+
+      return null;
+    }
+
+    const firmaEsperada = crypto
+      .createHmac("sha256", secret)
+      .update(payloadCodificado)
+      .digest("base64")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/g, "");
+
+    const bufferRecibido = Buffer.from(
+      firmaRecibida
     );
 
-    const bufferRecibido =
-      Buffer.from(firmaRecibida);
-
-    const bufferCorrecto =
-      Buffer.from(firmaCorrecta);
+    const bufferEsperado = Buffer.from(
+      firmaEsperada
+    );
 
     if (
       bufferRecibido.length !==
-      bufferCorrecto.length
+      bufferEsperado.length
     ) {
       return null;
     }
 
-    if (
-      !crypto.timingSafeEqual(
+    const firmaValida =
+      crypto.timingSafeEqual(
         bufferRecibido,
-        bufferCorrecto
-      )
-    ) {
+        bufferEsperado
+      );
+
+    if (!firmaValida) {
       return null;
     }
 
-    const datos = JSON.parse(
-      Buffer.from(
-        payload,
-        "base64url"
-      ).toString("utf8")
-    );
+    const payloadTexto =
+      base64UrlDecode(payloadCodificado);
 
-    const ahora = Math.floor(
-      Date.now() / 1000
-    );
+    const payload =
+      JSON.parse(payloadTexto);
 
-    if (
-      !datos.exp ||
-      datos.exp <= ahora
-    ) {
-      return null;
-    }
-
-    return datos;
+    return payload;
   } catch (error) {
     console.error(
       "Error verificando sesión:",
@@ -75,153 +115,466 @@ function verificarToken(token, secreto) {
   }
 }
 
-export async function GET() {
-  try {
-    const authSessionSecret =
-      process.env.AUTH_SESSION_SECRET;
+// =========================================
+// LEER COOKIE
+// =========================================
 
-    const supabaseUrl =
-      process.env.NEXT_PUBLIC_SUPABASE_URL;
+function obtenerCookie(request, nombre) {
+  const cookieHeader =
+    request.headers.get("cookie") || "";
 
-    const supabaseSecretKey =
-      process.env.SUPABASE_SECRET_KEY;
+  const cookies = cookieHeader
+    .split(";")
+    .map((cookie) => cookie.trim())
+    .filter(Boolean);
 
-    if (
-      !authSessionSecret ||
-      !supabaseUrl ||
-      !supabaseSecretKey
-    ) {
-      return NextResponse.json(
-        {
-          ok: false,
-          mensaje:
-            "El servicio no está configurado correctamente.",
-        },
-        { status: 500 }
-      );
+  for (const cookie of cookies) {
+    const indice = cookie.indexOf("=");
+
+    if (indice === -1) continue;
+
+    const clave = cookie.slice(0, indice);
+    const valor = cookie.slice(indice + 1);
+
+    if (clave === nombre) {
+      return decodeURIComponent(valor);
     }
+  }
 
-    const cookieStore =
-      await cookies();
+  return null;
+}
 
-    const token =
-      cookieStore.get("ra_session")?.value;
+// =========================================
+// PETICIÓN A SUPABASE
+// =========================================
+
+async function supabaseRequest(
+  ruta,
+  opciones = {}
+) {
+  const supabaseUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+  const secretKey =
+    process.env.SUPABASE_SECRET_KEY;
+
+  if (!supabaseUrl) {
+    throw new Error(
+      "Falta NEXT_PUBLIC_SUPABASE_URL"
+    );
+  }
+
+  if (!secretKey) {
+    throw new Error(
+      "Falta SUPABASE_SECRET_KEY"
+    );
+  }
+
+  const respuesta = await fetch(
+    `${supabaseUrl}/rest/v1/${ruta}`,
+    {
+      ...opciones,
+
+      headers: {
+        apikey: secretKey,
+        "Content-Type":
+          "application/json",
+
+        ...(opciones.headers || {}),
+      },
+
+      cache: "no-store",
+    }
+  );
+
+  const texto = await respuesta.text();
+
+  let data = null;
+
+  if (texto) {
+    try {
+      data = JSON.parse(texto);
+    } catch {
+      data = texto;
+    }
+  }
+
+  if (!respuesta.ok) {
+    console.error(
+      "Error Supabase:",
+      respuesta.status,
+      data
+    );
+
+    throw new Error(
+      typeof data === "object" &&
+        data?.message
+        ? data.message
+        : `Error Supabase ${respuesta.status}`
+    );
+  }
+
+  return data;
+}
+
+// =========================================
+// GET PRODUCTOS MAYORISTAS
+// =========================================
+
+export async function GET(request) {
+  try {
+    // =====================================
+    // 1. SESIÓN
+    // =====================================
+
+    const cookieValue =
+      obtenerCookie(
+        request,
+        COOKIE_NAME
+      );
 
     const sesion =
-      verificarToken(
-        token,
-        authSessionSecret
-      );
+      verificarSesion(cookieValue);
 
     if (!sesion) {
       return NextResponse.json(
         {
           ok: false,
           mensaje:
-            "Debes iniciar sesión.",
+            "No tienes una sesión válida.",
         },
-        { status: 401 }
+        {
+          status: 401,
+        }
       );
     }
 
-    const headers = {
-      apikey: supabaseSecretKey,
-      "Content-Type":
-        "application/json",
-    };
+    // =====================================
+    // 2. IDENTIFICAR CLIENTE
+    // =====================================
 
-    // Confirmar que siga autorizado
-    const clienteResponse =
-      await fetch(
-        `${supabaseUrl}/rest/v1/clientes_autorizados?id=eq.${encodeURIComponent(
-          sesion.cliente_id
-        )}&activo=eq.true&select=id,tienda_id`,
-        {
-          method: "GET",
-          headers,
-          cache: "no-store",
-        }
-      );
+    const clienteId =
+      sesion.id ||
+      sesion.cliente_id ||
+      sesion.cliente?.id;
 
-    if (!clienteResponse.ok) {
-      const texto =
-        await clienteResponse.text();
+    const telefono =
+      sesion.telefono ||
+      sesion.cliente?.telefono;
 
-      console.error(
-        "Error validando cliente:",
-        texto
-      );
+    let filtroCliente = "";
 
+    if (clienteId) {
+      filtroCliente =
+        `id=eq.${encodeURIComponent(
+          clienteId
+        )}`;
+    } else if (telefono) {
+      filtroCliente =
+        `telefono=eq.${encodeURIComponent(
+          telefono
+        )}`;
+    } else {
       return NextResponse.json(
         {
           ok: false,
           mensaje:
-            "No pudimos validar tu cuenta.",
+            "No pudimos identificar al cliente.",
         },
-        { status: 500 }
+        {
+          status: 401,
+        }
       );
     }
+
+    // =====================================
+    // 3. VERIFICAR CLIENTE
+    // =====================================
 
     const clientes =
-      await clienteResponse.json();
+      await supabaseRequest(
+        `clientes_autorizados` +
+          `?select=id,nombre,telefono,activo,tienda_id,rol` +
+          `&${filtroCliente}` +
+          `&limit=1`
+      );
 
     const cliente =
-      clientes?.[0];
+      Array.isArray(clientes)
+        ? clientes[0]
+        : null;
 
-    if (!cliente) {
+    if (
+      !cliente ||
+      cliente.activo !== true
+    ) {
       return NextResponse.json(
         {
           ok: false,
           mensaje:
-            "Tu cuenta ya no está autorizada.",
+            "Tu acceso no está autorizado.",
         },
-        { status: 403 }
+        {
+          status: 403,
+        }
       );
     }
 
-    // Traer los productos con costo privado
-    const productosResponse =
-      await fetch(
-        `${supabaseUrl}/rest/v1/productos?activo=eq.true&select=id,referencia,nombre,foto_url,foto_url_2,costo,precio_detal,activo,created_at&order=created_at.desc`,
+    if (!cliente.tienda_id) {
+      return NextResponse.json(
         {
-          method: "GET",
-          headers,
-          cache: "no-store",
+          ok: false,
+          mensaje:
+            "Primero debes crear tu tienda.",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
+
+    // =====================================
+    // 4. PRODUCTOS
+    // =====================================
+    //
+    // Esta API es PRIVADA.
+    // Aquí sí podemos entregar costo.
+    // =====================================
+
+    const productosData =
+      await supabaseRequest(
+        `productos` +
+          `?select=` +
+          [
+            "id",
+            "referencia",
+            "nombre",
+            "categoria",
+            "descripcion",
+            "foto_url",
+            "foto_url_2",
+            "costo",
+            "precio_detal",
+            "precio_minimo",
+            "activo",
+            "created_at",
+            "tiene_variantes",
+          ].join(",") +
+          `&activo=eq.true` +
+          `&order=created_at.desc`
+      );
+
+    const productosBase =
+      Array.isArray(productosData)
+        ? productosData
+        : [];
+
+    // =====================================
+    // 5. IDs DE PRODUCTOS CON VARIANTES
+    // =====================================
+
+    const idsConVariantes =
+      productosBase
+        .filter(
+          (producto) =>
+            producto.tiene_variantes ===
+            true
+        )
+        .map((producto) =>
+          Number(producto.id)
+        )
+        .filter((id) =>
+          Number.isFinite(id)
+        );
+
+    // =====================================
+    // 6. CARGAR VARIANTES
+    // =====================================
+
+    let variantesData = [];
+
+    if (idsConVariantes.length > 0) {
+      const ids =
+        idsConVariantes.join(",");
+
+      const variantes =
+        await supabaseRequest(
+          `producto_variantes` +
+            `?select=` +
+            [
+              "id",
+              "producto_id",
+              "nombre_variante",
+              "referencia",
+              "foto_url",
+              "foto_url_2",
+              "costo",
+              "precio_detal",
+              "precio_minimo",
+              "infoimagen",
+              "activo",
+              "orden",
+            ].join(",") +
+            `&producto_id=in.(${ids})` +
+            `&activo=eq.true` +
+            `&order=orden.asc`
+        );
+
+      variantesData =
+        Array.isArray(variantes)
+          ? variantes
+          : [];
+    }
+
+    // =====================================
+    // 7. UNIR PRODUCTOS + VARIANTES
+    // =====================================
+
+    const productos =
+      productosBase.map(
+        (producto) => {
+          const variantes =
+            variantesData
+              .filter(
+                (variante) =>
+                  String(
+                    variante.producto_id
+                  ) ===
+                  String(producto.id)
+              )
+              .sort(
+                (a, b) =>
+                  Number(a.orden || 0) -
+                  Number(b.orden || 0)
+              )
+              .map(
+                (variante) => ({
+                  id:
+                    variante.id,
+
+                  producto_id:
+                    variante.producto_id,
+
+                  nombre_variante:
+                    variante.nombre_variante,
+
+                  referencia:
+                    variante.referencia,
+
+                  foto_url:
+                    variante.foto_url,
+
+                  foto_url_2:
+                    variante.foto_url_2,
+
+                  costo:
+                    Number(
+                      variante.costo || 0
+                    ),
+
+                  precio_detal:
+                    Number(
+                      variante.precio_detal ||
+                        0
+                    ),
+
+                  precio_minimo:
+                    Number(
+                      variante.precio_minimo ||
+                        0
+                    ),
+
+                  infoimagen:
+                    variante.infoimagen ||
+                    "",
+
+                  activo:
+                    variante.activo,
+
+                  orden:
+                    variante.orden,
+                })
+              );
+
+          return {
+            id:
+              producto.id,
+
+            referencia:
+              producto.referencia,
+
+            nombre:
+              producto.nombre,
+
+            categoria:
+              producto.categoria || "",
+
+            descripcion:
+              producto.descripcion || "",
+
+            foto_url:
+              producto.foto_url || "",
+
+            foto_url_2:
+              producto.foto_url_2 || "",
+
+            costo:
+              Number(
+                producto.costo || 0
+              ),
+
+            precio_detal:
+              Number(
+                producto.precio_detal || 0
+              ),
+
+            precio_minimo:
+              Number(
+                producto.precio_minimo || 0
+              ),
+
+            activo:
+              producto.activo,
+
+            created_at:
+              producto.created_at,
+
+            tiene_variantes:
+              producto.tiene_variantes ===
+                true &&
+              variantes.length > 0,
+
+            variantes:
+              variantes,
+          };
         }
       );
 
-    if (!productosResponse.ok) {
-      const texto =
-        await productosResponse.text();
+    // =====================================
+    // 8. RESPUESTA
+    // =====================================
 
-      console.error(
-        "Error cargando productos:",
-        texto
-      );
+    return NextResponse.json(
+      {
+        ok: true,
 
-      return NextResponse.json(
-        {
-          ok: false,
-          mensaje:
-            "No pudimos cargar los productos.",
+        productos,
+
+        total:
+          productos.length,
+      },
+      {
+        status: 200,
+
+        headers: {
+          "Cache-Control":
+            "no-store, no-cache, must-revalidate",
         },
-        { status: 500 }
-      );
-    }
-
-    const productos =
-      await productosResponse.json();
-
-    return NextResponse.json({
-      ok: true,
-      productos:
-        Array.isArray(productos)
-          ? productos
-          : [],
-    });
+      }
+    );
   } catch (error) {
     console.error(
-      "Error en productos mayoristas:",
+      "ERROR PRODUCTOS MAYORISTAS:",
       error
     );
 
@@ -229,9 +582,12 @@ export async function GET() {
       {
         ok: false,
         mensaje:
-          "Ocurrió un error inesperado.",
+          error?.message ||
+          "No se pudieron cargar los productos.",
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
   }
 }
