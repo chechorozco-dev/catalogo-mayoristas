@@ -1,14 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function NuevoProductoPage() {
   const router = useRouter();
 
+  const inputFoto1Ref = useRef(null);
+  const inputFoto2Ref = useRef(null);
+
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState("");
+
+  const [foto1, setFoto1] = useState(null);
+  const [foto2, setFoto2] = useState(null);
+
+  const [previewFoto1, setPreviewFoto1] = useState("");
+  const [previewFoto2, setPreviewFoto2] = useState("");
 
   const [formulario, setFormulario] = useState({
     referencia: "",
@@ -83,6 +92,293 @@ export default function NuevoProductoPage() {
     return Number.isFinite(numero) ? numero : null;
   }
 
+  // =========================================================
+  // PREPARAR IMAGEN
+  // =========================================================
+
+  async function prepararImagen(archivo) {
+    if (!archivo) return null;
+
+    /*
+      Intentamos optimizar JPEG, PNG y WEBP.
+
+      Esto es especialmente útil cuando el iPhone entrega
+      fotografías de muchos megapíxeles.
+
+      No buscamos dejar la foto diminuta.
+      Para joyería conservamos hasta 1800 px en su lado mayor
+      y calidad WEBP de 0.9.
+    */
+
+    const tiposProcesables = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+    ];
+
+    if (!tiposProcesables.includes(archivo.type)) {
+      return archivo;
+    }
+
+    try {
+      const imagen = await cargarImagen(archivo);
+
+      const anchoOriginal = imagen.naturalWidth;
+      const altoOriginal = imagen.naturalHeight;
+
+      const maximo = 1800;
+
+      let ancho = anchoOriginal;
+      let alto = altoOriginal;
+
+      if (anchoOriginal > maximo || altoOriginal > maximo) {
+        if (anchoOriginal >= altoOriginal) {
+          ancho = maximo;
+          alto = Math.round(
+            altoOriginal * (maximo / anchoOriginal)
+          );
+        } else {
+          alto = maximo;
+          ancho = Math.round(
+            anchoOriginal * (maximo / altoOriginal)
+          );
+        }
+      }
+
+      const canvas = document.createElement("canvas");
+
+      canvas.width = ancho;
+      canvas.height = alto;
+
+      const contexto = canvas.getContext("2d");
+
+      if (!contexto) {
+        return archivo;
+      }
+
+      contexto.imageSmoothingEnabled = true;
+      contexto.imageSmoothingQuality = "high";
+
+      contexto.drawImage(
+        imagen,
+        0,
+        0,
+        ancho,
+        alto
+      );
+
+      const blob = await new Promise((resolve) => {
+        canvas.toBlob(
+          (resultado) => resolve(resultado),
+          "image/webp",
+          0.9
+        );
+      });
+
+      if (!blob) {
+        return archivo;
+      }
+
+      /*
+        Si por alguna razón la versión procesada queda
+        más pesada que el archivo original, conservamos
+        el original.
+      */
+
+      if (blob.size >= archivo.size) {
+        return archivo;
+      }
+
+      return new File(
+        [blob],
+        `producto-${Date.now()}.webp`,
+        {
+          type: "image/webp",
+        }
+      );
+    } catch (error) {
+      console.warn(
+        "No se pudo optimizar la imagen. Se usará el archivo original.",
+        error
+      );
+
+      return archivo;
+    }
+  }
+
+  function cargarImagen(archivo) {
+    return new Promise((resolve, reject) => {
+      const urlTemporal = URL.createObjectURL(archivo);
+      const imagen = new Image();
+
+      imagen.onload = () => {
+        URL.revokeObjectURL(urlTemporal);
+        resolve(imagen);
+      };
+
+      imagen.onerror = () => {
+        URL.revokeObjectURL(urlTemporal);
+        reject(
+          new Error("No pudimos procesar esta imagen.")
+        );
+      };
+
+      imagen.src = urlTemporal;
+    });
+  }
+
+  // =========================================================
+  // SELECCIONAR FOTO
+  // =========================================================
+
+  async function seleccionarFotoPrincipal(e) {
+    const archivoOriginal = e.target.files?.[0];
+
+    if (!archivoOriginal) return;
+
+    setMensaje("");
+
+    if (!archivoOriginal.type.startsWith("image/")) {
+      setMensaje("Selecciona una fotografía válida.");
+      return;
+    }
+
+    try {
+      const archivoPreparado =
+        await prepararImagen(archivoOriginal);
+
+      setFoto1(archivoPreparado);
+
+      if (previewFoto1) {
+        URL.revokeObjectURL(previewFoto1);
+      }
+
+      setPreviewFoto1(
+        URL.createObjectURL(archivoPreparado)
+      );
+    } catch (error) {
+      console.error(error);
+      setMensaje(
+        "No pudimos preparar la fotografía principal."
+      );
+    }
+  }
+
+  async function seleccionarSegundaFoto(e) {
+    const archivoOriginal = e.target.files?.[0];
+
+    if (!archivoOriginal) return;
+
+    setMensaje("");
+
+    if (!archivoOriginal.type.startsWith("image/")) {
+      setMensaje("Selecciona una fotografía válida.");
+      return;
+    }
+
+    try {
+      const archivoPreparado =
+        await prepararImagen(archivoOriginal);
+
+      setFoto2(archivoPreparado);
+
+      if (previewFoto2) {
+        URL.revokeObjectURL(previewFoto2);
+      }
+
+      setPreviewFoto2(
+        URL.createObjectURL(archivoPreparado)
+      );
+    } catch (error) {
+      console.error(error);
+      setMensaje(
+        "No pudimos preparar la segunda fotografía."
+      );
+    }
+  }
+
+  function eliminarFotoPrincipal() {
+    if (previewFoto1) {
+      URL.revokeObjectURL(previewFoto1);
+    }
+
+    setFoto1(null);
+    setPreviewFoto1("");
+
+    setFormulario((actual) => ({
+      ...actual,
+      foto_url: "",
+    }));
+
+    if (inputFoto1Ref.current) {
+      inputFoto1Ref.current.value = "";
+    }
+  }
+
+  function eliminarSegundaFoto() {
+    if (previewFoto2) {
+      URL.revokeObjectURL(previewFoto2);
+    }
+
+    setFoto2(null);
+    setPreviewFoto2("");
+
+    setFormulario((actual) => ({
+      ...actual,
+      foto_url_2: "",
+    }));
+
+    if (inputFoto2Ref.current) {
+      inputFoto2Ref.current.value = "";
+    }
+  }
+
+  // =========================================================
+  // SUBIR FOTO A SUPABASE
+  // =========================================================
+
+  async function subirFoto(archivo) {
+    if (!archivo) return "";
+
+    const formData = new FormData();
+
+    formData.append("foto", archivo);
+
+    const response = await fetch(
+      "/api/admin-maestro/productos/subir-foto",
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    let data = {};
+
+    try {
+      data = await response.json();
+    } catch (error) {
+      console.error(
+        "La respuesta al subir la foto no era JSON:",
+        error
+      );
+    }
+
+    if (!response.ok || !data.ok || !data.url) {
+      throw new Error(
+        data.mensaje ||
+          data.detalle ||
+          "No pudimos subir la fotografía."
+      );
+    }
+
+    return data.url;
+  }
+
+  // =========================================================
+  // GUARDAR PRODUCTO
+  // =========================================================
+
   async function guardarProducto(e) {
     e.preventDefault();
 
@@ -99,7 +395,9 @@ export default function NuevoProductoPage() {
     }
 
     if (!nombre) {
-      setMensaje("El nombre del producto es obligatorio.");
+      setMensaje(
+        "El nombre del producto es obligatorio."
+      );
       return;
     }
 
@@ -117,26 +415,61 @@ export default function NuevoProductoPage() {
     setGuardando(true);
 
     try {
+      let fotoUrl = formulario.foto_url;
+      let fotoUrl2 = formulario.foto_url_2;
+
+      // FOTO PRINCIPAL
+
+      if (foto1) {
+        setMensaje(
+          "📸 Subiendo fotografía principal..."
+        );
+
+        fotoUrl = await subirFoto(foto1);
+      }
+
+      // SEGUNDA FOTO
+
+      if (foto2) {
+        setMensaje(
+          "📸 Subiendo segunda fotografía..."
+        );
+
+        fotoUrl2 = await subirFoto(foto2);
+      }
+
+      setMensaje("💾 Guardando producto...");
+
       const response = await fetch(
         "/api/admin-maestro/productos",
         {
           method: "POST",
+
           headers: {
             "Content-Type": "application/json",
           },
+
           body: JSON.stringify({
             referencia,
             nombre,
             categoria: formulario.categoria.trim(),
-            descripcion: formulario.descripcion.trim(),
-            foto_url: formulario.foto_url.trim(),
-            foto_url_2: formulario.foto_url_2.trim(),
+            descripcion:
+              formulario.descripcion.trim(),
+
+            foto_url: fotoUrl || "",
+            foto_url_2: fotoUrl2 || "",
+
             costo: limpiarNumero(formulario.costo),
+
             precio_detal: precioDetal,
+
             precio_minimo: limpiarNumero(
               formulario.precio_minimo
             ),
-            infoimagen: formulario.infoimagen.trim(),
+
+            infoimagen:
+              formulario.infoimagen.trim(),
+
             activo: formulario.activo,
           }),
         }
@@ -149,10 +482,35 @@ export default function NuevoProductoPage() {
           data.mensaje ||
             "No pudimos guardar el producto."
         );
+
         return;
       }
 
-      setMensaje("✅ Producto creado correctamente.");
+      setMensaje(
+        "✅ Producto creado correctamente."
+      );
+
+      if (previewFoto1) {
+        URL.revokeObjectURL(previewFoto1);
+      }
+
+      if (previewFoto2) {
+        URL.revokeObjectURL(previewFoto2);
+      }
+
+      setFoto1(null);
+      setFoto2(null);
+
+      setPreviewFoto1("");
+      setPreviewFoto2("");
+
+      if (inputFoto1Ref.current) {
+        inputFoto1Ref.current.value = "";
+      }
+
+      if (inputFoto2Ref.current) {
+        inputFoto2Ref.current.value = "";
+      }
 
       setFormulario({
         referencia: "",
@@ -173,15 +531,23 @@ export default function NuevoProductoPage() {
         behavior: "smooth",
       });
     } catch (error) {
-      console.error("Error guardando producto:", error);
+      console.error(
+        "Error guardando producto:",
+        error
+      );
 
       setMensaje(
-        "No pudimos guardar el producto. Intenta nuevamente."
+        error.message ||
+          "No pudimos guardar el producto. Intenta nuevamente."
       );
     } finally {
       setGuardando(false);
     }
   }
+
+  // =========================================================
+  // CARGANDO
+  // =========================================================
 
   if (cargando) {
     return (
@@ -191,12 +557,18 @@ export default function NuevoProductoPage() {
     );
   }
 
+  // =========================================================
+  // PANTALLA
+  // =========================================================
+
   return (
     <main style={estilos.pagina}>
       <div style={estilos.contenedor}>
         <button
           type="button"
-          onClick={() => router.push("/admin-maestro")}
+          onClick={() =>
+            router.push("/admin-maestro")
+          }
           style={estilos.volver}
         >
           ← Volver al Panel Maestro
@@ -212,7 +584,8 @@ export default function NuevoProductoPage() {
           </h1>
 
           <p style={estilos.subtitulo}>
-            Crea un nuevo producto para el catálogo central.
+            Crea un nuevo producto para el catálogo
+            central.
           </p>
         </div>
 
@@ -220,11 +593,19 @@ export default function NuevoProductoPage() {
           <div
             style={{
               ...estilos.mensaje,
+
               background: mensaje.startsWith("✅")
                 ? "#eaf8ef"
+                : mensaje.startsWith("📸") ||
+                  mensaje.startsWith("💾")
+                ? "#eef6ff"
                 : "#ffeaea",
+
               color: mensaje.startsWith("✅")
                 ? "#267541"
+                : mensaje.startsWith("📸") ||
+                  mensaje.startsWith("💾")
+                ? "#245d91"
                 : "#a33",
             }}
           >
@@ -236,6 +617,8 @@ export default function NuevoProductoPage() {
           onSubmit={guardarProducto}
           style={estilos.formulario}
         >
+          {/* INFORMACIÓN PRINCIPAL */}
+
           <Seccion
             titulo="Información principal"
             icono="💎"
@@ -293,47 +676,181 @@ export default function NuevoProductoPage() {
             </Campo>
           </Seccion>
 
+          {/* FOTOGRAFÍAS */}
+
           <Seccion titulo="Fotografías" icono="📸">
             <p style={estilos.explicacion}>
-              Por ahora puedes colocar las URLs de las dos
-              fotografías. Después podremos agregar la opción
-              para subirlas directamente desde la galería.
+              Selecciona las fotografías directamente
+              desde tu galería. Las imágenes grandes se
+              optimizarán automáticamente manteniendo una
+              calidad alta para el catálogo.
             </p>
 
-            <Campo titulo="Foto principal">
+            {/* FOTO PRINCIPAL */}
+
+            <div style={estilos.bloqueFoto}>
+              <div style={estilos.tituloFoto}>
+                Foto principal
+              </div>
+
+              <div style={estilos.ayudaFoto}>
+                Esta será la primera imagen que verá el
+                cliente.
+              </div>
+
               <input
-                name="foto_url"
-                value={formulario.foto_url}
-                onChange={cambiarCampo}
-                placeholder="https://..."
-                style={estilos.input}
+                ref={inputFoto1Ref}
+                type="file"
+                accept="image/*"
+                onChange={seleccionarFotoPrincipal}
+                style={{ display: "none" }}
               />
-            </Campo>
 
-            {formulario.foto_url && (
-              <VistaPrevia
-                url={formulario.foto_url}
-                texto="Foto principal"
-              />
-            )}
+              {!previewFoto1 ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    inputFoto1Ref.current?.click()
+                  }
+                  style={estilos.botonGaleria}
+                >
+                  <span style={estilos.iconoGaleria}>
+                    📷
+                  </span>
 
-            <Campo titulo="Segunda foto">
+                  <div>
+                    <strong>
+                      Seleccionar foto principal
+                    </strong>
+
+                    <div
+                      style={estilos.textoBotonGaleria}
+                    >
+                      Elegir desde la galería
+                    </div>
+                  </div>
+                </button>
+              ) : (
+                <div style={estilos.fotoSeleccionada}>
+                  <img
+                    src={previewFoto1}
+                    alt="Vista previa foto principal"
+                    style={estilos.previewGrande}
+                  />
+
+                  <div
+                    style={
+                      estilos.accionesFotografia
+                    }
+                  >
+                    <button
+                      type="button"
+                      onClick={() =>
+                        inputFoto1Ref.current?.click()
+                      }
+                      style={estilos.botonCambiar}
+                    >
+                      📷 Cambiar
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={eliminarFotoPrincipal}
+                      style={estilos.botonEliminar}
+                    >
+                      🗑️ Quitar
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* SEGUNDA FOTO */}
+
+            <div
+              style={{
+                ...estilos.bloqueFoto,
+                marginBottom: 0,
+              }}
+            >
+              <div style={estilos.tituloFoto}>
+                Segunda foto
+              </div>
+
+              <div style={estilos.ayudaFoto}>
+                Opcional. Puedes mostrar otro ángulo o
+                detalle del producto.
+              </div>
+
               <input
-                name="foto_url_2"
-                value={formulario.foto_url_2}
-                onChange={cambiarCampo}
-                placeholder="https://..."
-                style={estilos.input}
+                ref={inputFoto2Ref}
+                type="file"
+                accept="image/*"
+                onChange={seleccionarSegundaFoto}
+                style={{ display: "none" }}
               />
-            </Campo>
 
-            {formulario.foto_url_2 && (
-              <VistaPrevia
-                url={formulario.foto_url_2}
-                texto="Segunda foto"
-              />
-            )}
+              {!previewFoto2 ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    inputFoto2Ref.current?.click()
+                  }
+                  style={estilos.botonGaleria}
+                >
+                  <span style={estilos.iconoGaleria}>
+                    📷
+                  </span>
+
+                  <div>
+                    <strong>
+                      Seleccionar segunda foto
+                    </strong>
+
+                    <div
+                      style={estilos.textoBotonGaleria}
+                    >
+                      Elegir desde la galería
+                    </div>
+                  </div>
+                </button>
+              ) : (
+                <div style={estilos.fotoSeleccionada}>
+                  <img
+                    src={previewFoto2}
+                    alt="Vista previa segunda foto"
+                    style={estilos.previewGrande}
+                  />
+
+                  <div
+                    style={
+                      estilos.accionesFotografia
+                    }
+                  >
+                    <button
+                      type="button"
+                      onClick={() =>
+                        inputFoto2Ref.current?.click()
+                      }
+                      style={estilos.botonCambiar}
+                    >
+                      📷 Cambiar
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={eliminarSegundaFoto}
+                      style={estilos.botonEliminar}
+                    >
+                      🗑️ Quitar
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </Seccion>
+
+          {/* PRECIOS */}
 
           <Seccion titulo="Precios" icono="💰">
             <div style={estilos.gridPrecios}>
@@ -385,6 +902,8 @@ export default function NuevoProductoPage() {
             </Campo>
           </Seccion>
 
+          {/* INFORMACIÓN INTERNA */}
+
           <Seccion
             titulo="Información interna"
             icono="🔗"
@@ -429,6 +948,8 @@ export default function NuevoProductoPage() {
             </label>
           </Seccion>
 
+          {/* GUARDAR */}
+
           <div style={estilos.barraGuardar}>
             <button
               type="submit"
@@ -436,10 +957,13 @@ export default function NuevoProductoPage() {
               style={{
                 ...estilos.guardar,
                 opacity: guardando ? 0.65 : 1,
+                cursor: guardando
+                  ? "not-allowed"
+                  : "pointer",
               }}
             >
               {guardando
-                ? "Guardando..."
+                ? "Guardando producto..."
                 : "＋ Crear producto"}
             </button>
           </div>
@@ -448,6 +972,10 @@ export default function NuevoProductoPage() {
     </main>
   );
 }
+
+// =========================================================
+// COMPONENTES
+// =========================================================
 
 function Seccion({ titulo, icono, children }) {
   return (
@@ -465,10 +993,14 @@ function Seccion({ titulo, icono, children }) {
 function Campo({ titulo, ayuda, children }) {
   return (
     <div style={estilos.campo}>
-      <label style={estilos.label}>{titulo}</label>
+      <label style={estilos.label}>
+        {titulo}
+      </label>
 
       {ayuda && (
-        <div style={estilos.ayuda}>{ayuda}</div>
+        <div style={estilos.ayuda}>
+          {ayuda}
+        </div>
       )}
 
       {children}
@@ -476,20 +1008,9 @@ function Campo({ titulo, ayuda, children }) {
   );
 }
 
-function VistaPrevia({ url, texto }) {
-  return (
-    <div style={estilos.previewContenedor}>
-      <img
-        src={url}
-        alt={texto}
-        style={estilos.preview}
-        onError={(e) => {
-          e.currentTarget.style.display = "none";
-        }}
-      />
-    </div>
-  );
-}
+// =========================================================
+// ESTILOS
+// =========================================================
 
 const estilos = {
   pagina: {
@@ -623,17 +1144,94 @@ const estilos = {
     gap: "12px",
   },
 
-  previewContenedor: {
-    marginTop: "-7px",
-    marginBottom: "20px",
+  bloqueFoto: {
+    marginBottom: "28px",
   },
 
-  preview: {
-    width: "150px",
-    height: "150px",
-    objectFit: "cover",
-    borderRadius: "15px",
+  tituloFoto: {
+    fontSize: "16px",
+    fontWeight: "800",
+    color: "#222",
+    marginBottom: "5px",
+  },
+
+  ayudaFoto: {
+    fontSize: "13px",
+    color: "#888",
+    lineHeight: "1.45",
+    marginBottom: "11px",
+  },
+
+  botonGaleria: {
+    width: "100%",
+    minHeight: "100px",
+    border: "2px dashed #d7d7d7",
+    borderRadius: "16px",
+    background: "#fafafa",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "13px",
+    padding: "18px",
+    color: "#222",
+    fontSize: "15px",
+    cursor: "pointer",
+    textAlign: "left",
+  },
+
+  iconoGaleria: {
+    fontSize: "32px",
+  },
+
+  textoBotonGaleria: {
+    marginTop: "4px",
+    fontSize: "12px",
+    color: "#888",
+    fontWeight: "400",
+  },
+
+  fotoSeleccionada: {
+    width: "100%",
+  },
+
+  previewGrande: {
+    display: "block",
+    width: "100%",
+    maxHeight: "460px",
+    aspectRatio: "1 / 1",
+    objectFit: "contain",
+    background: "#f7f7f7",
     border: "1px solid #eee",
+    borderRadius: "16px",
+  },
+
+  accionesFotografia: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "10px",
+    marginTop: "10px",
+  },
+
+  botonCambiar: {
+    border: "1px solid #ddd",
+    borderRadius: "11px",
+    padding: "12px",
+    background: "white",
+    color: "#222",
+    fontWeight: "700",
+    fontSize: "14px",
+    cursor: "pointer",
+  },
+
+  botonEliminar: {
+    border: "1px solid #f1cccc",
+    borderRadius: "11px",
+    padding: "12px",
+    background: "#fff5f5",
+    color: "#a33",
+    fontWeight: "700",
+    fontSize: "14px",
+    cursor: "pointer",
   },
 
   switchFila: {
@@ -662,6 +1260,5 @@ const estilos = {
     color: "white",
     fontSize: "17px",
     fontWeight: "800",
-    cursor: "pointer",
   },
 };
