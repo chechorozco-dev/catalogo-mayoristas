@@ -84,76 +84,168 @@ function numeroONull(valor) {
 }
 
 /* =========================================================
-   POST
-   CREAR PRODUCTO CON VARIANTES
+   OBTENER CONFIGURACIÓN
 ========================================================= */
 
-export async function POST(request) {
-  try {
-    const supabaseUrl =
-      process.env.NEXT_PUBLIC_SUPABASE_URL;
+function obtenerConfiguracion() {
+  const supabaseUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL;
 
-    const supabaseSecretKey =
-      process.env.SUPABASE_SECRET_KEY;
+  const supabaseSecretKey =
+    process.env.SUPABASE_SECRET_KEY;
 
-    const authSessionSecret =
-      process.env.AUTH_SESSION_SECRET;
+  const authSessionSecret =
+    process.env.AUTH_SESSION_SECRET;
 
-    if (
-      !supabaseUrl ||
-      !supabaseSecretKey ||
-      !authSessionSecret
-    ) {
-      return NextResponse.json(
-        {
-          ok: false,
-          mensaje:
-            "Faltan variables de configuración del servidor.",
-        },
-        { status: 500 }
-      );
-    }
+  return {
+    supabaseUrl,
+    supabaseSecretKey,
+    authSessionSecret,
+  };
+}
 
-    const headersSupabase = {
-      apikey: supabaseSecretKey,
-      "Content-Type": "application/json",
+/* =========================================================
+   VERIFICAR ADMINISTRADOR MAESTRO
+========================================================= */
+
+async function verificarAdministradorMaestro() {
+  const {
+    supabaseUrl,
+    supabaseSecretKey,
+    authSessionSecret,
+  } = obtenerConfiguracion();
+
+  if (
+    !supabaseUrl ||
+    !supabaseSecretKey ||
+    !authSessionSecret
+  ) {
+    return {
+      ok: false,
+      status: 500,
+      mensaje:
+        "Faltan variables de configuración del servidor.",
     };
+  }
 
-    /* =====================================================
-       1. VERIFICAR COOKIE
-    ===================================================== */
+  const headersSupabase = {
+    apikey: supabaseSecretKey,
+    "Content-Type": "application/json",
+  };
 
-    const cookieStore = await cookies();
+  const cookieStore = await cookies();
 
-    const token =
-      cookieStore.get("ra_session")?.value;
+  const token =
+    cookieStore.get("ra_session")?.value;
 
-    const sesion = verificarToken(
-      token,
-      authSessionSecret
+  const sesion = verificarToken(
+    token,
+    authSessionSecret
+  );
+
+  if (!sesion?.cliente_id) {
+    return {
+      ok: false,
+      status: 401,
+      mensaje: "Sesión no válida.",
+    };
+  }
+
+  const clienteResponse = await fetch(
+    `${supabaseUrl}/rest/v1/clientes_autorizados` +
+      `?id=eq.${encodeURIComponent(
+        sesion.cliente_id
+      )}` +
+      `&activo=eq.true` +
+      `&select=id,nombre,telefono,rol`,
+    {
+      method: "GET",
+      headers: headersSupabase,
+      cache: "no-store",
+    }
+  );
+
+  if (!clienteResponse.ok) {
+    const detalle =
+      await clienteResponse.text();
+
+    console.error(
+      "Error comprobando administrador maestro:",
+      detalle
     );
 
-    if (!sesion?.cliente_id) {
+    return {
+      ok: false,
+      status: 500,
+      mensaje:
+        "No pudimos comprobar tus permisos.",
+    };
+  }
+
+  const clientes =
+    await clienteResponse.json();
+
+  const cliente = clientes?.[0];
+
+  if (!cliente || cliente.rol !== "MAESTRO") {
+    return {
+      ok: false,
+      status: 403,
+      mensaje:
+        "No tienes permiso para realizar esta acción.",
+    };
+  }
+
+  return {
+    ok: true,
+    cliente,
+    sesion,
+    supabaseUrl,
+    supabaseSecretKey,
+    headersSupabase,
+  };
+}
+
+/* =========================================================
+   GET
+   LISTAR PRODUCTOS CON VARIANTES
+========================================================= */
+
+export async function GET() {
+  try {
+    /* =====================================================
+       1. VERIFICAR ADMINISTRADOR
+    ===================================================== */
+
+    const acceso =
+      await verificarAdministradorMaestro();
+
+    if (!acceso.ok) {
       return NextResponse.json(
         {
           ok: false,
-          mensaje: "Sesión no válida.",
+          mensaje: acceso.mensaje,
         },
-        { status: 401 }
+        {
+          status: acceso.status,
+        }
       );
     }
 
+    const {
+      supabaseUrl,
+      headersSupabase,
+    } = acceso;
+
     /* =====================================================
-       2. COMPROBAR QUE SEA ADMINISTRADOR MAESTRO
+       2. BUSCAR PRODUCTOS CON VARIANTES
     ===================================================== */
 
-    const clienteResponse = await fetch(
-      `${supabaseUrl}/rest/v1/clientes_autorizados` +
-        `?id=eq.${encodeURIComponent(
-          sesion.cliente_id
-        )}` +
-        `&activo=eq.true` +
-        `&select=id,nombre,telefono,rol`,
+    const productosResponse = await fetch(
+      `${supabaseUrl}/rest/v1/productos` +
+        `?tiene_variantes=eq.true` +
+        `&select=id,referencia,nombre,categoria,descripcion,foto_url,foto_url_2,costo,precio_detal,precio_minimo,infoimagen,activo,origen,tiene_variantes,created_at` +
+        `&order=id.desc`,
       {
         method: "GET",
         headers: headersSupabase,
@@ -161,12 +253,13 @@ export async function POST(request) {
       }
     );
 
-    if (!clienteResponse.ok) {
+    if (!productosResponse.ok) {
       const detalle =
-        await clienteResponse.text();
+        await productosResponse.text();
 
       console.error(
-        "Error comprobando administrador maestro:",
+        "Error cargando productos con variantes:",
+        productosResponse.status,
         detalle
       );
 
@@ -174,30 +267,154 @@ export async function POST(request) {
         {
           ok: false,
           mensaje:
-            "No pudimos comprobar tus permisos.",
+            "No pudimos cargar los productos con variantes.",
+          detalle,
         },
-        { status: 500 }
+        {
+          status: 500,
+        }
       );
     }
 
-    const clientes =
-      await clienteResponse.json();
+    const productos =
+      await productosResponse.json();
 
-    const cliente = clientes?.[0];
+    /* =====================================================
+       3. SI NO HAY PRODUCTOS
+    ===================================================== */
 
-    if (!cliente || cliente.rol !== "MAESTRO") {
-      return NextResponse.json(
-        {
-          ok: false,
-          mensaje:
-            "No tienes permiso para crear productos con variantes.",
-        },
-        { status: 403 }
-      );
+    if (
+      !Array.isArray(productos) ||
+      productos.length === 0
+    ) {
+      return NextResponse.json({
+        ok: true,
+        productos: [],
+        cantidad: 0,
+      });
     }
 
     /* =====================================================
-       3. LEER INFORMACIÓN ENVIADA
+       4. BUSCAR VARIANTES DE CADA PRODUCTO
+    ===================================================== */
+
+    const productosConVariantes =
+      await Promise.all(
+        productos.map(async (producto) => {
+          try {
+            const variantesResponse = await fetch(
+              `${supabaseUrl}/rest/v1/producto_variantes` +
+                `?producto_id=eq.${encodeURIComponent(
+                  producto.id
+                )}` +
+                `&select=id,producto_id,nombre_variante,referencia,foto_url,foto_url_2,costo,precio_detal,precio_minimo,infoimagen,activo,orden,creado_en` +
+                `&order=orden.asc`,
+              {
+                method: "GET",
+                headers: headersSupabase,
+                cache: "no-store",
+              }
+            );
+
+            if (!variantesResponse.ok) {
+              const detalle =
+                await variantesResponse.text();
+
+              console.error(
+                `Error cargando variantes del producto ${producto.id}:`,
+                detalle
+              );
+
+              return {
+                ...producto,
+                variantes: [],
+              };
+            }
+
+            const variantes =
+              await variantesResponse.json();
+
+            return {
+              ...producto,
+              variantes: Array.isArray(variantes)
+                ? variantes
+                : [],
+            };
+          } catch (error) {
+            console.error(
+              `Error cargando variantes del producto ${producto.id}:`,
+              error
+            );
+
+            return {
+              ...producto,
+              variantes: [],
+            };
+          }
+        })
+      );
+
+    /* =====================================================
+       5. RESPUESTA
+    ===================================================== */
+
+    return NextResponse.json({
+      ok: true,
+      productos: productosConVariantes,
+      cantidad: productosConVariantes.length,
+    });
+  } catch (error) {
+    console.error(
+      "Error general cargando productos con variantes:",
+      error
+    );
+
+    return NextResponse.json(
+      {
+        ok: false,
+        mensaje:
+          "Ocurrió un error cargando los productos con variantes.",
+      },
+      {
+        status: 500,
+      }
+    );
+  }
+}
+
+/* =========================================================
+   POST
+   CREAR PRODUCTO CON VARIANTES
+========================================================= */
+
+export async function POST(request) {
+  try {
+    /* =====================================================
+       1. VERIFICAR ADMINISTRADOR
+    ===================================================== */
+
+    const acceso =
+      await verificarAdministradorMaestro();
+
+    if (!acceso.ok) {
+      return NextResponse.json(
+        {
+          ok: false,
+          mensaje: acceso.mensaje,
+        },
+        {
+          status: acceso.status,
+        }
+      );
+    }
+
+    const {
+      supabaseUrl,
+      headersSupabase,
+    } = acceso;
+
+    /* =====================================================
+       2. LEER INFORMACIÓN ENVIADA
     ===================================================== */
 
     const body = await request.json();
@@ -220,7 +437,7 @@ export async function POST(request) {
         : [];
 
     /* =====================================================
-       4. VALIDAR PRODUCTO
+       3. VALIDAR PRODUCTO
     ===================================================== */
 
     if (!nombre) {
@@ -230,7 +447,9 @@ export async function POST(request) {
           mensaje:
             "El nombre del producto es obligatorio.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
@@ -241,12 +460,14 @@ export async function POST(request) {
           mensaje:
             "Debes agregar por lo menos una variante.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
     /* =====================================================
-       5. VALIDAR VARIANTES
+       4. VALIDAR VARIANTES
     ===================================================== */
 
     const referenciasRecibidas = new Set();
@@ -275,7 +496,9 @@ export async function POST(request) {
             mensaje:
               `La variante ${i + 1} no tiene nombre.`,
           },
-          { status: 400 }
+          {
+            status: 400,
+          }
         );
       }
 
@@ -286,7 +509,9 @@ export async function POST(request) {
             mensaje:
               `La variante ${i + 1} no tiene referencia.`,
           },
-          { status: 400 }
+          {
+            status: 400,
+          }
         );
       }
 
@@ -304,7 +529,9 @@ export async function POST(request) {
             mensaje:
               `La referencia ${referencia} está repetida entre las variantes.`,
           },
-          { status: 400 }
+          {
+            status: 400,
+          }
         );
       }
 
@@ -327,7 +554,9 @@ export async function POST(request) {
             mensaje:
               `El precio sugerido de la variante ${i + 1} no es válido.`,
           },
-          { status: 400 }
+          {
+            status: 400,
+          }
         );
       }
 
@@ -338,13 +567,15 @@ export async function POST(request) {
             mensaje:
               `La variante ${i + 1} necesita una foto principal.`,
           },
-          { status: 400 }
+          {
+            status: 400,
+          }
         );
       }
     }
 
     /* =====================================================
-       6. COMPROBAR REFERENCIAS CONTRA PRODUCTOS NORMALES
+       5. COMPROBAR REFERENCIAS CONTRA PRODUCTOS NORMALES
     ===================================================== */
 
     for (const variante of variantes) {
@@ -383,7 +614,9 @@ export async function POST(request) {
             mensaje:
               "No pudimos comprobar las referencias.",
           },
-          { status: 500 }
+          {
+            status: 500,
+          }
         );
       }
 
@@ -400,13 +633,15 @@ export async function POST(request) {
             mensaje:
               `Ya existe un producto con la referencia ${referencia}.`,
           },
-          { status: 409 }
+          {
+            status: 409,
+          }
         );
       }
     }
 
     /* =====================================================
-       7. COMPROBAR REFERENCIAS CONTRA OTRAS VARIANTES
+       6. COMPROBAR REFERENCIAS CONTRA OTRAS VARIANTES
     ===================================================== */
 
     for (const variante of variantes) {
@@ -445,7 +680,9 @@ export async function POST(request) {
             mensaje:
               "No pudimos comprobar las referencias de las variantes.",
           },
-          { status: 500 }
+          {
+            status: 500,
+          }
         );
       }
 
@@ -462,23 +699,16 @@ export async function POST(request) {
             mensaje:
               `Ya existe una variante con la referencia ${referencia}.`,
           },
-          { status: 409 }
+          {
+            status: 409,
+          }
         );
       }
     }
 
     /* =====================================================
-       8. CREAR PRODUCTO PADRE
+       7. CREAR PRODUCTO PADRE
     ===================================================== */
-
-    /*
-      IMPORTANTE:
-
-      productos.id es BIGINT.
-      producto_variantes.producto_id también es BIGINT.
-
-      Por eso ahora sí son compatibles.
-    */
 
     const primeraVariante =
       variantes[0];
@@ -569,7 +799,9 @@ export async function POST(request) {
             "No pudimos crear el producto principal.",
           detalle,
         },
-        { status: 500 }
+        {
+          status: 500,
+        }
       );
     }
 
@@ -586,12 +818,14 @@ export async function POST(request) {
           mensaje:
             "Supabase creó el producto pero no devolvió su ID.",
         },
-        { status: 500 }
+        {
+          status: 500,
+        }
       );
     }
 
     /* =====================================================
-       9. PREPARAR VARIANTES
+       8. PREPARAR VARIANTES
     ===================================================== */
 
     const variantesParaGuardar =
@@ -653,7 +887,7 @@ export async function POST(request) {
       );
 
     /* =====================================================
-       10. GUARDAR TODAS LAS VARIANTES
+       9. GUARDAR TODAS LAS VARIANTES
     ===================================================== */
 
     const crearVariantesResponse =
@@ -715,7 +949,9 @@ export async function POST(request) {
             "El producto se creó, pero ocurrió un error guardando sus variantes.",
           detalle,
         },
-        { status: 500 }
+        {
+          status: 500,
+        }
       );
     }
 
@@ -723,7 +959,7 @@ export async function POST(request) {
       await crearVariantesResponse.json();
 
     /* =====================================================
-       11. RESPUESTA CORRECTA
+       10. RESPUESTA CORRECTA
     ===================================================== */
 
     return NextResponse.json({
@@ -753,7 +989,221 @@ export async function POST(request) {
         mensaje:
           "Ocurrió un error creando el producto con variantes.",
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
+    );
+  }
+}
+
+/* =========================================================
+   DELETE
+   ELIMINAR PRODUCTO Y SUS VARIANTES
+========================================================= */
+
+export async function DELETE(request) {
+  try {
+    /* =====================================================
+       1. VERIFICAR ADMINISTRADOR
+    ===================================================== */
+
+    const acceso =
+      await verificarAdministradorMaestro();
+
+    if (!acceso.ok) {
+      return NextResponse.json(
+        {
+          ok: false,
+          mensaje: acceso.mensaje,
+        },
+        {
+          status: acceso.status,
+        }
+      );
+    }
+
+    const {
+      supabaseUrl,
+      headersSupabase,
+    } = acceso;
+
+    /* =====================================================
+       2. OBTENER ID
+    ===================================================== */
+
+    const { searchParams } =
+      new URL(request.url);
+
+    const id =
+      searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json(
+        {
+          ok: false,
+          mensaje:
+            "No recibimos el ID del producto.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    /* =====================================================
+       3. COMPROBAR QUE SEA PRODUCTO CON VARIANTES
+    ===================================================== */
+
+    const comprobarResponse = await fetch(
+      `${supabaseUrl}/rest/v1/productos` +
+        `?id=eq.${encodeURIComponent(id)}` +
+        `&tiene_variantes=eq.true` +
+        `&select=id,nombre,tiene_variantes` +
+        `&limit=1`,
+      {
+        method: "GET",
+        headers: headersSupabase,
+        cache: "no-store",
+      }
+    );
+
+    if (!comprobarResponse.ok) {
+      const detalle =
+        await comprobarResponse.text();
+
+      console.error(
+        "Error comprobando producto:",
+        detalle
+      );
+
+      return NextResponse.json(
+        {
+          ok: false,
+          mensaje:
+            "No pudimos comprobar el producto.",
+        },
+        {
+          status: 500,
+        }
+      );
+    }
+
+    const encontrados =
+      await comprobarResponse.json();
+
+    const producto =
+      encontrados?.[0];
+
+    if (!producto) {
+      return NextResponse.json(
+        {
+          ok: false,
+          mensaje:
+            "El producto con variantes no existe.",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
+    /* =====================================================
+       4. ELIMINAR VARIANTES
+    ===================================================== */
+
+    const eliminarVariantesResponse =
+      await fetch(
+        `${supabaseUrl}/rest/v1/producto_variantes` +
+          `?producto_id=eq.${encodeURIComponent(id)}`,
+        {
+          method: "DELETE",
+          headers: headersSupabase,
+        }
+      );
+
+    if (!eliminarVariantesResponse.ok) {
+      const detalle =
+        await eliminarVariantesResponse.text();
+
+      console.error(
+        "Error eliminando variantes:",
+        detalle
+      );
+
+      return NextResponse.json(
+        {
+          ok: false,
+          mensaje:
+            "No pudimos eliminar las variantes del producto.",
+          detalle,
+        },
+        {
+          status: 500,
+        }
+      );
+    }
+
+    /* =====================================================
+       5. ELIMINAR PRODUCTO PADRE
+    ===================================================== */
+
+    const eliminarProductoResponse =
+      await fetch(
+        `${supabaseUrl}/rest/v1/productos` +
+          `?id=eq.${encodeURIComponent(id)}`,
+        {
+          method: "DELETE",
+          headers: headersSupabase,
+        }
+      );
+
+    if (!eliminarProductoResponse.ok) {
+      const detalle =
+        await eliminarProductoResponse.text();
+
+      console.error(
+        "Error eliminando producto padre:",
+        detalle
+      );
+
+      return NextResponse.json(
+        {
+          ok: false,
+          mensaje:
+            "Las variantes fueron eliminadas, pero no pudimos eliminar el producto principal.",
+          detalle,
+        },
+        {
+          status: 500,
+        }
+      );
+    }
+
+    /* =====================================================
+       6. RESPUESTA
+    ===================================================== */
+
+    return NextResponse.json({
+      ok: true,
+      mensaje:
+        "Producto con variantes eliminado correctamente.",
+      id,
+    });
+  } catch (error) {
+    console.error(
+      "Error general eliminando producto con variantes:",
+      error
+    );
+
+    return NextResponse.json(
+      {
+        ok: false,
+        mensaje:
+          "Ocurrió un error eliminando el producto con variantes.",
+      },
+      {
+        status: 500,
+      }
     );
   }
 }
