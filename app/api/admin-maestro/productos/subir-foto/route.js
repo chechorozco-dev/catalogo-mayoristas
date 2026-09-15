@@ -38,9 +38,11 @@ function verificarFirma(token, secreto) {
 
     const payload = JSON.parse(base64UrlDecode(payloadBase64));
 
-    if (payload.exp && Date.now() > payload.exp) {
-      return null;
-    }
+   const ahora = Math.floor(Date.now() / 1000);
+
+if (payload.exp && ahora >= payload.exp) {
+  return null;
+}
 
     return payload;
   } catch (error) {
