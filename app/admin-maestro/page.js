@@ -29,7 +29,7 @@ export default function AdminMaestroPage() {
 
       if (!response.ok || !data.autenticado) {
         router.replace("/login");
-        return; 
+        return;
       }
 
       if (data.cliente?.rol !== "MAESTRO") {
@@ -67,6 +67,10 @@ export default function AdminMaestroPage() {
     router.refresh();
   }
 
+  // =====================================================
+  // NAVEGACIÓN PRODUCTOS NORMALES
+  // =====================================================
+
   function irProductos() {
     router.push("/admin-maestro/productos");
   }
@@ -75,9 +79,29 @@ export default function AdminMaestroPage() {
     router.push("/admin-maestro/productos/nuevo");
   }
 
+  // =====================================================
+  // NAVEGACIÓN PRODUCTOS CON VARIANTES
+  // =====================================================
+
+  function irVariantes() {
+    router.push("/admin-maestro/variantes");
+  }
+
+  function irNuevaVariante() {
+    router.push("/admin-maestro/variantes/nuevo");
+  }
+
+  // =====================================================
+  // ADMINISTRADOR COMO CLIENTE
+  // =====================================================
+
   function irAdminCliente() {
     router.push("/admin");
   }
+
+  // =====================================================
+  // CARGANDO
+  // =====================================================
 
   if (cargando) {
     return (
@@ -104,6 +128,10 @@ export default function AdminMaestroPage() {
     );
   }
 
+  // =====================================================
+  // PÁGINA
+  // =====================================================
+
   return (
     <main
       style={{
@@ -118,7 +146,9 @@ export default function AdminMaestroPage() {
           margin: "0 auto",
         }}
       >
-        {/* ENCABEZADO */}
+        {/* =================================================
+            ENCABEZADO
+        ================================================= */}
 
         <div
           style={{
@@ -196,6 +226,10 @@ export default function AdminMaestroPage() {
           </div>
         </div>
 
+        {/* =================================================
+            MENSAJE DE ERROR
+        ================================================= */}
+
         {mensaje && (
           <div
             style={{
@@ -210,7 +244,9 @@ export default function AdminMaestroPage() {
           </div>
         )}
 
-        {/* PRODUCTOS */}
+        {/* =================================================
+            PRODUCTOS NORMALES
+        ================================================= */}
 
         <section
           style={{
@@ -284,7 +320,9 @@ export default function AdminMaestroPage() {
           </div>
         </section>
 
-        {/* VARIANTES */}
+        {/* =================================================
+            PRODUCTOS CON VARIANTES
+        ================================================= */}
 
         <section
           style={{
@@ -323,7 +361,7 @@ export default function AdminMaestroPage() {
           <p
             style={{
               marginTop: "8px",
-              marginBottom: 0,
+              marginBottom: "22px",
               color: "#666",
               lineHeight: "1.6",
             }}
@@ -332,9 +370,36 @@ export default function AdminMaestroPage() {
             mismo producto tiene opciones A, B, C, D... y cada opción puede
             tener su propio código, foto, precio e información interna.
           </p>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: "12px",
+            }}
+          >
+            <button
+              type="button"
+              onClick={irVariantes}
+              style={botonSecundario}
+            >
+              🔤 Ver productos con variantes
+            </button>
+
+            <button
+              type="button"
+              onClick={irNuevaVariante}
+              style={botonPrincipal}
+            >
+              ＋ Agregar producto con variantes
+            </button>
+          </div>
         </section>
 
-        {/* INFOIMAGEN */}
+        {/* =================================================
+            INFORMACIÓN PARA PEDIDOS
+        ================================================= */}
 
         <section
           style={{
@@ -385,7 +450,9 @@ export default function AdminMaestroPage() {
           </p>
         </section>
 
-        {/* ADMIN NORMAL */}
+        {/* =================================================
+            MI CATÁLOGO COMO CLIENTE
+        ================================================= */}
 
         <section
           style={{
@@ -429,6 +496,10 @@ export default function AdminMaestroPage() {
     </main>
   );
 }
+
+// =====================================================
+// ESTILOS DE BOTONES
+// =====================================================
 
 const botonPrincipal = {
   width: "100%",
