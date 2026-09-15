@@ -24,7 +24,7 @@ function normalizar(texto) {
 }
 
 /* =========================================
-   GALERÍA DE CADA PRODUCTO
+   GALERÍA
 ========================================= */
 
 function GaleriaProducto({
@@ -36,8 +36,16 @@ function GaleriaProducto({
     producto.foto_url_2,
   ].filter(Boolean);
 
-  const [indice, setIndice] =
-    useState(0);
+  const [indice, setIndice] = useState(0);
+
+  useEffect(() => {
+    setIndice(0);
+  }, [
+    producto.id,
+    producto.variante_id,
+    producto.foto_url,
+    producto.foto_url_2,
+  ]);
 
   if (imagenes.length === 0) {
     return (
@@ -196,6 +204,70 @@ function VisorImagen({
   );
 }
 
+/* =========================================
+   TARJETA DE PRECIO
+========================================= */
+
+function BloquePrecios({
+  costo,
+  precio,
+}) {
+  const costoNumero =
+    Number(costo || 0);
+
+  const precioNumero =
+    Number(precio || 0);
+
+  const ganancia =
+    precioNumero - costoNumero;
+
+  return (
+    <>
+      <div className="price-block">
+        <p className="price-label">
+          Tu costo
+        </p>
+
+        <strong className="cost">
+          {formatoPrecio(costoNumero)}
+        </strong>
+      </div>
+
+      <div className="price-block">
+        <p className="price-label">
+          Precio sugerido
+        </p>
+
+        <strong className="retail">
+          {formatoPrecio(precioNumero)}
+        </strong>
+      </div>
+
+      <div>
+        <p className="price-label">
+          Ganancia
+        </p>
+
+        <strong
+          className="profit"
+          style={{
+            color:
+              ganancia >= 0
+                ? "#318553"
+                : "#c43b3b",
+          }}
+        >
+          {formatoPrecio(ganancia)}
+        </strong>
+      </div>
+    </>
+  );
+}
+
+/* =========================================
+   PÁGINA
+========================================= */
+
 export default function ProductosMayoristaPage() {
   const router = useRouter();
 
@@ -221,6 +293,11 @@ export default function ProductosMayoristaPage() {
 
   const [visor, setVisor] =
     useState(null);
+
+  const [
+    variantesAbiertas,
+    setVariantesAbiertas,
+  ] = useState({});
 
   const categorias = [
     "Accesorios en Rodio",
@@ -270,6 +347,7 @@ export default function ProductosMayoristaPage() {
         router.replace(
           "/crear-tienda"
         );
+
         return;
       }
 
@@ -395,12 +473,8 @@ export default function ProductosMayoristaPage() {
               );
 
             return (
-              texto.includes(
-                "arete"
-              ) ||
-              texto.includes(
-                "aretes"
-              )
+              texto.includes("arete") ||
+              texto.includes("aretes")
             );
           }
         );
@@ -436,12 +510,8 @@ export default function ProductosMayoristaPage() {
               );
 
             return (
-              texto.includes(
-                "collar"
-              ) ||
-              texto.includes(
-                "cadena"
-              )
+              texto.includes("collar") ||
+              texto.includes("cadena")
             );
           }
         );
@@ -495,9 +565,7 @@ export default function ProductosMayoristaPage() {
               );
 
             return (
-              texto.includes(
-                "topo"
-              ) ||
+              texto.includes("topo") ||
               texto.includes(
                 "maxitopo"
               )
@@ -514,9 +582,21 @@ export default function ProductosMayoristaPage() {
       if (textoBusqueda) {
         lista = lista.filter(
           (producto) => {
+            const variantesTexto =
+              Array.isArray(
+                producto.variantes
+              )
+                ? producto.variantes
+                    .map(
+                      (variante) =>
+                        `${variante.nombre_variante || ""} ${variante.referencia || ""}`
+                    )
+                    .join(" ")
+                : "";
+
             const texto =
               normalizar(
-                `${producto.referencia} ${producto.nombre} ${producto.categoria || ""}`
+                `${producto.referencia || ""} ${producto.nombre || ""} ${producto.categoria || ""} ${variantesTexto}`
               );
 
             return texto.includes(
@@ -541,6 +621,23 @@ export default function ProductosMayoristaPage() {
     );
 
     setMenuAbierto(false);
+  }
+
+  /* =========================================
+     VARIANTES
+  ========================================= */
+
+  function alternarVariantes(
+    productoId
+  ) {
+    setVariantesAbiertas(
+      (actual) => ({
+        ...actual,
+
+        [productoId]:
+          !actual[productoId],
+      })
+    );
   }
 
   /* =========================================
@@ -588,8 +685,7 @@ export default function ProductosMayoristaPage() {
 
         indice:
           actual.indice ===
-          actual.imagenes.length -
-            1
+          actual.imagenes.length - 1
             ? 0
             : actual.indice + 1,
       };
@@ -886,6 +982,151 @@ export default function ProductosMayoristaPage() {
           color: #318553;
         }
 
+        /* =====================================
+           PRODUCTOS CON VARIANTES
+        ===================================== */
+
+        .variants-summary {
+          margin-top: 16px;
+          padding-top: 14px;
+          border-top: 1px solid #eee;
+        }
+
+        .variants-button {
+          width: 100%;
+          border: none;
+          border-radius: 10px;
+          background: #222;
+          color: white;
+          padding: 12px 14px;
+          cursor: pointer;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 10px;
+          font-size: 14px;
+          font-weight: 700;
+        }
+
+        .variants-button-count {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 28px;
+          height: 28px;
+          padding: 0 8px;
+          border-radius: 999px;
+          background: white;
+          color: #222;
+          font-size: 12px;
+        }
+
+        .variants-container {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          margin-top: 12px;
+        }
+
+        .variant-card {
+          overflow: hidden;
+          border: 1px solid #e5e5e5;
+          border-radius: 12px;
+          background: #fff;
+        }
+
+        .variant-top {
+          display: grid;
+          grid-template-columns:
+            105px minmax(0, 1fr);
+        }
+
+        .variant-image {
+          width: 105px;
+          height: 105px;
+          background: #f5f5f5;
+          overflow: hidden;
+          cursor: zoom-in;
+        }
+
+        .variant-image img {
+          width: 100%;
+          height: 100%;
+          display: block;
+          object-fit: cover;
+        }
+
+        .variant-no-image {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          color: #aaa;
+          font-size: 12px;
+        }
+
+        .variant-main-info {
+          min-width: 0;
+          padding: 12px;
+        }
+
+        .variant-name {
+          margin: 0;
+          font-size: 14px;
+          line-height: 1.25;
+          text-transform: uppercase;
+        }
+
+        .variant-reference {
+          margin: 6px 0 0;
+          color: #888;
+          font-size: 12px;
+          font-weight: 700;
+        }
+
+        .variant-prices {
+          display: grid;
+          grid-template-columns:
+            repeat(
+              3,
+              minmax(0, 1fr)
+            );
+          border-top: 1px solid #eee;
+        }
+
+        .variant-price-box {
+          padding: 10px 8px;
+          min-width: 0;
+        }
+
+        .variant-price-box +
+        .variant-price-box {
+          border-left: 1px solid #eee;
+        }
+
+        .variant-price-label {
+          display: block;
+          margin-bottom: 4px;
+          color: #777;
+          font-size: 10px;
+          line-height: 1.2;
+        }
+
+        .variant-cost {
+          color: #d97883;
+          font-size: 13px;
+        }
+
+        .variant-retail {
+          color: #222;
+          font-size: 13px;
+        }
+
+        .variant-profit {
+          font-size: 13px;
+        }
+
         .empty {
           grid-column: 1 / -1;
           background: white;
@@ -1128,6 +1369,46 @@ export default function ProductosMayoristaPage() {
           .gallery-arrow {
             display: none;
           }
+
+          .variant-top {
+            grid-template-columns:
+              80px minmax(0, 1fr);
+          }
+
+          .variant-image {
+            width: 80px;
+            height: 80px;
+          }
+
+          .variant-main-info {
+            padding: 9px;
+          }
+
+          .variant-name {
+            font-size: 12px;
+          }
+
+          .variant-prices {
+            grid-template-columns: 1fr;
+          }
+
+          .variant-price-box +
+          .variant-price-box {
+            border-left: none;
+            border-top: 1px solid #eee;
+          }
+
+          .variant-price-box {
+            display: flex;
+            justify-content:
+              space-between;
+            align-items: center;
+            gap: 8px;
+          }
+
+          .variant-price-label {
+            margin-bottom: 0;
+          }
         }
       `}</style>
 
@@ -1195,6 +1476,7 @@ export default function ProductosMayoristaPage() {
 
       <main className="page">
         <div className="container">
+
           {/* ENCABEZADO */}
 
           <div className="top">
@@ -1223,7 +1505,7 @@ export default function ProductosMayoristaPage() {
             </div>
           </div>
 
-          {/* BUSCADOR + CATEGORÍAS */}
+          {/* BUSCADOR */}
 
           <div className="filter-area">
             <button
@@ -1239,7 +1521,7 @@ export default function ProductosMayoristaPage() {
             <input
               type="text"
               className="search"
-              placeholder="Buscar por referencia o nombre..."
+              placeholder="Buscar por referencia, producto o variante..."
               value={busqueda}
               onChange={(e) =>
                 setBusqueda(
@@ -1291,20 +1573,71 @@ export default function ProductosMayoristaPage() {
             ) : (
               productosFiltrados.map(
                 (producto) => {
-                  const costo =
-                    Number(
-                      producto.costo ||
-                        0
-                    );
+                  const variantes =
+                    Array.isArray(
+                      producto.variantes
+                    )
+                      ? producto.variantes
+                      : [];
 
-                  const precio =
-                    Number(
-                      producto.precio_detal ||
-                        0
-                    );
+                  const tieneVariantes =
+                    producto.tiene_variantes ===
+                      true &&
+                    variantes.length > 0;
 
-                  const ganancia =
-                    precio - costo;
+                  const primeraVariante =
+                    tieneVariantes
+                      ? variantes[0]
+                      : null;
+
+                  /*
+                    Si tiene variantes usamos
+                    la primera variante para
+                    representar el producto
+                    principal.
+                  */
+
+                  const productoVisual =
+                    primeraVariante
+                      ? {
+                          ...producto,
+
+                          foto_url:
+                            primeraVariante.foto_url ||
+                            producto.foto_url,
+
+                          foto_url_2:
+                            primeraVariante.foto_url_2 ||
+                            producto.foto_url_2,
+                        }
+                      : producto;
+
+                  const costoPrincipal =
+                    primeraVariante
+                      ? Number(
+                          primeraVariante.costo ||
+                            0
+                        )
+                      : Number(
+                          producto.costo ||
+                            0
+                        );
+
+                  const precioPrincipal =
+                    primeraVariante
+                      ? Number(
+                          primeraVariante.precio_detal ||
+                            0
+                        )
+                      : Number(
+                          producto.precio_detal ||
+                            0
+                        );
+
+                  const abiertas =
+                    variantesAbiertas[
+                      producto.id
+                    ] === true;
 
                   return (
                     <article
@@ -1315,7 +1648,7 @@ export default function ProductosMayoristaPage() {
                     >
                       <GaleriaProducto
                         producto={
-                          producto
+                          productoVisual
                         }
                         abrirImagen={
                           abrirImagen
@@ -1324,61 +1657,188 @@ export default function ProductosMayoristaPage() {
 
                       <div className="card-info">
                         <p className="reference">
-                          {
-                            producto.referencia
-                          }
+                          {producto.referencia}
                         </p>
 
                         <h2 className="name">
-                          {
-                            producto.nombre
-                          }
+                          {producto.nombre}
                         </h2>
 
-                        <div className="price-block">
-                          <p className="price-label">
-                            Tu costo
-                          </p>
+                        {!tieneVariantes && (
+                          <BloquePrecios
+                            costo={
+                              costoPrincipal
+                            }
+                            precio={
+                              precioPrincipal
+                            }
+                          />
+                        )}
 
-                          <strong className="cost">
-                            {formatoPrecio(
-                              costo
+                        {tieneVariantes && (
+                          <>
+                            <div className="variants-summary">
+                              <button
+                                type="button"
+                                className="variants-button"
+                                onClick={() =>
+                                  alternarVariantes(
+                                    producto.id
+                                  )
+                                }
+                              >
+                                <span>
+                                  {abiertas
+                                    ? "Ocultar variantes"
+                                    : "Ver variantes"}
+                                </span>
+
+                                <span className="variants-button-count">
+                                  {
+                                    variantes.length
+                                  }
+                                </span>
+                              </button>
+                            </div>
+
+                            {abiertas && (
+                              <div className="variants-container">
+                                {variantes.map(
+                                  (
+                                    variante
+                                  ) => {
+                                    const costo =
+                                      Number(
+                                        variante.costo ||
+                                          0
+                                      );
+
+                                    const precio =
+                                      Number(
+                                        variante.precio_detal ||
+                                          0
+                                      );
+
+                                    const ganancia =
+                                      precio -
+                                      costo;
+
+                                    const imagenesVariante =
+                                      [
+                                        variante.foto_url,
+                                        variante.foto_url_2,
+                                      ].filter(
+                                        Boolean
+                                      );
+
+                                    return (
+                                      <div
+                                        key={
+                                          variante.id
+                                        }
+                                        className="variant-card"
+                                      >
+                                        <div className="variant-top">
+                                          <div
+                                            className="variant-image"
+                                            onClick={() => {
+                                              if (
+                                                imagenesVariante.length >
+                                                0
+                                              ) {
+                                                abrirImagen(
+                                                  imagenesVariante,
+                                                  0,
+                                                  `${producto.nombre} - ${variante.nombre_variante}`
+                                                );
+                                              }
+                                            }}
+                                          >
+                                            {variante.foto_url ? (
+                                              <img
+                                                src={
+                                                  variante.foto_url
+                                                }
+                                                alt={
+                                                  variante.nombre_variante
+                                                }
+                                              />
+                                            ) : (
+                                              <div className="variant-no-image">
+                                                Sin imagen
+                                              </div>
+                                            )}
+                                          </div>
+
+                                          <div className="variant-main-info">
+                                            <h3 className="variant-name">
+                                              {
+                                                variante.nombre_variante
+                                              }
+                                            </h3>
+
+                                            <p className="variant-reference">
+                                              Ref.{" "}
+                                              {variante.referencia ||
+                                                "Sin referencia"}
+                                            </p>
+                                          </div>
+                                        </div>
+
+                                        <div className="variant-prices">
+                                          <div className="variant-price-box">
+                                            <span className="variant-price-label">
+                                              Tu costo
+                                            </span>
+
+                                            <strong className="variant-cost">
+                                              {formatoPrecio(
+                                                costo
+                                              )}
+                                            </strong>
+                                          </div>
+
+                                          <div className="variant-price-box">
+                                            <span className="variant-price-label">
+                                              Precio sugerido
+                                            </span>
+
+                                            <strong className="variant-retail">
+                                              {formatoPrecio(
+                                                precio
+                                              )}
+                                            </strong>
+                                          </div>
+
+                                          <div className="variant-price-box">
+                                            <span className="variant-price-label">
+                                              Ganancia
+                                            </span>
+
+                                            <strong
+                                              className="variant-profit"
+                                              style={{
+                                                color:
+                                                  ganancia >=
+                                                  0
+                                                    ? "#318553"
+                                                    : "#c43b3b",
+                                              }}
+                                            >
+                                              {formatoPrecio(
+                                                ganancia
+                                              )}
+                                            </strong>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+                                )}
+                              </div>
                             )}
-                          </strong>
-                        </div>
-
-                        <div className="price-block">
-                          <p className="price-label">
-                            Precio sugerido
-                          </p>
-
-                          <strong className="retail">
-                            {formatoPrecio(
-                              precio
-                            )}
-                          </strong>
-                        </div>
-
-                        <div>
-                          <p className="price-label">
-                            Ganancia
-                          </p>
-
-                          <strong
-                            className="profit"
-                            style={{
-                              color:
-                                ganancia >=
-                                0
-                                  ? "#318553"
-                                  : "#c43b3b",
-                            }}
-                          >
-                            {formatoPrecio(
-                              ganancia
-                            )}
-                          </strong>
-                        </div>
+                          </>
+                        )}
                       </div>
                     </article>
                   );
