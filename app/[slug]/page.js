@@ -266,7 +266,16 @@ export default async function TiendaPage({ params }) {
   // =========================================
   // CATÁLOGO
   // =========================================
-
+console.log(
+  "PRODUCTO RA8000 EN CATALOGO:",
+  JSON.stringify(
+    productos.find(
+      (p) => p.referencia === "RA8000"
+    ),
+    null,
+    2
+  )
+);
   return (
     <main>
       <TiendaCliente
