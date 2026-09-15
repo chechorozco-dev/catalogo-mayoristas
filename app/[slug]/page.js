@@ -2,11 +2,13 @@ import { notFound } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import TiendaCliente from "./TiendaCliente";
 
+export const dynamic = "force-dynamic";
+
 export default async function TiendaPage({ params }) {
   const { slug } = await params;
 
   // =========================================
-  // TIENDA
+  // 1. BUSCAR TIENDA
   // =========================================
 
   const {
@@ -30,7 +32,7 @@ export default async function TiendaPage({ params }) {
   }
 
   // =========================================
-  // PRODUCTOS
+  // 2. BUSCAR PRODUCTOS
   // =========================================
 
   const {
@@ -94,7 +96,7 @@ export default async function TiendaPage({ params }) {
   }
 
   // =========================================
-  // IDS DE PRODUCTOS CON VARIANTES
+  // 3. IDENTIFICAR PRODUCTOS CON VARIANTES
   // =========================================
 
   const productosConVariantes =
@@ -109,106 +111,182 @@ export default async function TiendaPage({ params }) {
     );
 
   // =========================================
-  // CARGAR VARIANTES
+  // 4. CARGAR VARIANTES
+  // =========================================
+  //
+  // IMPORTANTE:
+  // Esto ocurre únicamente en el servidor.
+  // SUPABASE_SECRET_KEY nunca se envía
+  // al navegador del cliente.
   // =========================================
 
   let variantesData = [];
 
   if (idsProductosConVariantes.length > 0) {
-    const {
-      data,
-      error: variantesError,
-    } = await supabase
-      .from("producto_variantes")
-      .select(`
-        id,
-        producto_id,
-        nombre_variante,
-        referencia,
-        foto_url,
-        foto_url_2,
-        precio_detal,
-        activo,
-        orden
-      `)
-      .in(
-        "producto_id",
-        idsProductosConVariantes
-      )
-      .eq("activo", true)
-      .order("orden", {
-        ascending: true,
-      });
+    try {
+      const supabaseUrl =
+        process.env.NEXT_PUBLIC_SUPABASE_URL;
 
-    if (variantesError) {
+      const supabaseSecretKey =
+        process.env.SUPABASE_SECRET_KEY;
+
+      if (!supabaseUrl) {
+        throw new Error(
+          "Falta NEXT_PUBLIC_SUPABASE_URL"
+        );
+      }
+
+      if (!supabaseSecretKey) {
+        throw new Error(
+          "Falta SUPABASE_SECRET_KEY"
+        );
+      }
+
+      const ids = idsProductosConVariantes
+        .map((id) => Number(id))
+        .filter((id) => Number.isFinite(id))
+        .join(",");
+
+      if (ids) {
+        const url =
+          `${supabaseUrl}` +
+          `/rest/v1/producto_variantes` +
+          `?select=` +
+          [
+            "id",
+            "producto_id",
+            "nombre_variante",
+            "referencia",
+            "foto_url",
+            "foto_url_2",
+            "precio_detal",
+            "activo",
+            "orden",
+          ].join(",") +
+          `&producto_id=in.(${ids})` +
+          `&activo=eq.true` +
+          `&order=orden.asc`;
+
+        const respuesta = await fetch(url, {
+          method: "GET",
+
+          headers: {
+            apikey: supabaseSecretKey,
+            "Content-Type":
+              "application/json",
+          },
+
+          cache: "no-store",
+        });
+
+        const texto =
+          await respuesta.text();
+
+        if (!respuesta.ok) {
+          console.error(
+            "ERROR SUPABASE VARIANTES:",
+            respuesta.status,
+            texto
+          );
+
+          throw new Error(
+            `Error cargando variantes: ${respuesta.status}`
+          );
+        }
+
+        if (texto) {
+          const datos =
+            JSON.parse(texto);
+
+          if (Array.isArray(datos)) {
+            variantesData = datos;
+          }
+        }
+      }
+    } catch (error) {
       console.error(
-        "Error cargando variantes:",
-        variantesError
+        "ERROR CARGANDO VARIANTES:",
+        error
       );
-    } else {
-      variantesData = data || [];
+
+      variantesData = [];
     }
   }
 
   // =========================================
-  // PREPARAR PRODUCTOS
+  // 5. PREPARAR PRODUCTOS
   // =========================================
 
   const productos =
     (productosData || []).map(
       (producto) => {
-        const tieneVariantes =
-          producto.tiene_variantes === true;
-
         // =====================================
         // VARIANTES DEL PRODUCTO
         // =====================================
 
-        const variantes = tieneVariantes
-          ? variantesData
-              .filter(
-                (variante) =>
-                  String(
-                    variante.producto_id
-                  ) ===
-                  String(producto.id)
-              )
-              .map((variante) => ({
-                id: variante.id,
+        const variantesDelProducto =
+          variantesData
+            .filter(
+              (variante) =>
+                String(
+                  variante.producto_id
+                ) ===
+                String(producto.id)
+            )
+            .sort(
+              (a, b) =>
+                Number(a.orden || 0) -
+                Number(b.orden || 0)
+            )
+            .map((variante) => ({
+              id:
+                variante.id,
 
-                nombre_variante:
-                  variante.nombre_variante,
+              producto_id:
+                variante.producto_id,
 
-                referencia:
-                  variante.referencia,
+              nombre_variante:
+                variante.nombre_variante,
 
-                foto_url:
-                  variante.foto_url,
+              referencia:
+                variante.referencia,
 
-                foto_url_2:
-                  variante.foto_url_2,
+              foto_url:
+                variante.foto_url,
 
-                // IMPORTANTE:
-                // Al catálogo público solamente
-                // enviamos el precio sugerido.
-                precio:
-                  variante.precio_detal,
+              foto_url_2:
+                variante.foto_url_2,
 
-                activo:
-                  variante.activo,
+              // IMPORTANTE:
+              // TiendaCliente.js espera
+              // que el precio se llame "precio"
+              precio:
+                Number(
+                  variante.precio_detal || 0
+                ),
 
-                orden:
-                  variante.orden,
-              }))
-          : [];
+              activo:
+                variante.activo,
+
+              orden:
+                variante.orden,
+            }));
+
+        // =====================================
+        // ¿REALMENTE TIENE VARIANTES?
+        // =====================================
+
+        const tieneVariantes =
+          producto.tiene_variantes === true &&
+          variantesDelProducto.length > 0;
 
         // =====================================
         // PRIMERA VARIANTE
         // =====================================
 
         const primeraVariante =
-          variantes.length > 0
-            ? variantes[0]
+          tieneVariantes
+            ? variantesDelProducto[0]
             : null;
 
         // =====================================
@@ -216,7 +294,8 @@ export default async function TiendaPage({ params }) {
         // =====================================
 
         return {
-          id: producto.id,
+          id:
+            producto.id,
 
           referencia:
             primeraVariante?.referencia ||
@@ -226,56 +305,51 @@ export default async function TiendaPage({ params }) {
             producto.nombre,
 
           categoria:
-            producto.categoria,
+            producto.categoria || "",
 
           descripcion:
-            producto.descripcion,
+            producto.descripcion || "",
 
           foto_url:
             primeraVariante?.foto_url ||
-            producto.foto_url,
+            producto.foto_url ||
+            "",
 
           foto_url_2:
             primeraVariante?.foto_url_2 ||
-            producto.foto_url_2,
-
-          // ===================================
-          // PRECIO PÚBLICO
-          // ===================================
+            producto.foto_url_2 ||
+            "",
 
           precio:
-            primeraVariante?.precio ??
-            producto.precio_detal,
+            primeraVariante
+              ? Number(
+                  primeraVariante.precio || 0
+                )
+              : Number(
+                  producto.precio_detal || 0
+                ),
 
           created_at:
             producto.created_at,
 
           // ===================================
-          // VARIANTES
+          // ESTO ES LO QUE NECESITA
+          // TiendaCliente.js
           // ===================================
 
           tiene_variantes:
-            tieneVariantes &&
-            variantes.length > 0,
+            tieneVariantes,
 
-          variantes,
+          variantes:
+            variantesDelProducto,
         };
       }
     );
 
   // =========================================
-  // CATÁLOGO
+  // 6. CATÁLOGO
   // =========================================
-console.log(
-  "PRODUCTO RA8000 EN CATALOGO:",
-  JSON.stringify(
-    productos.find(
-      (p) => p.referencia === "RA8000"
-    ),
-    null,
-    2
-  )
-);
+
   return (
     <main>
       <TiendaCliente
@@ -286,7 +360,7 @@ console.log(
           tienda.logo_url || ""
         }
         whatsapp={
-          tienda.whatsapp
+          tienda.whatsapp || ""
         }
         productos={
           productos
