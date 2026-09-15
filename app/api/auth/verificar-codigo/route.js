@@ -108,13 +108,14 @@ export async function POST(request) {
     // ======================================
     // 1. CONFIRMAR QUE EL CLIENTE
     //    SIGA AUTORIZADO
+    //    AHORA TAMBIÉN TRAEMOS EL ROL
     // ======================================
 
     const clienteResponse =
       await fetch(
         `${supabaseUrl}/rest/v1/clientes_autorizados?telefono=eq.${encodeURIComponent(
           telefono
-        )}&activo=eq.true&select=id,telefono,nombre,activo,tienda_id`,
+        )}&activo=eq.true&select=id,telefono,nombre,activo,tienda_id,rol`,
         {
           method: "GET",
           headers: supabaseHeaders,
@@ -393,6 +394,7 @@ export async function POST(request) {
 
     // ======================================
     // 8. CREAR SESIÓN PRIVADA
+    //    AHORA INCLUYE EL ROL
     // ======================================
 
     const ahora = Math.floor(
@@ -402,12 +404,18 @@ export async function POST(request) {
     const duracionSesion =
       60 * 60 * 24 * 30;
 
+    const rol =
+      cliente.rol === "MAESTRO"
+        ? "MAESTRO"
+        : "CLIENTE";
+
     const sesion = {
       cliente_id: cliente.id,
       telefono: cliente.telefono,
       nombre: cliente.nombre || "",
       tienda_id:
         cliente.tienda_id || null,
+      rol,
       iat: ahora,
       exp:
         ahora + duracionSesion,
@@ -425,12 +433,14 @@ export async function POST(request) {
         mensaje:
           "Código correcto. Inicio de sesión exitoso.",
         cliente: {
+          id: cliente.id,
           nombre:
             cliente.nombre || "",
           telefono:
             cliente.telefono,
           tienda_id:
             cliente.tienda_id || null,
+          rol,
         },
       });
 
