@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 /* =========================================================
@@ -32,7 +32,13 @@ function claveProducto(productoId, varianteId = null) {
    GALERÍA
 ========================================================= */
 
-function GaleriaProducto({ producto, abrirImagen }) {
+function GaleriaProducto({
+  producto,
+  abrirImagen,
+  onAgregar,
+  agregado = false,
+  tieneVariantes = false,
+}) {
   const imagenes = [
     producto.foto_url,
     producto.foto_url_2,
@@ -49,10 +55,46 @@ function GaleriaProducto({ producto, abrirImagen }) {
     producto.foto_url_2,
   ]);
 
+  function manejarAgregar(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const contenedor = e.currentTarget.closest(
+      ".product-image-container"
+    );
+
+    const imagen =
+      contenedor?.querySelector(".product-image");
+
+    onAgregar?.({
+      elementoImagen: imagen,
+      boton: e.currentTarget,
+    });
+  }
+
   if (!imagenes.length) {
     return (
       <div className="product-image-container">
         <div className="no-image">Sin imagen</div>
+
+        {onAgregar && (
+          <button
+            type="button"
+            className={
+              agregado
+                ? "image-cart-button image-cart-added"
+                : "image-cart-button"
+            }
+            onClick={manejarAgregar}
+            title={
+              tieneVariantes
+                ? "Ver variantes"
+                : "Agregar al pedido"
+            }
+          >
+            {agregado ? "✓" : "🛒"}
+          </button>
+        )}
       </div>
     );
   }
@@ -77,7 +119,11 @@ function GaleriaProducto({ producto, abrirImagen }) {
     <div
       className="product-image-container"
       onClick={() =>
-        abrirImagen(imagenes, indice, producto.nombre)
+        abrirImagen(
+          imagenes,
+          indice,
+          producto.nombre
+        )
       }
     >
       <img
@@ -109,7 +155,9 @@ function GaleriaProducto({ producto, abrirImagen }) {
               <span
                 key={i}
                 className={
-                  i === indice ? "dot dot-active" : "dot"
+                  i === indice
+                    ? "dot dot-active"
+                    : "dot"
                 }
               />
             ))}
@@ -119,6 +167,25 @@ function GaleriaProducto({ producto, abrirImagen }) {
             {indice + 1}/{imagenes.length}
           </div>
         </>
+      )}
+
+      {onAgregar && (
+        <button
+          type="button"
+          className={
+            agregado
+              ? "image-cart-button image-cart-added"
+              : "image-cart-button"
+          }
+          onClick={manejarAgregar}
+          title={
+            tieneVariantes
+              ? "Ver variantes"
+              : "Agregar al pedido"
+          }
+        >
+          {agregado ? "✓" : "🛒"}
+        </button>
       )}
     </div>
   );
@@ -175,7 +242,8 @@ function VisorImagen({
             </button>
 
             <div className="viewer-count">
-              {visor.indice + 1} / {visor.imagenes.length}
+              {visor.indice + 1} /{" "}
+              {visor.imagenes.length}
             </div>
           </>
         )}
@@ -220,38 +288,15 @@ function BloquePrecios({ costo, precio }) {
           className="profit"
           style={{
             color:
-              ganancia >= 0 ? "#318553" : "#c43b3b",
+              ganancia >= 0
+                ? "#318553"
+                : "#c43b3b",
           }}
         >
           {formatoPrecio(ganancia)}
         </strong>
       </div>
     </>
-  );
-}
-
-/* =========================================================
-   BOTÓN AGREGAR
-========================================================= */
-
-function BotonAgregar({
-  onClick,
-  agregado = false,
-}) {
-  return (
-    <button
-      type="button"
-      className={
-        agregado
-          ? "add-order-button added"
-          : "add-order-button"
-      }
-      onClick={onClick}
-    >
-      {agregado
-        ? "✓ Agregado al pedido"
-        : "＋ Agregar al pedido"}
-    </button>
   );
 }
 
@@ -368,7 +413,10 @@ function Carrito({
                         </span>
 
                         <span className="cart-unit-price">
-                          {formatoPrecio(item.costo)} c/u
+                          {formatoPrecio(
+                            item.costo
+                          )}{" "}
+                          c/u
                         </span>
                       </div>
 
@@ -389,7 +437,9 @@ function Carrito({
                         <button
                           type="button"
                           onClick={() =>
-                            disminuir(item.clave)
+                            disminuir(
+                              item.clave
+                            )
                           }
                         >
                           −
@@ -402,7 +452,9 @@ function Carrito({
                         <button
                           type="button"
                           onClick={() =>
-                            aumentar(item.clave)
+                            aumentar(
+                              item.clave
+                            )
                           }
                         >
                           +
@@ -410,7 +462,9 @@ function Carrito({
                       </div>
 
                       <strong className="cart-subtotal">
-                        {formatoPrecio(subtotal)}
+                        {formatoPrecio(
+                          subtotal
+                        )}
                       </strong>
                     </div>
                   </div>
@@ -474,6 +528,8 @@ function Carrito({
 export default function ProductosMayoristaPage() {
   const router = useRouter();
 
+  const cartButtonRef = useRef(null);
+
   const [productos, setProductos] =
     useState([]);
 
@@ -521,6 +577,11 @@ export default function ProductosMayoristaPage() {
     agregadoReciente,
     setAgregadoReciente,
   ] = useState(null);
+
+  const [
+    carritoAnimando,
+    setCarritoAnimando,
+  ] = useState(false);
 
   const categorias = [
     "Accesorios en Rodio",
@@ -661,10 +722,99 @@ export default function ProductosMayoristaPage() {
   }, [carrito, carritoCargado]);
 
   /* =======================================================
+     ANIMACIÓN PRODUCTO → CARRITO
+  ======================================================= */
+
+  function animarHaciaCarrito(
+    elementoImagen
+  ) {
+    const destino =
+      cartButtonRef.current;
+
+    if (
+      !elementoImagen ||
+      !destino ||
+      typeof window === "undefined"
+    ) {
+      return;
+    }
+
+    const origenRect =
+      elementoImagen.getBoundingClientRect();
+
+    const destinoRect =
+      destino.getBoundingClientRect();
+
+    const clon =
+      elementoImagen.cloneNode(true);
+
+    clon.className = "flying-product-image";
+
+    clon.style.position = "fixed";
+    clon.style.left = `${origenRect.left}px`;
+    clon.style.top = `${origenRect.top}px`;
+    clon.style.width = `${origenRect.width}px`;
+    clon.style.height = `${origenRect.height}px`;
+    clon.style.objectFit = "cover";
+    clon.style.borderRadius = "14px";
+    clon.style.zIndex = "20000";
+    clon.style.pointerEvents = "none";
+    clon.style.margin = "0";
+    clon.style.transform = "scale(1)";
+    clon.style.opacity = "0.95";
+    clon.style.transition =
+      "left 650ms cubic-bezier(.2,.8,.2,1), top 650ms cubic-bezier(.2,.8,.2,1), width 650ms cubic-bezier(.2,.8,.2,1), height 650ms cubic-bezier(.2,.8,.2,1), opacity 650ms ease, transform 650ms ease";
+
+    document.body.appendChild(clon);
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const anchoFinal = 28;
+        const altoFinal = 28;
+
+        clon.style.left = `${
+          destinoRect.left +
+          destinoRect.width / 2 -
+          anchoFinal / 2
+        }px`;
+
+        clon.style.top = `${
+          destinoRect.top +
+          destinoRect.height / 2 -
+          altoFinal / 2
+        }px`;
+
+        clon.style.width =
+          `${anchoFinal}px`;
+
+        clon.style.height =
+          `${altoFinal}px`;
+
+        clon.style.opacity = "0.15";
+        clon.style.transform =
+          "scale(0.25) rotate(8deg)";
+      });
+    });
+
+    window.setTimeout(() => {
+      clon.remove();
+
+      setCarritoAnimando(true);
+
+      window.setTimeout(() => {
+        setCarritoAnimando(false);
+      }, 450);
+    }, 680);
+  }
+
+  /* =======================================================
      CARRITO
   ======================================================= */
 
-  function agregarProductoNormal(producto) {
+  function agregarProductoNormal(
+    producto,
+    elementoImagen = null
+  ) {
     const clave = claveProducto(
       producto.id
     );
@@ -685,12 +835,16 @@ export default function ProductosMayoristaPage() {
       cantidad: 1,
     };
 
-    agregarAlCarrito(nuevoItem);
+    agregarAlCarrito(
+      nuevoItem,
+      elementoImagen
+    );
   }
 
   function agregarVariante(
     producto,
-    variante
+    variante,
+    elementoImagen = null
   ) {
     const clave = claveProducto(
       producto.id,
@@ -718,10 +872,16 @@ export default function ProductosMayoristaPage() {
       cantidad: 1,
     };
 
-    agregarAlCarrito(nuevoItem);
+    agregarAlCarrito(
+      nuevoItem,
+      elementoImagen
+    );
   }
 
-  function agregarAlCarrito(nuevoItem) {
+  function agregarAlCarrito(
+    nuevoItem,
+    elementoImagen = null
+  ) {
     setCarrito((actual) => {
       const existe =
         actual.find(
@@ -753,6 +913,18 @@ export default function ProductosMayoristaPage() {
     setAgregadoReciente(
       nuevoItem.clave
     );
+
+    if (elementoImagen) {
+      animarHaciaCarrito(
+        elementoImagen
+      );
+    } else {
+      setCarritoAnimando(true);
+
+      window.setTimeout(() => {
+        setCarritoAnimando(false);
+      }, 450);
+    }
 
     setTimeout(() => {
       setAgregadoReciente(
@@ -1051,6 +1223,45 @@ export default function ProductosMayoristaPage() {
     );
   }
 
+  function manejarCarritoProducto(
+    producto,
+    datosEvento
+  ) {
+    const tieneVariantes =
+      producto.tiene_variantes &&
+      Array.isArray(producto.variantes) &&
+      producto.variantes.length > 0;
+
+    if (tieneVariantes) {
+      setVariantesAbiertas(
+        (actual) => ({
+          ...actual,
+          [producto.id]: true,
+        })
+      );
+
+      window.setTimeout(() => {
+        const elemento =
+          document.getElementById(
+            `variantes-${producto.id}`
+          );
+
+        elemento?.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        });
+      }, 80);
+
+      return;
+    }
+
+    agregarProductoNormal(
+      producto,
+      datosEvento?.elementoImagen ||
+        null
+    );
+  }
+
   /* =======================================================
      VISOR
   ======================================================= */
@@ -1110,9 +1321,7 @@ export default function ProductosMayoristaPage() {
         Cargando productos...
       </main>
     );
-  }
-
-  return (
+  }  return (
     <>
       <style jsx global>{`
         * {
@@ -1148,7 +1357,9 @@ export default function ProductosMayoristaPage() {
           margin: 0 auto;
         }
 
-        /* ENCABEZADO */
+        /* =================================================
+           ENCABEZADO
+        ================================================= */
 
         .top {
           display: flex;
@@ -1185,7 +1396,9 @@ export default function ProductosMayoristaPage() {
           font-weight: 600;
         }
 
-        /* CARRITO SUPERIOR */
+        /* =================================================
+           BOTÓN CARRITO SUPERIOR
+        ================================================= */
 
         .cart-top-button {
           position: relative;
@@ -1198,13 +1411,49 @@ export default function ProductosMayoristaPage() {
           cursor: pointer;
           display: flex;
           align-items: center;
+          justify-content: center;
           gap: 9px;
           font-size: 15px;
           font-weight: 800;
+          transform-origin: center;
+          transition:
+            transform 0.15s ease,
+            box-shadow 0.15s ease;
+        }
+
+        .cart-top-button:hover {
+          transform: translateY(-1px);
+        }
+
+        .cart-top-button.cart-bounce {
+          animation: cartBounce 0.45s ease;
+        }
+
+        @keyframes cartBounce {
+          0% {
+            transform: scale(1);
+          }
+
+          30% {
+            transform: scale(1.14) rotate(-3deg);
+          }
+
+          55% {
+            transform: scale(0.96) rotate(2deg);
+          }
+
+          75% {
+            transform: scale(1.06);
+          }
+
+          100% {
+            transform: scale(1);
+          }
         }
 
         .cart-top-icon {
           font-size: 20px;
+          line-height: 1;
         }
 
         .cart-badge {
@@ -1219,9 +1468,17 @@ export default function ProductosMayoristaPage() {
           color: white;
           font-size: 12px;
           font-weight: 800;
+          transition: transform 0.2s ease;
         }
 
-        /* FILTROS */
+        .cart-top-button.cart-bounce
+        .cart-badge {
+          transform: scale(1.2);
+        }
+
+        /* =================================================
+           FILTROS
+        ================================================= */
 
         .filter-area {
           display: grid;
@@ -1251,6 +1508,10 @@ export default function ProductosMayoristaPage() {
           outline: none;
         }
 
+        .search:focus {
+          border-color: #aaa;
+        }
+
         .selected-category {
           margin: 0 0 18px;
           font-size: 18px;
@@ -1270,13 +1531,16 @@ export default function ProductosMayoristaPage() {
           margin-bottom: 0;
         }
 
-        /* PRODUCTOS */
+        /* =================================================
+           PRODUCTOS
+        ================================================= */
 
         .products {
           display: grid;
           grid-template-columns:
             repeat(4, minmax(0, 1fr));
           gap: 20px;
+          align-items: start;
         }
 
         .card {
@@ -1288,6 +1552,10 @@ export default function ProductosMayoristaPage() {
             0 5px 18px
             rgba(0, 0, 0, 0.05);
         }
+
+        /* =================================================
+           FOTO DEL PRODUCTO
+        ================================================= */
 
         .product-image-container {
           position: relative;
@@ -1326,11 +1594,14 @@ export default function ProductosMayoristaPage() {
             255,
             255,
             255,
-            0.92
+            0.94
           );
           font-size: 25px;
           cursor: pointer;
-          z-index: 3;
+          z-index: 4;
+          box-shadow:
+            0 2px 7px
+            rgba(0, 0, 0, 0.08);
         }
 
         .gallery-left {
@@ -1348,6 +1619,7 @@ export default function ProductosMayoristaPage() {
           transform: translateX(-50%);
           display: flex;
           gap: 5px;
+          z-index: 3;
         }
 
         .dot {
@@ -1357,9 +1629,12 @@ export default function ProductosMayoristaPage() {
             255,
             255,
             255,
-            0.75
+            0.8
           );
           border-radius: 50%;
+          box-shadow:
+            0 1px 3px
+            rgba(0, 0, 0, 0.2);
         }
 
         .dot-active {
@@ -1374,13 +1649,107 @@ export default function ProductosMayoristaPage() {
             0,
             0,
             0,
-            0.55
+            0.62
           );
           color: white;
           font-size: 12px;
           padding: 5px 8px;
           border-radius: 20px;
+          z-index: 5;
         }
+
+        /* =================================================
+           NUEVO BOTÓN 🛒 DENTRO DE LA FOTO
+        ================================================= */
+
+        .image-cart-button {
+          position: absolute;
+          right: 13px;
+          bottom: 13px;
+          z-index: 8;
+
+          width: 48px;
+          height: 48px;
+
+          border: none;
+          border-radius: 50%;
+
+          background: #222;
+          color: white;
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          font-size: 21px;
+          line-height: 1;
+
+          cursor: pointer;
+
+          box-shadow:
+            0 5px 15px
+            rgba(0, 0, 0, 0.25);
+
+          transition:
+            transform 0.15s ease,
+            background 0.15s ease,
+            box-shadow 0.15s ease;
+        }
+
+        .image-cart-button:hover {
+          transform: scale(1.08);
+          box-shadow:
+            0 7px 18px
+            rgba(0, 0, 0, 0.3);
+        }
+
+        .image-cart-button:active {
+          transform: scale(0.92);
+        }
+
+        .image-cart-added {
+          background: #318553;
+          animation: addButtonSuccess 0.35s ease;
+        }
+
+        @keyframes addButtonSuccess {
+          0% {
+            transform: scale(1);
+          }
+
+          50% {
+            transform: scale(1.22);
+          }
+
+          100% {
+            transform: scale(1);
+          }
+        }
+
+        /* =================================================
+           IMAGEN QUE VUELA HACIA EL CARRITO
+        ================================================= */
+
+        .flying-product-image {
+          position: fixed;
+          pointer-events: none;
+          z-index: 20000;
+          overflow: hidden;
+          box-shadow:
+            0 8px 25px
+            rgba(0, 0, 0, 0.25);
+          will-change:
+            left,
+            top,
+            width,
+            height,
+            opacity,
+            transform;
+        }
+
+        /* =================================================
+           INFORMACIÓN TARJETA
+        ================================================= */
 
         .card-info {
           padding: 18px;
@@ -1431,33 +1800,9 @@ export default function ProductosMayoristaPage() {
           font-size: 18px;
         }
 
-        /* AGREGAR PEDIDO */
-
-        .add-order-button {
-          width: 100%;
-          border: none;
-          background: #222;
-          color: white;
-          padding: 12px 10px;
-          border-radius: 10px;
-          margin-top: 16px;
-          cursor: pointer;
-          font-size: 13px;
-          font-weight: 800;
-          transition:
-            transform 0.15s ease,
-            background 0.15s ease;
-        }
-
-        .add-order-button:hover {
-          transform: translateY(-1px);
-        }
-
-        .add-order-button.added {
-          background: #318553;
-        }
-
-        /* VARIANTES */
+        /* =================================================
+           VARIANTES
+        ================================================= */
 
         .variants-summary {
           margin-top: 16px;
@@ -1514,7 +1859,10 @@ export default function ProductosMayoristaPage() {
             105px minmax(0, 1fr);
         }
 
+        /* FOTO VARIANTE */
+
         .variant-image {
+          position: relative;
           width: 105px;
           height: 105px;
           background: #f5f5f5;
@@ -1537,6 +1885,52 @@ export default function ProductosMayoristaPage() {
           align-items: center;
           color: #aaa;
           font-size: 12px;
+        }
+
+        /* CARRITO DE LA VARIANTE */
+
+        .variant-cart-button {
+          position: absolute;
+          right: 7px;
+          bottom: 7px;
+          z-index: 8;
+
+          width: 34px;
+          height: 34px;
+
+          border: none;
+          border-radius: 50%;
+
+          background: #222;
+          color: white;
+
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          cursor: pointer;
+
+          font-size: 15px;
+
+          box-shadow:
+            0 3px 10px
+            rgba(0, 0, 0, 0.25);
+
+          transition:
+            transform 0.15s ease,
+            background 0.15s ease;
+        }
+
+        .variant-cart-button:hover {
+          transform: scale(1.1);
+        }
+
+        .variant-cart-button:active {
+          transform: scale(0.9);
+        }
+
+        .variant-cart-button.added {
+          background: #318553;
         }
 
         .variant-main-info {
@@ -1597,15 +1991,6 @@ export default function ProductosMayoristaPage() {
           font-size: 13px;
         }
 
-        .variant-add-wrap {
-          padding: 0 9px 10px;
-        }
-
-        .variant-add-wrap
-        .add-order-button {
-          margin-top: 0;
-        }
-
         .empty {
           grid-column: 1 / -1;
           background: white;
@@ -1615,7 +2000,9 @@ export default function ProductosMayoristaPage() {
           color: #666;
         }
 
-        /* MENÚ */
+        /* =================================================
+           MENÚ CATEGORÍAS
+        ================================================= */
 
         .overlay {
           position: fixed;
@@ -1690,7 +2077,9 @@ export default function ProductosMayoristaPage() {
           font-weight: 700;
         }
 
-        /* VISOR */
+        /* =================================================
+           VISOR DE IMÁGENES
+        ================================================= */
 
         .viewer {
           position: fixed;
@@ -2024,7 +2413,9 @@ export default function ProductosMayoristaPage() {
           font-size: 13px;
         }
 
-        /* RESPONSIVE */
+        /* =================================================
+           RESPONSIVE
+        ================================================= */
 
         @media (max-width: 1000px) {
           .products {
@@ -2083,7 +2474,14 @@ export default function ProductosMayoristaPage() {
 
           .cart-top-button {
             flex: 1;
-            justify-content: center;
+          }
+
+          .image-cart-button {
+            width: 44px;
+            height: 44px;
+            right: 10px;
+            bottom: 10px;
+            font-size: 19px;
           }
 
           .variant-top {
@@ -2125,6 +2523,14 @@ export default function ProductosMayoristaPage() {
             margin-bottom: 0;
           }
 
+          .variant-cart-button {
+            width: 31px;
+            height: 31px;
+            right: 5px;
+            bottom: 5px;
+            font-size: 13px;
+          }
+
           .cart-panel {
             width: 100%;
           }
@@ -2136,7 +2542,7 @@ export default function ProductosMayoristaPage() {
       `}</style>
 
       {/* ===================================================
-          MENÚ
+          MENÚ DE CATEGORÍAS
       =================================================== */}
 
       {menuAbierto && (
@@ -2191,7 +2597,7 @@ export default function ProductosMayoristaPage() {
       )}
 
       {/* ===================================================
-          VISOR
+          VISOR DE IMÁGENES
       =================================================== */}
 
       <VisorImagen
@@ -2202,7 +2608,7 @@ export default function ProductosMayoristaPage() {
       />
 
       {/* ===================================================
-          CARRITO
+          CARRITO LATERAL
       =================================================== */}
 
       <Carrito
@@ -2239,8 +2645,13 @@ export default function ProductosMayoristaPage() {
 
             <div className="top-buttons">
               <button
+                ref={cartButtonRef}
                 type="button"
-                className="cart-top-button"
+                className={
+                  carritoAnimando
+                    ? "cart-top-button cart-bounce"
+                    : "cart-top-button"
+                }
                 onClick={() =>
                   setCarritoAbierto(true)
                 }
@@ -2287,7 +2698,9 @@ export default function ProductosMayoristaPage() {
               placeholder="Buscar por referencia, producto o variante..."
               value={busqueda}
               onChange={(e) =>
-                setBusqueda(e.target.value)
+                setBusqueda(
+                  e.target.value
+                )
               }
             />
           </div>
@@ -2306,11 +2719,14 @@ export default function ProductosMayoristaPage() {
             </p>
           </div>
 
+          {/* RESUMEN DEL PEDIDO */}
+
           {totalUnidades > 0 && (
             <div
               style={{
                 background: "#fff",
-                border: "1px solid #eee",
+                border:
+                  "1px solid #eee",
                 borderRadius: "12px",
                 padding: "12px 16px",
                 marginBottom: "20px",
@@ -2338,6 +2754,8 @@ export default function ProductosMayoristaPage() {
               </strong>
             </div>
           )}
+
+          {/* ERROR */}
 
           {error && (
             <div
@@ -2434,12 +2852,30 @@ export default function ProductosMayoristaPage() {
                       key={producto.id}
                       className="card"
                     >
+                      {/* FOTO PRINCIPAL */}
+
                       <GaleriaProducto
                         producto={
                           productoVisual
                         }
                         abrirImagen={
                           abrirImagen
+                        }
+                        tieneVariantes={
+                          tieneVariantes
+                        }
+                        agregado={
+                          !tieneVariantes &&
+                          agregadoReciente ===
+                            claveNormal
+                        }
+                        onAgregar={(
+                          datosEvento
+                        ) =>
+                          manejarCarritoProducto(
+                            producto,
+                            datosEvento
+                          )
                         }
                       />
 
@@ -2452,34 +2888,24 @@ export default function ProductosMayoristaPage() {
                           {producto.nombre}
                         </h2>
 
-                        {/* PRODUCTO NORMAL */}
+                        {/* ================================
+                            PRODUCTO NORMAL
+                        ================================ */}
 
                         {!tieneVariantes && (
-                          <>
-                            <BloquePrecios
-                              costo={
-                                costoPrincipal
-                              }
-                              precio={
-                                precioPrincipal
-                              }
-                            />
-
-                            <BotonAgregar
-                              agregado={
-                                agregadoReciente ===
-                                claveNormal
-                              }
-                              onClick={() =>
-                                agregarProductoNormal(
-                                  producto
-                                )
-                              }
-                            />
-                          </>
+                          <BloquePrecios
+                            costo={
+                              costoPrincipal
+                            }
+                            precio={
+                              precioPrincipal
+                            }
+                          />
                         )}
 
-                        {/* PRODUCTO CON VARIANTES */}
+                        {/* ================================
+                            PRODUCTO CON VARIANTES
+                        ================================ */}
 
                         {tieneVariantes && (
                           <>
@@ -2508,7 +2934,10 @@ export default function ProductosMayoristaPage() {
                             </div>
 
                             {abiertas && (
-                              <div className="variants-container">
+                              <div
+                                id={`variantes-${producto.id}`}
+                                className="variants-container"
+                              >
                                 {variantes.map(
                                   (
                                     variante
@@ -2551,6 +2980,9 @@ export default function ProductosMayoristaPage() {
                                         className="variant-card"
                                       >
                                         <div className="variant-top">
+
+                                          {/* FOTO VARIANTE */}
+
                                           <div
                                             className="variant-image"
                                             onClick={() => {
@@ -2580,7 +3012,50 @@ export default function ProductosMayoristaPage() {
                                                 Sin imagen
                                               </div>
                                             )}
+
+                                            {/* CARRITO VARIANTE */}
+
+                                            <button
+                                              type="button"
+                                              className={
+                                                agregadoReciente ===
+                                                claveVariante
+                                                  ? "variant-cart-button added"
+                                                  : "variant-cart-button"
+                                              }
+                                              title="Agregar esta variante al pedido"
+                                              onClick={(
+                                                e
+                                              ) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+
+                                                const contenedor =
+                                                  e.currentTarget.closest(
+                                                    ".variant-image"
+                                                  );
+
+                                                const imagen =
+                                                  contenedor?.querySelector(
+                                                    "img"
+                                                  );
+
+                                                agregarVariante(
+                                                  producto,
+                                                  variante,
+                                                  imagen ||
+                                                    null
+                                                );
+                                              }}
+                                            >
+                                              {agregadoReciente ===
+                                              claveVariante
+                                                ? "✓"
+                                                : "🛒"}
+                                            </button>
                                           </div>
+
+                                          {/* INFO VARIANTE */}
 
                                           <div className="variant-main-info">
                                             <h3 className="variant-name">
@@ -2596,6 +3071,8 @@ export default function ProductosMayoristaPage() {
                                             </p>
                                           </div>
                                         </div>
+
+                                        {/* PRECIOS VARIANTE */}
 
                                         <div className="variant-prices">
                                           <div className="variant-price-box">
@@ -2642,21 +3119,6 @@ export default function ProductosMayoristaPage() {
                                               )}
                                             </strong>
                                           </div>
-                                        </div>
-
-                                        <div className="variant-add-wrap">
-                                          <BotonAgregar
-                                            agregado={
-                                              agregadoReciente ===
-                                              claveVariante
-                                            }
-                                            onClick={() =>
-                                              agregarVariante(
-                                                producto,
-                                                variante
-                                              )
-                                            }
-                                          />
                                         </div>
                                       </div>
                                     );
