@@ -128,55 +128,139 @@ export async function POST(request) {
       );
     }
 
-    // ==========================================
-    // 2. EVITAR CÓDIGOS DEMASIADO SEGUIDOS
-    // ==========================================
+  // ==========================================
+// 2. PROTECCIÓN CONTRA ABUSO DE CÓDIGOS
+// ==========================================
 
-    const desdeHaceUnMinuto = new Date(
-      Date.now() - 60 * 1000
-    ).toISOString();
+async function contarCodigosDesde(fechaDesde) {
+  const response = await fetch(
+    `${supabaseUrl}/rest/v1/codigos_acceso?telefono=eq.${encodeURIComponent(
+      telefono
+    )}&creado_en=gte.${encodeURIComponent(
+      fechaDesde
+    )}&select=id`,
+    {
+      method: "GET",
+      headers: supabaseHeaders,
+      cache: "no-store",
+    }
+  );
 
-    const recientesResponse = await fetch(
-      `${supabaseUrl}/rest/v1/codigos_acceso?telefono=eq.${encodeURIComponent(
-        telefono
-      )}&creado_en=gte.${encodeURIComponent(
-        desdeHaceUnMinuto
-      )}&select=id`,
-      {
-        method: "GET",
-        headers: supabaseHeaders,
-        cache: "no-store",
-      }
+  if (!response.ok) {
+    const errorTexto = await response.text();
+
+    console.error(
+      "Error consultando límite de códigos:",
+      response.status,
+      errorTexto
     );
 
-    if (!recientesResponse.ok) {
-      const errorTexto =
-        await recientesResponse.text();
+    /*
+      Si Supabase falla, NO dejamos pasar la solicitud.
 
-      console.error(
-        "Error consultando códigos recientes:",
-        recientesResponse.status,
-        errorTexto
-      );
-    } else {
-      const recientes =
-        await recientesResponse.json();
+      Es más seguro no enviar un código que permitir
+      que un error en la consulta desactive la protección.
+    */
+    throw new Error(
+      "No se pudo verificar el límite de códigos."
+    );
+  }
 
-      if (
-        Array.isArray(recientes) &&
-        recientes.length > 0
-      ) {
-        return NextResponse.json(
-          {
-            ok: false,
-            mensaje:
-              "Ya enviamos un código recientemente. Espera un minuto antes de solicitar otro.",
-          },
-          { status: 429 }
-        );
-      }
-    }
+  const datos = await response.json();
 
+  return Array.isArray(datos)
+    ? datos.length
+    : 0;
+}
+
+const ahora = Date.now();
+
+const desdeHaceUnMinuto = new Date(
+  ahora - 60 * 1000
+).toISOString();
+
+const desdeHaceUnaHora = new Date(
+  ahora - 60 * 60 * 1000
+).toISOString();
+
+const desdeHace24Horas = new Date(
+  ahora - 24 * 60 * 60 * 1000
+).toISOString();
+
+let codigosUltimoMinuto;
+let codigosUltimaHora;
+let codigosUltimas24Horas;
+
+try {
+  [
+    codigosUltimoMinuto,
+    codigosUltimaHora,
+    codigosUltimas24Horas,
+  ] = await Promise.all([
+    contarCodigosDesde(desdeHaceUnMinuto),
+    contarCodigosDesde(desdeHaceUnaHora),
+    contarCodigosDesde(desdeHace24Horas),
+  ]);
+} catch (error) {
+  console.error(
+    "Error verificando protección antiabuso:",
+    error
+  );
+
+  return NextResponse.json(
+    {
+      ok: false,
+      mensaje:
+        "No pudimos enviar el código en este momento. Intenta nuevamente más tarde.",
+    },
+    { status: 503 }
+  );
+}
+
+// ------------------------------------------
+// MÁXIMO 1 CÓDIGO POR MINUTO
+// ------------------------------------------
+
+if (codigosUltimoMinuto >= 1) {
+  return NextResponse.json(
+    {
+      ok: false,
+      mensaje:
+        "Ya enviamos un código recientemente. Espera un minuto antes de solicitar otro.",
+    },
+    { status: 429 }
+  );
+}
+
+// ------------------------------------------
+// MÁXIMO 5 CÓDIGOS POR HORA
+// ------------------------------------------
+
+if (codigosUltimaHora >= 5) {
+  return NextResponse.json(
+    {
+      ok: false,
+      mensaje:
+        "Has solicitado varios códigos. Por seguridad, espera una hora antes de intentar nuevamente.",
+    },
+    { status: 429 }
+  );
+}
+
+// ------------------------------------------
+// MÁXIMO 10 CÓDIGOS EN 24 HORAS
+// ------------------------------------------
+
+if (codigosUltimas24Horas >= 10) {
+  return NextResponse.json(
+    {
+      ok: false,
+      mensaje:
+        "Alcanzaste el límite de códigos de acceso por hoy. Intenta nuevamente más tarde.",
+    },
+    { status: 429 }
+  );
+}
     // ==========================================
     // 3. GENERAR CÓDIGO DE 4 DÍGITOS
     // ==========================================
