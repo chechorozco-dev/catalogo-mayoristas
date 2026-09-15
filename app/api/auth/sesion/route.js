@@ -111,6 +111,19 @@ export async function GET() {
       return respuesta;
     }
 
+    // ======================================
+    // NORMALIZAR ROL
+    // ======================================
+
+    const rol =
+      sesion.rol === "MAESTRO"
+        ? "MAESTRO"
+        : "CLIENTE";
+
+    // ======================================
+    // DEVOLVER SESIÓN
+    // ======================================
+
     return NextResponse.json({
       ok: true,
       autenticado: true,
@@ -120,6 +133,7 @@ export async function GET() {
         nombre: sesion.nombre || "",
         telefono: sesion.telefono,
         tienda_id: sesion.tienda_id || null,
+        rol,
       },
     });
   } catch (error) {
