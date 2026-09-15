@@ -29,7 +29,7 @@ export default function AdminMaestroPage() {
 
       if (!response.ok || !data.autenticado) {
         router.replace("/login");
-        return;
+        return; 
       }
 
       if (data.cliente?.rol !== "MAESTRO") {
