@@ -1,12 +1,11 @@
 "use client";
 
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+
+/* =========================================================
+   UTILIDADES
+========================================================= */
 
 function formatoPrecio(valor) {
   return new Intl.NumberFormat("es-CO", {
@@ -23,14 +22,17 @@ function normalizar(texto) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
-/* =========================================
-   GALERÍA
-========================================= */
+function claveProducto(productoId, varianteId = null) {
+  return varianteId
+    ? `producto-${productoId}-variante-${varianteId}`
+    : `producto-${productoId}`;
+}
 
-function GaleriaProducto({
-  producto,
-  abrirImagen,
-}) {
+/* =========================================================
+   GALERÍA
+========================================================= */
+
+function GaleriaProducto({ producto, abrirImagen }) {
   const imagenes = [
     producto.foto_url,
     producto.foto_url_2,
@@ -47,12 +49,10 @@ function GaleriaProducto({
     producto.foto_url_2,
   ]);
 
-  if (imagenes.length === 0) {
+  if (!imagenes.length) {
     return (
       <div className="product-image-container">
-        <div className="no-image">
-          Sin imagen
-        </div>
+        <div className="no-image">Sin imagen</div>
       </div>
     );
   }
@@ -61,9 +61,7 @@ function GaleriaProducto({
     e.stopPropagation();
 
     setIndice((actual) =>
-      actual === 0
-        ? imagenes.length - 1
-        : actual - 1
+      actual === 0 ? imagenes.length - 1 : actual - 1
     );
   }
 
@@ -71,9 +69,7 @@ function GaleriaProducto({
     e.stopPropagation();
 
     setIndice((actual) =>
-      actual === imagenes.length - 1
-        ? 0
-        : actual + 1
+      actual === imagenes.length - 1 ? 0 : actual + 1
     );
   }
 
@@ -81,11 +77,7 @@ function GaleriaProducto({
     <div
       className="product-image-container"
       onClick={() =>
-        abrirImagen(
-          imagenes,
-          indice,
-          producto.nombre
-        )
+        abrirImagen(imagenes, indice, producto.nombre)
       }
     >
       <img
@@ -117,9 +109,7 @@ function GaleriaProducto({
               <span
                 key={i}
                 className={
-                  i === indice
-                    ? "dot dot-active"
-                    : "dot"
+                  i === indice ? "dot dot-active" : "dot"
                 }
               />
             ))}
@@ -134,9 +124,9 @@ function GaleriaProducto({
   );
 }
 
-/* =========================================
-   VISOR GRANDE
-========================================= */
+/* =========================================================
+   VISOR
+========================================================= */
 
 function VisorImagen({
   visor,
@@ -147,10 +137,7 @@ function VisorImagen({
   if (!visor) return null;
 
   return (
-    <div
-      className="viewer"
-      onClick={cerrar}
-    >
+    <div className="viewer" onClick={cerrar}>
       <button
         type="button"
         className="viewer-close"
@@ -161,16 +148,10 @@ function VisorImagen({
 
       <div
         className="viewer-content"
-        onClick={(e) =>
-          e.stopPropagation()
-        }
+        onClick={(e) => e.stopPropagation()}
       >
         <img
-          src={
-            visor.imagenes[
-              visor.indice
-            ]
-          }
+          src={visor.imagenes[visor.indice]}
           alt={visor.nombre}
           className="viewer-image"
         />
@@ -194,8 +175,7 @@ function VisorImagen({
             </button>
 
             <div className="viewer-count">
-              {visor.indice + 1} /{" "}
-              {visor.imagenes.length}
+              {visor.indice + 1} / {visor.imagenes.length}
             </div>
           </>
         )}
@@ -204,29 +184,19 @@ function VisorImagen({
   );
 }
 
-/* =========================================
-   TARJETA DE PRECIO
-========================================= */
+/* =========================================================
+   PRECIOS
+========================================================= */
 
-function BloquePrecios({
-  costo,
-  precio,
-}) {
-  const costoNumero =
-    Number(costo || 0);
-
-  const precioNumero =
-    Number(precio || 0);
-
-  const ganancia =
-    precioNumero - costoNumero;
+function BloquePrecios({ costo, precio }) {
+  const costoNumero = Number(costo || 0);
+  const precioNumero = Number(precio || 0);
+  const ganancia = precioNumero - costoNumero;
 
   return (
     <>
       <div className="price-block">
-        <p className="price-label">
-          Tu costo
-        </p>
+        <p className="price-label">Tu costo</p>
 
         <strong className="cost">
           {formatoPrecio(costoNumero)}
@@ -244,17 +214,13 @@ function BloquePrecios({
       </div>
 
       <div>
-        <p className="price-label">
-          Ganancia
-        </p>
+        <p className="price-label">Ganancia</p>
 
         <strong
           className="profit"
           style={{
             color:
-              ganancia >= 0
-                ? "#318553"
-                : "#c43b3b",
+              ganancia >= 0 ? "#318553" : "#c43b3b",
           }}
         >
           {formatoPrecio(ganancia)}
@@ -264,9 +230,246 @@ function BloquePrecios({
   );
 }
 
-/* =========================================
+/* =========================================================
+   BOTÓN AGREGAR
+========================================================= */
+
+function BotonAgregar({
+  onClick,
+  agregado = false,
+}) {
+  return (
+    <button
+      type="button"
+      className={
+        agregado
+          ? "add-order-button added"
+          : "add-order-button"
+      }
+      onClick={onClick}
+    >
+      {agregado
+        ? "✓ Agregado al pedido"
+        : "＋ Agregar al pedido"}
+    </button>
+  );
+}
+
+/* =========================================================
+   CARRITO
+========================================================= */
+
+function Carrito({
+  abierto,
+  cerrar,
+  carrito,
+  aumentar,
+  disminuir,
+  eliminar,
+  vaciar,
+}) {
+  if (!abierto) return null;
+
+  const unidades = carrito.reduce(
+    (total, item) =>
+      total + Number(item.cantidad || 0),
+    0
+  );
+
+  const total = carrito.reduce(
+    (acumulado, item) =>
+      acumulado +
+      Number(item.costo || 0) *
+        Number(item.cantidad || 0),
+    0
+  );
+
+  return (
+    <>
+      <div
+        className="cart-overlay"
+        onClick={cerrar}
+      />
+
+      <aside className="cart-panel">
+        <div className="cart-header">
+          <div>
+            <h2>Mi pedido</h2>
+
+            <p>
+              {unidades}{" "}
+              {unidades === 1
+                ? "unidad"
+                : "unidades"}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            className="cart-close"
+            onClick={cerrar}
+          >
+            ✕
+          </button>
+        </div>
+
+        {carrito.length === 0 ? (
+          <div className="cart-empty">
+            <div className="cart-empty-icon">
+              🛒
+            </div>
+
+            <h3>Tu pedido está vacío</h3>
+
+            <p>
+              Agrega los productos que deseas pedir.
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="cart-items">
+              {carrito.map((item) => {
+                const subtotal =
+                  Number(item.costo || 0) *
+                  Number(item.cantidad || 0);
+
+                return (
+                  <div
+                    className="cart-item"
+                    key={item.clave}
+                  >
+                    <div className="cart-item-top">
+                      <div className="cart-item-image">
+                        {item.foto_url ? (
+                          <img
+                            src={item.foto_url}
+                            alt={item.nombre}
+                          />
+                        ) : (
+                          <div className="cart-no-image">
+                            Sin foto
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="cart-item-info">
+                        <strong>
+                          {item.nombre}
+                        </strong>
+
+                        {item.variante_nombre && (
+                          <span className="cart-variant">
+                            {item.variante_nombre}
+                          </span>
+                        )}
+
+                        <span className="cart-reference">
+                          Ref. {item.referencia}
+                        </span>
+
+                        <span className="cart-unit-price">
+                          {formatoPrecio(item.costo)} c/u
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="cart-delete"
+                        onClick={() =>
+                          eliminar(item.clave)
+                        }
+                        title="Eliminar"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    <div className="cart-item-bottom">
+                      <div className="quantity-control">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            disminuir(item.clave)
+                          }
+                        >
+                          −
+                        </button>
+
+                        <strong>
+                          {item.cantidad}
+                        </strong>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            aumentar(item.clave)
+                          }
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      <strong className="cart-subtotal">
+                        {formatoPrecio(subtotal)}
+                      </strong>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="cart-footer">
+              <div className="cart-summary-row">
+                <span>Unidades</span>
+                <strong>{unidades}</strong>
+              </div>
+
+              <div className="cart-summary-row total">
+                <span>Total del pedido</span>
+
+                <strong>
+                  {formatoPrecio(total)}
+                </strong>
+              </div>
+
+              <button
+                type="button"
+                className="send-order-button"
+                onClick={() =>
+                  alert(
+                    "El carrito ya está funcionando correctamente. En el siguiente paso conectaremos este botón con Supabase para guardar y enviar el pedido."
+                  )
+                }
+              >
+                Enviar pedido
+              </button>
+
+              <button
+                type="button"
+                className="empty-cart-button"
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      "¿Quieres vaciar todo el pedido?"
+                    )
+                  ) {
+                    vaciar();
+                  }
+                }}
+              >
+                Vaciar pedido
+              </button>
+            </div>
+          </>
+        )}
+      </aside>
+    </>
+  );
+}
+
+/* =========================================================
    PÁGINA
-========================================= */
+========================================================= */
 
 export default function ProductosMayoristaPage() {
   const router = useRouter();
@@ -299,6 +502,26 @@ export default function ProductosMayoristaPage() {
     setVariantesAbiertas,
   ] = useState({});
 
+  /* CARRITO */
+
+  const [carrito, setCarrito] =
+    useState([]);
+
+  const [
+    carritoAbierto,
+    setCarritoAbierto,
+  ] = useState(false);
+
+  const [
+    carritoCargado,
+    setCarritoCargado,
+  ] = useState(false);
+
+  const [
+    agregadoReciente,
+    setAgregadoReciente,
+  ] = useState(null);
+
   const categorias = [
     "Accesorios en Rodio",
     "Accesorios en Acero",
@@ -312,6 +535,10 @@ export default function ProductosMayoristaPage() {
     "Topos y maxitopos",
   ];
 
+  /* =======================================================
+     CARGAR PRODUCTOS
+  ======================================================= */
+
   useEffect(() => {
     cargarProductos();
   }, []);
@@ -322,13 +549,10 @@ export default function ProductosMayoristaPage() {
 
     try {
       const sesionResponse =
-        await fetch(
-          "/api/auth/sesion",
-          {
-            method: "GET",
-            cache: "no-store",
-          }
-        );
+        await fetch("/api/auth/sesion", {
+          method: "GET",
+          cache: "no-store",
+        });
 
       const sesionData =
         await sesionResponse.json();
@@ -341,13 +565,8 @@ export default function ProductosMayoristaPage() {
         return;
       }
 
-      if (
-        !sesionData.cliente?.tienda_id
-      ) {
-        router.replace(
-          "/crear-tienda"
-        );
-
+      if (!sesionData.cliente?.tienda_id) {
+        router.replace("/crear-tienda");
         return;
       }
 
@@ -392,9 +611,233 @@ export default function ProductosMayoristaPage() {
     }
   }
 
-  /* =========================================
+  /* =======================================================
+     CARGAR CARRITO DE LOCALSTORAGE
+  ======================================================= */
+
+  useEffect(() => {
+    try {
+      const guardado =
+        window.localStorage.getItem(
+          "ra_pedido_mayorista"
+        );
+
+      if (guardado) {
+        const datos =
+          JSON.parse(guardado);
+
+        if (Array.isArray(datos)) {
+          setCarrito(datos);
+        }
+      }
+    } catch (error) {
+      console.error(
+        "Error cargando carrito:",
+        error
+      );
+    }
+
+    setCarritoCargado(true);
+  }, []);
+
+  /* =======================================================
+     GUARDAR CARRITO
+  ======================================================= */
+
+  useEffect(() => {
+    if (!carritoCargado) return;
+
+    try {
+      window.localStorage.setItem(
+        "ra_pedido_mayorista",
+        JSON.stringify(carrito)
+      );
+    } catch (error) {
+      console.error(
+        "Error guardando carrito:",
+        error
+      );
+    }
+  }, [carrito, carritoCargado]);
+
+  /* =======================================================
+     CARRITO
+  ======================================================= */
+
+  function agregarProductoNormal(producto) {
+    const clave = claveProducto(
+      producto.id
+    );
+
+    const nuevoItem = {
+      clave,
+      producto_id: producto.id,
+      variante_id: null,
+      variante_nombre: "",
+      referencia:
+        producto.referencia || "",
+      nombre:
+        producto.nombre || "Producto",
+      foto_url:
+        producto.foto_url || "",
+      costo:
+        Number(producto.costo || 0),
+      cantidad: 1,
+    };
+
+    agregarAlCarrito(nuevoItem);
+  }
+
+  function agregarVariante(
+    producto,
+    variante
+  ) {
+    const clave = claveProducto(
+      producto.id,
+      variante.id
+    );
+
+    const nuevoItem = {
+      clave,
+      producto_id: producto.id,
+      variante_id: variante.id,
+      variante_nombre:
+        variante.nombre_variante || "",
+      referencia:
+        variante.referencia ||
+        producto.referencia ||
+        "",
+      nombre:
+        producto.nombre || "Producto",
+      foto_url:
+        variante.foto_url ||
+        producto.foto_url ||
+        "",
+      costo:
+        Number(variante.costo || 0),
+      cantidad: 1,
+    };
+
+    agregarAlCarrito(nuevoItem);
+  }
+
+  function agregarAlCarrito(nuevoItem) {
+    setCarrito((actual) => {
+      const existe =
+        actual.find(
+          (item) =>
+            item.clave ===
+            nuevoItem.clave
+        );
+
+      if (existe) {
+        return actual.map((item) =>
+          item.clave === nuevoItem.clave
+            ? {
+                ...item,
+                cantidad:
+                  Number(
+                    item.cantidad || 0
+                  ) + 1,
+              }
+            : item
+        );
+      }
+
+      return [
+        ...actual,
+        nuevoItem,
+      ];
+    });
+
+    setAgregadoReciente(
+      nuevoItem.clave
+    );
+
+    setTimeout(() => {
+      setAgregadoReciente(
+        (actual) =>
+          actual === nuevoItem.clave
+            ? null
+            : actual
+      );
+    }, 1000);
+  }
+
+  function aumentarCantidad(clave) {
+    setCarrito((actual) =>
+      actual.map((item) =>
+        item.clave === clave
+          ? {
+              ...item,
+              cantidad:
+                Number(
+                  item.cantidad || 0
+                ) + 1,
+            }
+          : item
+      )
+    );
+  }
+
+  function disminuirCantidad(clave) {
+    setCarrito((actual) =>
+      actual
+        .map((item) =>
+          item.clave === clave
+            ? {
+                ...item,
+                cantidad:
+                  Number(
+                    item.cantidad || 0
+                  ) - 1,
+              }
+            : item
+        )
+        .filter(
+          (item) =>
+            Number(item.cantidad) > 0
+        )
+    );
+  }
+
+  function eliminarDelCarrito(clave) {
+    setCarrito((actual) =>
+      actual.filter(
+        (item) =>
+          item.clave !== clave
+      )
+    );
+  }
+
+  function vaciarCarrito() {
+    setCarrito([]);
+  }
+
+  const totalUnidades =
+    useMemo(() => {
+      return carrito.reduce(
+        (total, item) =>
+          total +
+          Number(item.cantidad || 0),
+        0
+      );
+    }, [carrito]);
+
+  const totalCarrito =
+    useMemo(() => {
+      return carrito.reduce(
+        (total, item) =>
+          total +
+          Number(item.costo || 0) *
+            Number(item.cantidad || 0),
+        0
+      );
+    }, [carrito]);
+
+  /* =======================================================
      FILTROS
-  ========================================= */
+  ======================================================= */
 
   const productosFiltrados =
     useMemo(() => {
@@ -437,8 +880,7 @@ export default function ProductosMayoristaPage() {
       }
 
       if (
-        categoriaActiva ===
-        "Nuevos"
+        categoriaActiva === "Nuevos"
       ) {
         lista = [...lista].sort(
           (a, b) => {
@@ -462,8 +904,7 @@ export default function ProductosMayoristaPage() {
       }
 
       if (
-        categoriaActiva ===
-        "Aretes"
+        categoriaActiva === "Aretes"
       ) {
         lista = lista.filter(
           (producto) => {
@@ -481,26 +922,18 @@ export default function ProductosMayoristaPage() {
       }
 
       if (
-        categoriaActiva ===
-        "Candongas"
+        categoriaActiva === "Candongas"
       ) {
         lista = lista.filter(
-          (producto) => {
-            const texto =
-              normalizar(
-                producto.nombre
-              );
-
-            return texto.includes(
-              "candonga"
-            );
-          }
+          (producto) =>
+            normalizar(
+              producto.nombre
+            ).includes("candonga")
         );
       }
 
       if (
-        categoriaActiva ===
-        "Collares"
+        categoriaActiva === "Collares"
       ) {
         lista = lista.filter(
           (producto) => {
@@ -518,38 +951,24 @@ export default function ProductosMayoristaPage() {
       }
 
       if (
-        categoriaActiva ===
-        "Pulseras"
+        categoriaActiva === "Pulseras"
       ) {
         lista = lista.filter(
-          (producto) => {
-            const texto =
-              normalizar(
-                producto.nombre
-              );
-
-            return texto.includes(
-              "pulsera"
-            );
-          }
+          (producto) =>
+            normalizar(
+              producto.nombre
+            ).includes("pulsera")
         );
       }
 
       if (
-        categoriaActiva ===
-        "Anillos"
+        categoriaActiva === "Anillos"
       ) {
         lista = lista.filter(
-          (producto) => {
-            const texto =
-              normalizar(
-                producto.nombre
-              );
-
-            return texto.includes(
-              "anillo"
-            );
-          }
+          (producto) =>
+            normalizar(
+              producto.nombre
+            ).includes("anillo")
         );
       }
 
@@ -566,18 +985,14 @@ export default function ProductosMayoristaPage() {
 
             return (
               texto.includes("topo") ||
-              texto.includes(
-                "maxitopo"
-              )
+              texto.includes("maxitopo")
             );
           }
         );
       }
 
       const textoBusqueda =
-        normalizar(
-          busqueda.trim()
-        );
+        normalizar(busqueda.trim());
 
       if (textoBusqueda) {
         lista = lista.filter(
@@ -616,16 +1031,13 @@ export default function ProductosMayoristaPage() {
   function seleccionarCategoria(
     categoria
   ) {
-    setCategoriaActiva(
-      categoria
-    );
-
+    setCategoriaActiva(categoria);
     setMenuAbierto(false);
   }
 
-  /* =========================================
+  /* =======================================================
      VARIANTES
-  ========================================= */
+  ======================================================= */
 
   function alternarVariantes(
     productoId
@@ -633,16 +1045,15 @@ export default function ProductosMayoristaPage() {
     setVariantesAbiertas(
       (actual) => ({
         ...actual,
-
         [productoId]:
           !actual[productoId],
       })
     );
   }
 
-  /* =========================================
+  /* =======================================================
      VISOR
-  ========================================= */
+  ======================================================= */
 
   function abrirImagen(
     imagenes,
@@ -666,11 +1077,9 @@ export default function ProductosMayoristaPage() {
 
       return {
         ...actual,
-
         indice:
           actual.indice === 0
-            ? actual.imagenes
-                .length - 1
+            ? actual.imagenes.length - 1
             : actual.indice - 1,
       };
     });
@@ -682,7 +1091,6 @@ export default function ProductosMayoristaPage() {
 
       return {
         ...actual,
-
         indice:
           actual.indice ===
           actual.imagenes.length - 1
@@ -691,6 +1099,10 @@ export default function ProductosMayoristaPage() {
       };
     });
   }
+
+  /* =======================================================
+     CARGANDO
+  ======================================================= */
 
   if (cargando) {
     return (
@@ -712,6 +1124,11 @@ export default function ProductosMayoristaPage() {
           background: #fff8f6;
         }
 
+        button,
+        input {
+          font-family: inherit;
+        }
+
         .loading-page {
           min-height: 100vh;
           display: flex;
@@ -730,6 +1147,8 @@ export default function ProductosMayoristaPage() {
           max-width: 1400px;
           margin: 0 auto;
         }
+
+        /* ENCABEZADO */
 
         .top {
           display: flex;
@@ -752,6 +1171,7 @@ export default function ProductosMayoristaPage() {
 
         .top-buttons {
           display: flex;
+          align-items: center;
           gap: 10px;
         }
 
@@ -764,6 +1184,44 @@ export default function ProductosMayoristaPage() {
           font-size: 15px;
           font-weight: 600;
         }
+
+        /* CARRITO SUPERIOR */
+
+        .cart-top-button {
+          position: relative;
+          border: none;
+          background: #222;
+          color: white;
+          height: 46px;
+          padding: 0 18px;
+          border-radius: 12px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          font-size: 15px;
+          font-weight: 800;
+        }
+
+        .cart-top-icon {
+          font-size: 20px;
+        }
+
+        .cart-badge {
+          min-width: 24px;
+          height: 24px;
+          padding: 0 7px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 999px;
+          background: #f47c8c;
+          color: white;
+          font-size: 12px;
+          font-weight: 800;
+        }
+
+        /* FILTROS */
 
         .filter-area {
           display: grid;
@@ -812,13 +1270,12 @@ export default function ProductosMayoristaPage() {
           margin-bottom: 0;
         }
 
+        /* PRODUCTOS */
+
         .products {
           display: grid;
           grid-template-columns:
-            repeat(
-              4,
-              minmax(0, 1fr)
-            );
+            repeat(4, minmax(0, 1fr));
           gap: 20px;
         }
 
@@ -860,19 +1317,17 @@ export default function ProductosMayoristaPage() {
         .gallery-arrow {
           position: absolute;
           top: 50%;
-          transform:
-            translateY(-50%);
+          transform: translateY(-50%);
           width: 38px;
           height: 38px;
           border: none;
           border-radius: 50%;
-          background:
-            rgba(
-              255,
-              255,
-              255,
-              0.92
-            );
+          background: rgba(
+            255,
+            255,
+            255,
+            0.92
+          );
           font-size: 25px;
           cursor: pointer;
           z-index: 3;
@@ -890,8 +1345,7 @@ export default function ProductosMayoristaPage() {
           position: absolute;
           left: 50%;
           bottom: 12px;
-          transform:
-            translateX(-50%);
+          transform: translateX(-50%);
           display: flex;
           gap: 5px;
         }
@@ -899,13 +1353,12 @@ export default function ProductosMayoristaPage() {
         .dot {
           width: 7px;
           height: 7px;
-          background:
-            rgba(
-              255,
-              255,
-              255,
-              0.75
-            );
+          background: rgba(
+            255,
+            255,
+            255,
+            0.75
+          );
           border-radius: 50%;
         }
 
@@ -917,13 +1370,12 @@ export default function ProductosMayoristaPage() {
           position: absolute;
           top: 10px;
           right: 10px;
-          background:
-            rgba(
-              0,
-              0,
-              0,
-              0.55
-            );
+          background: rgba(
+            0,
+            0,
+            0,
+            0.55
+          );
           color: white;
           font-size: 12px;
           padding: 5px 8px;
@@ -942,8 +1394,7 @@ export default function ProductosMayoristaPage() {
         }
 
         .name {
-          margin:
-            7px 0 18px;
+          margin: 7px 0 18px;
           font-size: 17px;
           line-height: 1.3;
         }
@@ -951,8 +1402,7 @@ export default function ProductosMayoristaPage() {
         .price-block {
           padding-bottom: 12px;
           margin-bottom: 12px;
-          border-bottom:
-            1px solid #eee;
+          border-bottom: 1px solid #eee;
         }
 
         .price-label {
@@ -979,12 +1429,35 @@ export default function ProductosMayoristaPage() {
           display: block;
           margin-top: 4px;
           font-size: 18px;
-          color: #318553;
         }
 
-        /* =====================================
-           PRODUCTOS CON VARIANTES
-        ===================================== */
+        /* AGREGAR PEDIDO */
+
+        .add-order-button {
+          width: 100%;
+          border: none;
+          background: #222;
+          color: white;
+          padding: 12px 10px;
+          border-radius: 10px;
+          margin-top: 16px;
+          cursor: pointer;
+          font-size: 13px;
+          font-weight: 800;
+          transition:
+            transform 0.15s ease,
+            background 0.15s ease;
+        }
+
+        .add-order-button:hover {
+          transform: translateY(-1px);
+        }
+
+        .add-order-button.added {
+          background: #318553;
+        }
+
+        /* VARIANTES */
 
         .variants-summary {
           margin-top: 16px;
@@ -1088,10 +1561,7 @@ export default function ProductosMayoristaPage() {
         .variant-prices {
           display: grid;
           grid-template-columns:
-            repeat(
-              3,
-              minmax(0, 1fr)
-            );
+            repeat(3, minmax(0, 1fr));
           border-top: 1px solid #eee;
         }
 
@@ -1127,6 +1597,15 @@ export default function ProductosMayoristaPage() {
           font-size: 13px;
         }
 
+        .variant-add-wrap {
+          padding: 0 9px 10px;
+        }
+
+        .variant-add-wrap
+        .add-order-button {
+          margin-top: 0;
+        }
+
         .empty {
           grid-column: 1 / -1;
           background: white;
@@ -1141,13 +1620,12 @@ export default function ProductosMayoristaPage() {
         .overlay {
           position: fixed;
           inset: 0;
-          background:
-            rgba(
-              0,
-              0,
-              0,
-              0.35
-            );
+          background: rgba(
+            0,
+            0,
+            0,
+            0.35
+          );
           z-index: 9998;
         }
 
@@ -1155,11 +1633,7 @@ export default function ProductosMayoristaPage() {
           position: fixed;
           top: 0;
           left: 0;
-          width:
-            min(
-              340px,
-              88vw
-            );
+          width: min(340px, 88vw);
           height: 100vh;
           background: white;
           z-index: 9999;
@@ -1167,21 +1641,14 @@ export default function ProductosMayoristaPage() {
           overflow-y: auto;
           box-shadow:
             6px 0 30px
-            rgba(
-              0,
-              0,
-              0,
-              0.18
-            );
+            rgba(0, 0, 0, 0.18);
         }
 
         .menu-header {
           display: flex;
-          justify-content:
-            space-between;
+          justify-content: space-between;
           align-items: center;
-          border-bottom:
-            1px solid #eee;
+          border-bottom: 1px solid #eee;
           padding-bottom: 18px;
         }
 
@@ -1228,13 +1695,12 @@ export default function ProductosMayoristaPage() {
         .viewer {
           position: fixed;
           inset: 0;
-          background:
-            rgba(
-              0,
-              0,
-              0,
-              0.9
-            );
+          background: rgba(
+            0,
+            0,
+            0,
+            0.9
+          );
           z-index: 10000;
           display: flex;
           justify-content: center;
@@ -1274,8 +1740,7 @@ export default function ProductosMayoristaPage() {
         .viewer-arrow {
           position: absolute;
           top: 50%;
-          transform:
-            translateY(-50%);
+          transform: translateY(-50%);
           width: 48px;
           height: 48px;
           border: none;
@@ -1297,47 +1762,286 @@ export default function ProductosMayoristaPage() {
           position: absolute;
           left: 50%;
           bottom: 15px;
-          transform:
-            translateX(-50%);
+          transform: translateX(-50%);
           color: white;
-          background:
-            rgba(
-              0,
-              0,
-              0,
-              0.6
-            );
+          background: rgba(
+            0,
+            0,
+            0,
+            0.6
+          );
           padding: 7px 12px;
           border-radius: 20px;
         }
 
-        @media (
-          max-width: 1000px
-        ) {
+        /* =================================================
+           CARRITO LATERAL
+        ================================================= */
+
+        .cart-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(
+            0,
+            0,
+            0,
+            0.42
+          );
+          z-index: 11000;
+        }
+
+        .cart-panel {
+          position: fixed;
+          top: 0;
+          right: 0;
+          width: min(470px, 100vw);
+          height: 100vh;
+          background: white;
+          z-index: 11001;
+          display: flex;
+          flex-direction: column;
+          box-shadow:
+            -8px 0 35px
+            rgba(0, 0, 0, 0.16);
+        }
+
+        .cart-header {
+          flex-shrink: 0;
+          padding: 22px;
+          border-bottom: 1px solid #eee;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .cart-header h2 {
+          margin: 0;
+          font-size: 25px;
+        }
+
+        .cart-header p {
+          margin: 5px 0 0;
+          color: #777;
+          font-size: 13px;
+        }
+
+        .cart-close {
+          width: 40px;
+          height: 40px;
+          border: none;
+          background: #f5f5f5;
+          border-radius: 50%;
+          cursor: pointer;
+          font-size: 18px;
+        }
+
+        .cart-empty {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          padding: 35px;
+        }
+
+        .cart-empty-icon {
+          font-size: 50px;
+        }
+
+        .cart-empty h3 {
+          margin: 15px 0 5px;
+        }
+
+        .cart-empty p {
+          margin: 0;
+          color: #777;
+        }
+
+        .cart-items {
+          flex: 1;
+          overflow-y: auto;
+          padding: 10px 20px;
+        }
+
+        .cart-item {
+          padding: 16px 0;
+          border-bottom: 1px solid #eee;
+        }
+
+        .cart-item-top {
+          display: grid;
+          grid-template-columns:
+            76px minmax(0, 1fr) 32px;
+          gap: 12px;
+          align-items: start;
+        }
+
+        .cart-item-image {
+          width: 76px;
+          height: 76px;
+          border-radius: 10px;
+          overflow: hidden;
+          background: #f5f5f5;
+        }
+
+        .cart-item-image img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+
+        .cart-no-image {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          color: #999;
+          font-size: 10px;
+        }
+
+        .cart-item-info {
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .cart-item-info strong {
+          font-size: 14px;
+        }
+
+        .cart-variant {
+          color: #d97883;
+          font-size: 12px;
+          font-weight: 800;
+          text-transform: uppercase;
+        }
+
+        .cart-reference {
+          color: #888;
+          font-size: 12px;
+        }
+
+        .cart-unit-price {
+          color: #222;
+          font-size: 13px;
+          font-weight: 700;
+        }
+
+        .cart-delete {
+          width: 30px;
+          height: 30px;
+          border: none;
+          background: #f6f6f6;
+          border-radius: 50%;
+          cursor: pointer;
+          color: #888;
+        }
+
+        .cart-item-bottom {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 12px;
+          margin-top: 12px;
+          padding-left: 88px;
+        }
+
+        .quantity-control {
+          display: flex;
+          align-items: center;
+          border: 1px solid #ddd;
+          border-radius: 9px;
+          overflow: hidden;
+        }
+
+        .quantity-control button {
+          width: 34px;
+          height: 34px;
+          border: none;
+          background: #fafafa;
+          cursor: pointer;
+          font-size: 18px;
+        }
+
+        .quantity-control strong {
+          width: 38px;
+          text-align: center;
+          font-size: 14px;
+        }
+
+        .cart-subtotal {
+          font-size: 15px;
+        }
+
+        .cart-footer {
+          flex-shrink: 0;
+          padding: 20px;
+          border-top: 1px solid #ddd;
+          background: white;
+        }
+
+        .cart-summary-row {
+          display: flex;
+          justify-content: space-between;
+          gap: 20px;
+          margin-bottom: 8px;
+          color: #666;
+        }
+
+        .cart-summary-row.total {
+          margin-top: 13px;
+          padding-top: 13px;
+          border-top: 1px solid #eee;
+          color: #222;
+          font-size: 19px;
+        }
+
+        .send-order-button {
+          width: 100%;
+          border: none;
+          background: #222;
+          color: white;
+          padding: 15px;
+          border-radius: 11px;
+          margin-top: 14px;
+          cursor: pointer;
+          font-size: 16px;
+          font-weight: 800;
+        }
+
+        .empty-cart-button {
+          width: 100%;
+          border: none;
+          background: transparent;
+          color: #999;
+          padding: 11px;
+          margin-top: 5px;
+          cursor: pointer;
+          font-size: 13px;
+        }
+
+        /* RESPONSIVE */
+
+        @media (max-width: 1000px) {
           .products {
             grid-template-columns:
-              repeat(
-                3,
-                minmax(0, 1fr)
-              );
+              repeat(3, minmax(0, 1fr));
           }
         }
 
-        @media (
-          max-width: 700px
-        ) {
+        @media (max-width: 700px) {
           .products {
             grid-template-columns:
-              repeat(
-                2,
-                minmax(0, 1fr)
-              );
+              repeat(2, minmax(0, 1fr));
             gap: 11px;
           }
 
           .page {
-            padding:
-              18px 12px 50px;
+            padding: 18px 12px 50px;
           }
 
           .top h1 {
@@ -1345,8 +2049,7 @@ export default function ProductosMayoristaPage() {
           }
 
           .filter-area {
-            grid-template-columns:
-              1fr;
+            grid-template-columns: 1fr;
           }
 
           .category-button {
@@ -1368,6 +2071,19 @@ export default function ProductosMayoristaPage() {
 
           .gallery-arrow {
             display: none;
+          }
+
+          .top {
+            align-items: flex-start;
+          }
+
+          .top-buttons {
+            width: 100%;
+          }
+
+          .cart-top-button {
+            flex: 1;
+            justify-content: center;
           }
 
           .variant-top {
@@ -1400,8 +2116,7 @@ export default function ProductosMayoristaPage() {
 
           .variant-price-box {
             display: flex;
-            justify-content:
-              space-between;
+            justify-content: space-between;
             align-items: center;
             gap: 8px;
           }
@@ -1409,10 +2124,20 @@ export default function ProductosMayoristaPage() {
           .variant-price-label {
             margin-bottom: 0;
           }
+
+          .cart-panel {
+            width: 100%;
+          }
+
+          .cart-item-bottom {
+            padding-left: 0;
+          }
         }
       `}</style>
 
-      {/* MENÚ DE CATEGORÍAS */}
+      {/* ===================================================
+          MENÚ
+      =================================================== */}
 
       {menuAbierto && (
         <>
@@ -1465,7 +2190,9 @@ export default function ProductosMayoristaPage() {
         </>
       )}
 
-      {/* VISOR */}
+      {/* ===================================================
+          VISOR
+      =================================================== */}
 
       <VisorImagen
         visor={visor}
@@ -1473,6 +2200,26 @@ export default function ProductosMayoristaPage() {
         anterior={imagenAnterior}
         siguiente={imagenSiguiente}
       />
+
+      {/* ===================================================
+          CARRITO
+      =================================================== */}
+
+      <Carrito
+        abierto={carritoAbierto}
+        cerrar={() =>
+          setCarritoAbierto(false)
+        }
+        carrito={carrito}
+        aumentar={aumentarCantidad}
+        disminuir={disminuirCantidad}
+        eliminar={eliminarDelCarrito}
+        vaciar={vaciarCarrito}
+      />
+
+      {/* ===================================================
+          PÁGINA
+      =================================================== */}
 
       <main className="page">
         <div className="container">
@@ -1486,18 +2233,34 @@ export default function ProductosMayoristaPage() {
               </h1>
 
               <p>
-                Consulta tu costo, precio sugerido y ganancia.
+                Consulta tu costo, precio sugerido y arma tu pedido.
               </p>
             </div>
 
             <div className="top-buttons">
               <button
                 type="button"
+                className="cart-top-button"
+                onClick={() =>
+                  setCarritoAbierto(true)
+                }
+              >
+                <span className="cart-top-icon">
+                  🛒
+                </span>
+
+                <span>Mi pedido</span>
+
+                <span className="cart-badge">
+                  {totalUnidades}
+                </span>
+              </button>
+
+              <button
+                type="button"
                 className="button"
                 onClick={() =>
-                  router.push(
-                    "/admin"
-                  )
+                  router.push("/admin")
                 }
               >
                 ← Volver
@@ -1524,9 +2287,7 @@ export default function ProductosMayoristaPage() {
               placeholder="Buscar por referencia, producto o variante..."
               value={busqueda}
               onChange={(e) =>
-                setBusqueda(
-                  e.target.value
-                )
+                setBusqueda(e.target.value)
               }
             />
           </div>
@@ -1541,28 +2302,60 @@ export default function ProductosMayoristaPage() {
             </strong>
 
             <p>
-              Tu costo es el precio que pagas por el producto. El precio sugerido es el valor recomendado para venderlo a tus clientes.
+              Tu costo es el precio que pagas por el producto. El precio sugerido es el valor recomendado para venderlo a tus clientes. También puedes agregar los productos directamente a tu pedido.
             </p>
           </div>
+
+          {totalUnidades > 0 && (
+            <div
+              style={{
+                background: "#fff",
+                border: "1px solid #eee",
+                borderRadius: "12px",
+                padding: "12px 16px",
+                marginBottom: "20px",
+                display: "flex",
+                justifyContent:
+                  "space-between",
+                alignItems: "center",
+                gap: "15px",
+                flexWrap: "wrap",
+              }}
+            >
+              <span>
+                🛒 Tienes{" "}
+                <strong>
+                  {totalUnidades}
+                </strong>{" "}
+                unidades en tu pedido
+              </span>
+
+              <strong>
+                Total:{" "}
+                {formatoPrecio(
+                  totalCarrito
+                )}
+              </strong>
+            </div>
+          )}
 
           {error && (
             <div
               style={{
-                background:
-                  "#ffeaea",
+                background: "#ffeaea",
                 color: "#a33",
                 padding: "15px",
-                borderRadius:
-                  "10px",
-                marginBottom:
-                  "20px",
+                borderRadius: "10px",
+                marginBottom: "20px",
               }}
             >
               {error}
             </div>
           )}
 
-          {/* PRODUCTOS */}
+          {/* =================================================
+              PRODUCTOS
+          ================================================= */}
 
           <section className="products">
             {productosFiltrados.length ===
@@ -1590,13 +2383,6 @@ export default function ProductosMayoristaPage() {
                       ? variantes[0]
                       : null;
 
-                  /*
-                    Si tiene variantes usamos
-                    la primera variante para
-                    representar el producto
-                    principal.
-                  */
-
                   const productoVisual =
                     primeraVariante
                       ? {
@@ -1619,8 +2405,7 @@ export default function ProductosMayoristaPage() {
                             0
                         )
                       : Number(
-                          producto.costo ||
-                            0
+                          producto.costo || 0
                         );
 
                   const precioPrincipal =
@@ -1639,11 +2424,14 @@ export default function ProductosMayoristaPage() {
                       producto.id
                     ] === true;
 
+                  const claveNormal =
+                    claveProducto(
+                      producto.id
+                    );
+
                   return (
                     <article
-                      key={
-                        producto.id
-                      }
+                      key={producto.id}
                       className="card"
                     >
                       <GaleriaProducto
@@ -1664,16 +2452,34 @@ export default function ProductosMayoristaPage() {
                           {producto.nombre}
                         </h2>
 
+                        {/* PRODUCTO NORMAL */}
+
                         {!tieneVariantes && (
-                          <BloquePrecios
-                            costo={
-                              costoPrincipal
-                            }
-                            precio={
-                              precioPrincipal
-                            }
-                          />
+                          <>
+                            <BloquePrecios
+                              costo={
+                                costoPrincipal
+                              }
+                              precio={
+                                precioPrincipal
+                              }
+                            />
+
+                            <BotonAgregar
+                              agregado={
+                                agregadoReciente ===
+                                claveNormal
+                              }
+                              onClick={() =>
+                                agregarProductoNormal(
+                                  producto
+                                )
+                              }
+                            />
+                          </>
                         )}
+
+                        {/* PRODUCTO CON VARIANTES */}
 
                         {tieneVariantes && (
                           <>
@@ -1729,6 +2535,12 @@ export default function ProductosMayoristaPage() {
                                         variante.foto_url_2,
                                       ].filter(
                                         Boolean
+                                      );
+
+                                    const claveVariante =
+                                      claveProducto(
+                                        producto.id,
+                                        variante.id
                                       );
 
                                     return (
@@ -1830,6 +2642,21 @@ export default function ProductosMayoristaPage() {
                                               )}
                                             </strong>
                                           </div>
+                                        </div>
+
+                                        <div className="variant-add-wrap">
+                                          <BotonAgregar
+                                            agregado={
+                                              agregadoReciente ===
+                                              claveVariante
+                                            }
+                                            onClick={() =>
+                                              agregarVariante(
+                                                producto,
+                                                variante
+                                              )
+                                            }
+                                          />
                                         </div>
                                       </div>
                                     );
