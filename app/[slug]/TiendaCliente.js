@@ -909,7 +909,7 @@ export default function TiendaCliente({
                     </button>
                   </div>
 
-                 {fotos.length > 1 && (
+               {fotos.length > 1 && (
   <div className="miniaturas-producto">
     {fotos.map((foto, index) => (
       <button
@@ -930,49 +930,17 @@ export default function TiendaCliente({
       >
         <img
           src={foto}
-          alt=""
+          alt={`Foto ${index + 1} de ${producto.nombre}`}
           loading="lazy"
         />
 
         {index === 1 && (
-          <span className="miniatura-etiqueta">
-            2
-          </span>
+          <span className="miniatura-etiqueta">2</span>
         )}
       </button>
     ))}
   </div>
 )}
-                      >
-                        ‹
-                      </button>
-
-                      <div className="puntos-mini">
-                        {fotos.map((_, index) => (
-                          <span
-                            key={index}
-                            className={`punto-mini ${
-                              index === indiceActual
-                                ? "activo"
-                                : ""
-                            }`}
-                          />
-                        ))}
-                      </div>
-
-                      <button
-                        onClick={() =>
-                          cambiarFotoTarjeta(
-                            producto,
-                            "siguiente"
-                          )
-                        }
-                      >
-                        ›
-                      </button>
-                    </div>
-                  )}
-
                   <div
                     className="producto-info"
                     onClick={() =>
