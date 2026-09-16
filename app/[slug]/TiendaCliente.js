@@ -898,8 +898,7 @@ export default function TiendaCliente({
                           : "Agregar al carrito"
                       }
                     >
-                      <span className="corazon">♡</span>
-
+                     <span className="icono-carrito-agregar">🛒</span>
                       <span className="circulo-mas">
                         {productoConfirmado ===
                         claveCarrito(producto)
@@ -908,39 +907,51 @@ export default function TiendaCliente({
                       </span>
                     </button>
                   </div>
+{fotos.length > 1 &&
+  !fotosTarjetas[`foto2_error_${producto.id}`] && (
+    <div className="miniaturas-producto">
+      {fotos.map((foto, index) => (
+        <button
+          key={`${producto.id}-foto-${index}`}
+          type="button"
+          className={`miniatura-producto ${
+            index === indiceActual ? "activa" : ""
+          }`}
+          onClick={(e) => {
+            e.stopPropagation();
 
-               {fotos.length > 1 && (
-  <div className="miniaturas-producto">
-    {fotos.map((foto, index) => (
-      <button
-        key={`${producto.id}-foto-${index}`}
-        type="button"
-        className={`miniatura-producto ${
-          index === indiceActual ? "activa" : ""
-        }`}
-        onClick={(e) => {
-          e.stopPropagation();
+            setFotosTarjetas((actual) => ({
+              ...actual,
+              [producto.id]: index,
+            }));
+          }}
+          aria-label={`Ver foto ${index + 1} de ${producto.nombre}`}
+        >
+          <img
+            src={foto}
+            alt={`Foto ${index + 1} de ${producto.nombre}`}
+            loading="lazy"
+            onError={() => {
+              if (index === 1) {
+                setFotosTarjetas((actual) => ({
+                  ...actual,
+                  [`foto2_error_${producto.id}`]: true,
+                  [producto.id]: 0,
+                }));
+              }
+            }}
+          />
 
-          setFotosTarjetas((actual) => ({
-            ...actual,
-            [producto.id]: index,
-          }));
-        }}
-        aria-label={`Ver foto ${index + 1} de ${producto.nombre}`}
-      >
-        <img
-          src={foto}
-          alt={`Foto ${index + 1} de ${producto.nombre}`}
-          loading="lazy"
-        />
-
-        {index === 1 && (
-          <span className="miniatura-etiqueta">2</span>
-        )}
-      </button>
-    ))}
-  </div>
-)}
+          {index === 1 && (
+            <span className="miniatura-etiqueta">
+              2
+            </span>
+          )}
+        </button>
+      ))}
+    </div>
+  )}
+            
                   <div
                     className="producto-info"
                     onClick={() =>
@@ -1736,10 +1747,14 @@ export default function TiendaCliente({
           align-items: center;
         }
 
-        .corazon {
-          font-size: 36px;
-          line-height: 1;
-        }
+       .icono-carrito-agregar {
+  font-size: 27px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translate(-1px, -1px);
+}
 
         .circulo-mas {
           position: absolute;
