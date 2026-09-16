@@ -518,10 +518,10 @@ export default function TiendaCliente({
       });
     });
 
-    setTimeout(() => {
-      imagenVoladora.remove();
-      animarBolsa();
-    }, 720);
+   setTimeout(() => {
+  imagenVoladora.remove();
+  animarBolsa();
+}, 1280);
   }
 
   // ========================================
@@ -858,6 +858,8 @@ export default function TiendaCliente({
                         className="producto-imagen"
                         src={fotoActual}
                         alt={producto.nombre}
+                                    loading="lazy"
+                                    decoding="async"
                         onClick={() =>
                           abrirProducto(
                             producto,
@@ -907,15 +909,40 @@ export default function TiendaCliente({
                     </button>
                   </div>
 
-                  {fotos.length > 1 && (
-                    <div className="cambiar-foto-barra">
-                      <button
-                        onClick={() =>
-                          cambiarFotoTarjeta(
-                            producto,
-                            "anterior"
-                          )
-                        }
+                 {fotos.length > 1 && (
+  <div className="miniaturas-producto">
+    {fotos.map((foto, index) => (
+      <button
+        key={`${producto.id}-foto-${index}`}
+        type="button"
+        className={`miniatura-producto ${
+          index === indiceActual ? "activa" : ""
+        }`}
+        onClick={(e) => {
+          e.stopPropagation();
+
+          setFotosTarjetas((actual) => ({
+            ...actual,
+            [producto.id]: index,
+          }));
+        }}
+        aria-label={`Ver foto ${index + 1} de ${producto.nombre}`}
+      >
+        <img
+          src={foto}
+          alt=""
+          loading="lazy"
+        />
+
+        {index === 1 && (
+          <span className="miniatura-etiqueta">
+            2
+          </span>
+        )}
+      </button>
+    ))}
+  </div>
+)}
                       >
                         ‹
                       </button>
@@ -1587,27 +1614,23 @@ export default function TiendaCliente({
         }
 
         .producto-volador {
-          position: fixed;
-          z-index: 999999;
-          object-fit: cover;
-          border-radius: 14px;
-          pointer-events: none;
-          opacity: 1;
-          transform: scale(1);
-          box-shadow: 0 10px 30px
-            rgba(0, 0, 0, 0.28);
+  position: fixed;
+  z-index: 999999;
+  object-fit: cover;
+  border-radius: 14px;
+  pointer-events: none;
+  opacity: 1;
+  transform: scale(1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
 
-          transition:
-            left 0.7s
-              cubic-bezier(0.22, 0.8, 0.25, 1),
-            top 0.7s
-              cubic-bezier(0.22, 0.8, 0.25, 1),
-            width 0.7s ease,
-            height 0.7s ease,
-            opacity 0.7s ease,
-            transform 0.7s ease;
-        }
-
+  transition:
+    left 1.25s cubic-bezier(0.22, 0.75, 0.25, 1),
+    top 1.25s cubic-bezier(0.22, 0.75, 0.25, 1),
+    width 1.25s ease,
+    height 1.25s ease,
+    opacity 1.15s ease,
+    transform 1.25s ease;
+}
         /* BUSCADOR */
 
         .buscador-contenedor {
@@ -1765,50 +1788,72 @@ export default function TiendaCliente({
           border: 2px solid white;
         }
 
-        /* FOTOS TARJETA */
+      /* FOTOS TARJETA - MINIATURAS */
 
-        .cambiar-foto-barra {
-          height: 34px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 13px;
-          border-bottom: 1px solid #eee;
-          background: white;
-        }
+.miniaturas-producto {
+  min-height: 64px;
+  padding: 7px 7px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 7px;
+  border-bottom: 1px solid #eeeeee;
+  background: #ffffff;
+}
 
-        .cambiar-foto-barra button {
-          width: 30px;
-          height: 28px;
-          border: none;
-          background: transparent;
-          color: #222;
-          font-size: 24px;
-          line-height: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
+.miniatura-producto {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  flex: 0 0 50px;
+  padding: 2px;
+  overflow: hidden;
+  border: 1px solid #d8d8d8;
+  border-radius: 7px;
+  background: #ffffff;
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
 
-        .puntos-mini {
-          display: flex;
-          gap: 5px;
-          align-items: center;
-        }
+.miniatura-producto:hover {
+  transform: translateY(-1px);
+  border-color: #777777;
+}
 
-        .punto-mini {
-          width: 5px;
-          height: 5px;
-          border-radius: 50%;
-          background: #c5c5c5;
-        }
+.miniatura-producto.activa {
+  border: 2px solid #111111;
+  padding: 1px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
 
-        .punto-mini.activo {
-          width: 7px;
-          height: 7px;
-          background: #111;
-        }
+.miniatura-producto img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
 
+.miniatura-etiqueta {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #111111;
+  color: #ffffff;
+  border: 1px solid #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
         /* INFORMACIÓN PRODUCTO */
 
         .producto-info {
