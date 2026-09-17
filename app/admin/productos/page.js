@@ -351,45 +351,31 @@ function BloquePrecios({
   const costoNumero = Number(costo || 0);
   const precioNumero = Number(precio || 0);
 
-  const [editando, setEditando] =
-    useState(false);
-
-  const [nuevoPrecio, setNuevoPrecio] =
-    useState(String(Math.round(precioNumero)));
-
-  const [guardando, setGuardando] =
-    useState(false);
-
-  const [errorPrecio, setErrorPrecio] =
-    useState("");
+  const [editando, setEditando] = useState(false);
+  const [nuevoPrecio, setNuevoPrecio] = useState(
+    String(Math.round(precioNumero))
+  );
+  const [guardando, setGuardando] = useState(false);
+  const [errorPrecio, setErrorPrecio] = useState("");
 
   useEffect(() => {
     if (!editando) {
-      setNuevoPrecio(
-        String(Math.round(precioNumero))
-      );
+      setNuevoPrecio(String(Math.round(precioNumero)));
     }
   }, [precioNumero, editando]);
 
-  const ganancia =
-    precioNumero - costoNumero;
+  const ganancia = precioNumero - costoNumero;
 
   async function guardarPrecio() {
-    const precioGuardar =
-      Number(
-        String(nuevoPrecio)
-          .replace(/\./g, "")
-          .replace(/,/g, "")
-          .replace(/\s/g, "")
-      );
+    const precioGuardar = Number(
+      String(nuevoPrecio)
+        .replace(/\./g, "")
+        .replace(/,/g, "")
+        .replace(/\s/g, "")
+    );
 
-    if (
-      !Number.isFinite(precioGuardar) ||
-      precioGuardar < 0
-    ) {
-      setErrorPrecio(
-        "Ingresa un precio válido."
-      );
+    if (!Number.isFinite(precioGuardar) || precioGuardar < 0) {
+      setErrorPrecio("Ingresa un precio válido.");
       return;
     }
 
@@ -397,59 +383,38 @@ function BloquePrecios({
     setErrorPrecio("");
 
     try {
-      const response = await fetch(
-        "/api/precios-tienda",
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-
-          body: JSON.stringify({
-            producto_id:
-              Number(productoId),
-
-            variante_id:
-              varianteId !== null &&
-              varianteId !== undefined
-                ? Number(varianteId)
-                : null,
-
-            precio_sugerido:
-              Math.round(precioGuardar),
-          }),
-        }
-      );
+      const response = await fetch("/api/precios-tienda", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          producto_id: Number(productoId),
+          variante_id:
+            varianteId !== null && varianteId !== undefined
+              ? Number(varianteId)
+              : null,
+          precio_sugerido: Math.round(precioGuardar),
+        }),
+      });
 
       const data = await response.json();
 
       if (!response.ok || !data.ok) {
         throw new Error(
-          data.mensaje ||
-            "No pudimos guardar el precio."
+          data.mensaje || "No pudimos guardar el precio."
         );
       }
 
-      onPrecioActualizado?.(
-        Number(data.precio_sugerido)
-      );
+      onPrecioActualizado?.(Number(data.precio_sugerido));
 
-      setNuevoPrecio(
-        String(data.precio_sugerido)
-      );
-
+      setNuevoPrecio(String(data.precio_sugerido));
       setEditando(false);
     } catch (error) {
-      console.error(
-        "Error guardando precio:",
-        error
-      );
+      console.error("Error guardando precio:", error);
 
       setErrorPrecio(
-        error.message ||
-          "No pudimos guardar el precio."
+        error.message || "No pudimos guardar el precio."
       );
     } finally {
       setGuardando(false);
@@ -457,61 +422,87 @@ function BloquePrecios({
   }
 
   function cancelarEdicion() {
-    setNuevoPrecio(
-      String(Math.round(precioNumero))
-    );
-
+    setNuevoPrecio(String(Math.round(precioNumero)));
     setErrorPrecio("");
     setEditando(false);
   }
 
   return (
-    <>
-      <div className="price-block">
-        <p className="price-label">
-          Tu costo
-        </p>
+    <div className="compact-prices-wrapper">
 
-        <strong className="cost">
-          {formatoPrecio(costoNumero)}
-        </strong>
-      </div>
+      {/* FILA COMPACTA DE PRECIOS */}
+      <div className="compact-prices">
 
-      <div className="price-block">
-        <div className="price-title-row">
-          <p className="price-label">
-            Precio sugerido
-          </p>
+        {/* TU COSTO */}
+        <div className="compact-price-item">
+          <span className="compact-price-label">
+            Tu costo
+          </span>
 
-          {!editando && (
-            <button
-              type="button"
-              className="edit-price-button"
-              onClick={() => {
-                setNuevoPrecio(
-                  String(
-                    Math.round(
-                      precioNumero
-                    )
-                  )
-                );
-
-                setErrorPrecio("");
-                setEditando(true);
-              }}
-            >
-              ✏️ Editar
-            </button>
-          )}
+          <strong className="compact-cost">
+            {formatoPrecio(costoNumero)}
+          </strong>
         </div>
 
-        {!editando ? (
-          <strong className="retail">
+        {/* PRECIO DE VENTA */}
+        <div className="compact-price-item compact-price-middle">
+          <div className="compact-price-title">
+            <span className="compact-price-label">
+              Precio venta
+            </span>
+
+            {!editando && (
+              <button
+                type="button"
+                className="compact-edit-button"
+                onClick={() => {
+                  setNuevoPrecio(
+                    String(Math.round(precioNumero))
+                  );
+                  setErrorPrecio("");
+                  setEditando(true);
+                }}
+                title="Editar precio"
+              >
+                ✏️
+              </button>
+            )}
+          </div>
+
+          <strong className="compact-retail">
             {formatoPrecio(precioNumero)}
           </strong>
-        ) : (
-          <div className="price-editor">
-            <div className="price-input-wrap">
+        </div>
+
+        {/* GANANCIA */}
+        <div className="compact-price-item">
+          <span className="compact-price-label">
+            Ganancia
+          </span>
+
+          <strong
+            className="compact-profit"
+            style={{
+              color:
+                ganancia >= 0
+                  ? "#318553"
+                  : "#c43b3b",
+            }}
+          >
+            {formatoPrecio(ganancia)}
+          </strong>
+        </div>
+      </div>
+
+      {/* EDITOR - SOLO APARECE AL TOCAR EL LÁPIZ */}
+      {editando && (
+        <div className="compact-price-editor">
+          <span className="compact-editor-label">
+            Nuevo precio de venta
+          </span>
+
+          <div className="compact-editor-row">
+            <div className="compact-input-wrap">
               <span>$</span>
 
               <input
@@ -523,10 +514,7 @@ function BloquePrecios({
                 disabled={guardando}
                 autoFocus
                 onChange={(e) => {
-                  setNuevoPrecio(
-                    e.target.value
-                  );
-
+                  setNuevoPrecio(e.target.value);
                   setErrorPrecio("");
                 }}
                 onKeyDown={(e) => {
@@ -541,55 +529,33 @@ function BloquePrecios({
               />
             </div>
 
-            <div className="price-editor-buttons">
-              <button
-                type="button"
-                className="save-price-button"
-                disabled={guardando}
-                onClick={guardarPrecio}
-              >
-                {guardando
-                  ? "Guardando..."
-                  : "✓ Guardar"}
-              </button>
+            <button
+              type="button"
+              className="compact-save-button"
+              disabled={guardando}
+              onClick={guardarPrecio}
+            >
+              {guardando ? "..." : "✓"}
+            </button>
 
-              <button
-                type="button"
-                className="cancel-price-button"
-                disabled={guardando}
-                onClick={cancelarEdicion}
-              >
-                Cancelar
-              </button>
-            </div>
-
-            {errorPrecio && (
-              <p className="price-error">
-                {errorPrecio}
-              </p>
-            )}
+            <button
+              type="button"
+              className="compact-cancel-button"
+              disabled={guardando}
+              onClick={cancelarEdicion}
+            >
+              ✕
+            </button>
           </div>
-        )}
-      </div>
 
-      <div>
-        <p className="price-label">
-          Ganancia
-        </p>
-
-        <strong
-          className="profit"
-          style={{
-            color:
-              ganancia >= 0
-                ? "#318553"
-                : "#c43b3b",
-          }}
-        >
-          {formatoPrecio(ganancia)}
-        </strong>
-      </div>
-    </>
+          {errorPrecio && (
+            <p className="price-error">
+              {errorPrecio}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -3035,7 +3001,200 @@ export default function ProductosMayoristaPage() {
           margin-top: 4px;
           font-size: 18px;
         }
+/* =================================================
+   PRECIOS COMPACTOS
+================================================= */
 
+.compact-prices-wrapper {
+  width: 100%;
+}
+
+.compact-prices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 1px solid #eeeeee;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fafafa;
+}
+
+.compact-price-item {
+  min-width: 0;
+  padding: 10px 9px;
+}
+
+.compact-price-item + .compact-price-item {
+  border-left: 1px solid #e8e8e8;
+}
+
+.compact-price-label {
+  display: block;
+  color: #888;
+  font-size: 10px;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.compact-price-title {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.compact-cost,
+.compact-retail,
+.compact-profit {
+  display: block;
+  margin-top: 5px;
+  font-size: 15px;
+  line-height: 1.1;
+  white-space: nowrap;
+  letter-spacing: -0.3px;
+}
+
+.compact-cost {
+  color: #d97883;
+}
+
+.compact-retail {
+  color: #222;
+}
+
+.compact-profit {
+  color: #318553;
+}
+
+.compact-edit-button {
+  width: 21px;
+  height: 21px;
+  flex: 0 0 21px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #eeeeee;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.compact-edit-button:hover {
+  background: #e2e2e2;
+}
+
+/* EDITOR */
+
+.compact-price-editor {
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid #eeeeee;
+  border-radius: 10px;
+  background: #fafafa;
+}
+
+.compact-editor-label {
+  display: block;
+  margin-bottom: 6px;
+  color: #777;
+  font-size: 11px;
+}
+
+.compact-editor-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34px 34px;
+  gap: 6px;
+}
+
+.compact-input-wrap {
+  display: flex;
+  align-items: center;
+  border: 1px solid #dcdcdc;
+  border-radius: 8px;
+  background: white;
+  overflow: hidden;
+}
+
+.compact-input-wrap span {
+  padding-left: 9px;
+  color: #777;
+  font-weight: 700;
+}
+
+.compact-input-wrap input {
+  width: 100%;
+  min-width: 0;
+  height: 36px;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 0 7px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.compact-save-button,
+.compact-cancel-button {
+  width: 34px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.compact-save-button {
+  background: #318553;
+  color: white;
+}
+
+.compact-cancel-button {
+  background: #eeeeee;
+  color: #555;
+}
+
+.price-error {
+  margin: 7px 0 0;
+  color: #c43b3b;
+  font-size: 11px;
+}
+
+/* MÓVIL */
+
+@media (max-width: 700px) {
+  .compact-price-item {
+    padding: 8px 5px;
+  }
+
+  .compact-price-label {
+    font-size: 8.5px;
+  }
+
+  .compact-cost,
+  .compact-retail,
+  .compact-profit {
+    margin-top: 4px;
+    font-size: 12px;
+    letter-spacing: -0.45px;
+  }
+
+  .compact-price-title {
+    gap: 2px;
+  }
+
+  .compact-edit-button {
+    width: 18px;
+    height: 18px;
+    flex-basis: 18px;
+    font-size: 8px;
+  }
+
+  .compact-price-editor {
+    padding: 8px;
+  }
+}
         /* =================================================
            VARIANTES
         ================================================= */
