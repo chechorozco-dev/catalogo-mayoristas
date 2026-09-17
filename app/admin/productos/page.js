@@ -352,9 +352,11 @@ function BloquePrecios({
   const precioNumero = Number(precio || 0);
 
   const [editando, setEditando] = useState(false);
+
   const [nuevoPrecio, setNuevoPrecio] = useState(
     String(Math.round(precioNumero))
   );
+
   const [guardando, setGuardando] = useState(false);
   const [errorPrecio, setErrorPrecio] = useState("");
 
@@ -364,8 +366,6 @@ function BloquePrecios({
     }
   }, [precioNumero, editando]);
 
-  const ganancia = precioNumero - costoNumero;
-
   async function guardarPrecio() {
     const precioGuardar = Number(
       String(nuevoPrecio)
@@ -374,7 +374,10 @@ function BloquePrecios({
         .replace(/\s/g, "")
     );
 
-    if (!Number.isFinite(precioGuardar) || precioGuardar < 0) {
+    if (
+      !Number.isFinite(precioGuardar) ||
+      precioGuardar < 0
+    ) {
       setErrorPrecio("Ingresa un precio válido.");
       return;
     }
@@ -383,38 +386,54 @@ function BloquePrecios({
     setErrorPrecio("");
 
     try {
-      const response = await fetch("/api/precios-tienda", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          producto_id: Number(productoId),
-          variante_id:
-            varianteId !== null && varianteId !== undefined
-              ? Number(varianteId)
-              : null,
-          precio_sugerido: Math.round(precioGuardar),
-        }),
-      });
+      const response = await fetch(
+        "/api/precios-tienda",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            producto_id: Number(productoId),
+
+            variante_id:
+              varianteId !== null &&
+              varianteId !== undefined
+                ? Number(varianteId)
+                : null,
+
+            precio_sugerido: Math.round(precioGuardar),
+          }),
+        }
+      );
 
       const data = await response.json();
 
       if (!response.ok || !data.ok) {
         throw new Error(
-          data.mensaje || "No pudimos guardar el precio."
+          data.mensaje ||
+            "No pudimos guardar el precio."
         );
       }
 
-      onPrecioActualizado?.(Number(data.precio_sugerido));
+      onPrecioActualizado?.(
+        Number(data.precio_sugerido)
+      );
 
-      setNuevoPrecio(String(data.precio_sugerido));
+      setNuevoPrecio(
+        String(data.precio_sugerido)
+      );
+
       setEditando(false);
     } catch (error) {
-      console.error("Error guardando precio:", error);
+      console.error(
+        "Error guardando precio:",
+        error
+      );
 
       setErrorPrecio(
-        error.message || "No pudimos guardar el precio."
+        error.message ||
+          "No pudimos guardar el precio."
       );
     } finally {
       setGuardando(false);
@@ -422,129 +441,121 @@ function BloquePrecios({
   }
 
   function cancelarEdicion() {
-    setNuevoPrecio(String(Math.round(precioNumero)));
+    setNuevoPrecio(
+      String(Math.round(precioNumero))
+    );
+
     setErrorPrecio("");
     setEditando(false);
   }
 
   return (
-  <div className="new-prices-wrapper">
+    <div className="product-prices-new">
 
-    {/* COSTO + GANANCIA */}
-    <div className="cost-profit-row">
+      {/* TU COSTO */}
+      <div className="cost-box-new">
+        <span className="price-label-new">
+          Tu costo
+        </span>
 
-      <div className="cost-inline">
-        <span>Tu costo</span>
-
-        <strong>
+        <strong className="cost-new">
           {formatoPrecio(costoNumero)}
         </strong>
       </div>
 
-      <div className="profit-inline">
-        <span>Ganancia</span>
+      {/* PRECIO DE VENTA */}
+      <div className="sale-box-new">
 
-        <strong
-          style={{
-            color:
-              ganancia >= 0
-                ? "#318553"
-                : "#c43b3b",
-          }}
-        >
-          {formatoPrecio(ganancia)}
-        </strong>
-      </div>
+        <div className="sale-title-new">
+          <span className="price-label-new">
+            Precio de venta
+          </span>
 
-    </div>
+          {!editando && (
+            <button
+              type="button"
+              className="edit-price-new"
+              title="Editar precio de venta"
+              onClick={() => {
+                setNuevoPrecio(
+                  String(Math.round(precioNumero))
+                );
 
-    {/* PRECIO DE VENTA */}
-    <div className="sale-price-box">
+                setErrorPrecio("");
+                setEditando(true);
+              }}
+            >
+              ✏️
+            </button>
+          )}
+        </div>
 
-      <div className="sale-price-header">
-        <span>Precio de venta</span>
+        {!editando ? (
+          <strong className="sale-price-new">
+            {formatoPrecio(precioNumero)}
+          </strong>
+        ) : (
+          <div className="price-editor-new">
 
-        {!editando && (
-          <button
-            type="button"
-            className="sale-edit-button"
-            onClick={() => {
-              setNuevoPrecio(
-                String(Math.round(precioNumero))
-              );
-              setErrorPrecio("");
-              setEditando(true);
-            }}
-          >
-            ✏️
-          </button>
+            <div className="price-input-new">
+              <span>$</span>
+
+              <input
+                type="number"
+                min="0"
+                step="100"
+                inputMode="numeric"
+                value={nuevoPrecio}
+                disabled={guardando}
+                autoFocus
+                onChange={(e) => {
+                  setNuevoPrecio(e.target.value);
+                  setErrorPrecio("");
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    guardarPrecio();
+                  }
+
+                  if (e.key === "Escape") {
+                    cancelarEdicion();
+                  }
+                }}
+              />
+            </div>
+
+            <div className="price-editor-actions-new">
+              <button
+                type="button"
+                className="save-price-new"
+                disabled={guardando}
+                onClick={guardarPrecio}
+              >
+                {guardando
+                  ? "Guardando..."
+                  : "✓ Guardar"}
+              </button>
+
+              <button
+                type="button"
+                className="cancel-price-new"
+                disabled={guardando}
+                onClick={cancelarEdicion}
+              >
+                Cancelar
+              </button>
+            </div>
+
+            {errorPrecio && (
+              <p className="price-error-new">
+                {errorPrecio}
+              </p>
+            )}
+          </div>
         )}
       </div>
-
-      {!editando ? (
-        <strong className="sale-price-value">
-          {formatoPrecio(precioNumero)}
-        </strong>
-      ) : (
-        <div className="new-price-editor">
-
-          <div className="new-price-input">
-            <span>$</span>
-
-            <input
-              type="number"
-              min="0"
-              step="100"
-              inputMode="numeric"
-              value={nuevoPrecio}
-              disabled={guardando}
-              autoFocus
-              onChange={(e) => {
-                setNuevoPrecio(e.target.value);
-                setErrorPrecio("");
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  guardarPrecio();
-                }
-
-                if (e.key === "Escape") {
-                  cancelarEdicion();
-                }
-              }}
-            />
-          </div>
-
-          <button
-            type="button"
-            className="new-save-price"
-            disabled={guardando}
-            onClick={guardarPrecio}
-          >
-            {guardando ? "..." : "✓"}
-          </button>
-
-          <button
-            type="button"
-            className="new-cancel-price"
-            disabled={guardando}
-            onClick={cancelarEdicion}
-          >
-            ✕
-          </button>
-
-        </div>
-      )}
-
-      {errorPrecio && (
-        <p className="price-error">
-          {errorPrecio}
-        </p>
-      )}
-
     </div>
-  </div>
-);
+  );
 }
 
 /* =========================================================
@@ -3220,6 +3231,224 @@ export default function ProductosMayoristaPage() {
     width: 21px;
     height: 21px;
     font-size: 9px;
+  }
+}/* =================================================
+   NUEVO DISEÑO COMPACTO DE PRECIOS
+================================================= */
+
+.card-info {
+  padding: 14px 16px 16px;
+}
+
+/* Ocultamos la referencia porque ya viene
+   incluida en el nombre del producto */
+.card-info > .reference {
+  display: none;
+}
+
+/* Nombre del producto más compacto */
+.name {
+  margin: 3px 0 13px;
+  font-size: 15px;
+  line-height: 1.25;
+  font-weight: 800;
+  color: #222;
+}
+
+/* Contenedor de precios */
+.product-prices-new {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Caja TU COSTO */
+.cost-box-new {
+  background: #fafafa;
+  border: 1px solid #e9e9e9;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+/* Etiquetas */
+.price-label-new {
+  display: block;
+  color: #777;
+  font-size: 12px;
+  line-height: 1.15;
+}
+
+/* Tu costo grande y rosado */
+.cost-new {
+  display: block;
+  margin-top: 3px;
+  color: #d97883;
+  font-size: 23px;
+  line-height: 1.05;
+  font-weight: 850;
+}
+
+/* Caja PRECIO DE VENTA */
+.sale-box-new {
+  background: #fafafa;
+  border: 1px solid #e9e9e9;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+/* Precio de venta + lápiz */
+.sale-title-new {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Botón del lápiz */
+.edit-price-new {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  border: none;
+  border-radius: 50%;
+  background: #eeeeee;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+}
+
+/* Precio de venta */
+.sale-price-new {
+  display: block;
+  margin-top: 2px;
+  color: #222;
+  font-size: 23px;
+  line-height: 1.05;
+  font-weight: 850;
+}
+
+/* EDICIÓN DEL PRECIO */
+
+.price-editor-new {
+  margin-top: 7px;
+}
+
+.price-input-new {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 9px;
+  padding: 7px 9px;
+  background: white;
+}
+
+.price-input-new span {
+  font-weight: 800;
+  font-size: 16px;
+}
+
+.price-input-new input {
+  width: 100%;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.price-editor-actions-new {
+  display: flex;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.save-price-new,
+.cancel-price-new {
+  border: none;
+  border-radius: 8px;
+  padding: 7px 9px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.save-price-new {
+  background: #222;
+  color: white;
+}
+
+.cancel-price-new {
+  background: #eeeeee;
+  color: #555;
+}
+
+.price-error-new {
+  margin: 6px 0 0;
+  color: #b43d3d;
+  font-size: 11px;
+}
+
+
+/* =================================================
+   AJUSTES ESPECIALES PARA CELULAR
+================================================= */
+
+@media (max-width: 700px) {
+
+  .card-info {
+    padding: 11px 10px 12px;
+  }
+
+  .name {
+    margin: 2px 0 10px;
+    font-size: 13px;
+    line-height: 1.22;
+  }
+
+  .product-prices-new {
+    gap: 6px;
+  }
+
+  .cost-box-new,
+  .sale-box-new {
+    padding: 8px 9px;
+    border-radius: 10px;
+  }
+
+  .price-label-new {
+    font-size: 10px;
+  }
+
+  .cost-new {
+    margin-top: 2px;
+    font-size: 19px;
+  }
+
+  .sale-price-new {
+    margin-top: 2px;
+    font-size: 19px;
+  }
+
+  .edit-price-new {
+    width: 24px;
+    height: 24px;
+    flex-basis: 24px;
+    font-size: 11px;
+  }
+
+  .price-editor-actions-new {
+    flex-direction: column;
+  }
+
+  .save-price-new,
+  .cancel-price-new {
+    width: 100%;
   }
 }
         /* =================================================
