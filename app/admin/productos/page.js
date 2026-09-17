@@ -1637,7 +1637,12 @@ export default function ProductosMayoristaPage() {
     carritoAnimando,
     setCarritoAnimando,
   ] = useState(false);
+const [
+  mostrarResumenFlotante,
+  setMostrarResumenFlotante,
+] = useState(false);
 
+const temporizadorResumenRef = useRef(null);
   const categorias = [
     "Accesorios en Rodio",
     "Accesorios en Acero",
@@ -1989,6 +1994,22 @@ export default function ProductosMayoristaPage() {
             : actual
       );
     }, 1000);
+    // Mostrar resumen flotante del carrito
+setMostrarResumenFlotante(true);
+
+// Si ya había un temporizador,
+// lo reiniciamos para que permanezca visible
+// después del último producto agregado.
+if (temporizadorResumenRef.current) {
+  clearTimeout(
+    temporizadorResumenRef.current
+  );
+}
+
+temporizadorResumenRef.current =
+  setTimeout(() => {
+    setMostrarResumenFlotante(false);
+  }, 3500);
   }
 
   function aumentarCantidad(clave) {
@@ -4063,7 +4084,111 @@ export default function ProductosMayoristaPage() {
           cursor: pointer;
           font-size: 13px;
         }
+/* =================================================
+   RESUMEN FLOTANTE DEL CARRITO
+================================================= */
 
+.floating-cart-summary {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+
+  width: calc(100% - 36px);
+  max-width: 760px;
+
+  min-height: 82px;
+  padding: 18px 26px;
+
+  border: none;
+  border-radius: 22px;
+
+  background: #111;
+  color: #fff;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  z-index: 10500;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 14px 40px rgba(0, 0, 0, 0.28);
+
+  animation:
+    floatingCartIn 0.35s
+    cubic-bezier(.2,.8,.2,1);
+}
+
+.floating-cart-left {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-width: 0;
+}
+
+.floating-cart-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.floating-cart-left strong {
+  font-size: 20px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.floating-cart-total {
+  font-size: 24px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+@keyframes floatingCartIn {
+  from {
+    opacity: 0;
+    transform:
+      translate(-50%, 30px)
+      scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform:
+      translate(-50%, 0)
+      scale(1);
+  }
+}
+
+@media (max-width: 700px) {
+  .floating-cart-summary {
+    width: calc(100% - 28px);
+    bottom: 20px;
+    min-height: 72px;
+
+    padding: 15px 18px;
+    border-radius: 20px;
+  }
+
+  .floating-cart-icon {
+    font-size: 23px;
+  }
+
+  .floating-cart-left {
+    gap: 9px;
+  }
+
+  .floating-cart-left strong {
+    font-size: 17px;
+  }
+
+  .floating-cart-total {
+    font-size: 19px;
+  }
+}
         /* =================================================
            RESPONSIVE
         ================================================= */
@@ -4273,7 +4398,39 @@ export default function ProductosMayoristaPage() {
         eliminar={eliminarDelCarrito}
         vaciar={vaciarCarrito}
       />
+{/* ===================================================
+    RESUMEN FLOTANTE DEL CARRITO
+=================================================== */}
 
+{mostrarResumenFlotante &&
+  totalUnidades > 0 &&
+  !carritoAbierto && (
+    <button
+      type="button"
+      className="floating-cart-summary"
+      onClick={() => {
+        setMostrarResumenFlotante(false);
+        setCarritoAbierto(true);
+      }}
+    >
+      <div className="floating-cart-left">
+        <span className="floating-cart-icon">
+          🛍️
+        </span>
+
+        <strong>
+          {totalUnidades}{" "}
+          {totalUnidades === 1
+            ? "producto"
+            : "productos"}
+        </strong>
+      </div>
+
+      <strong className="floating-cart-total">
+        {formatoPrecio(totalCarrito)}
+      </strong>
+    </button>
+  )}
       {/* ===================================================
           PÁGINA
       =================================================== */}
