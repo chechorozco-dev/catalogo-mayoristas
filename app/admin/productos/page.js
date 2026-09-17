@@ -42,18 +42,40 @@ function GaleriaProducto({
   const imagenes = [
     producto.foto_url,
     producto.foto_url_2,
-  ].filter(Boolean);
+  ].filter(
+    (url, index, array) =>
+      url &&
+      String(url).trim() !== "" &&
+      array.indexOf(url) === index
+  );
 
   const [indice, setIndice] = useState(0);
+  const [imagenesConError, setImagenesConError] = useState({});
 
   useEffect(() => {
     setIndice(0);
+    setImagenesConError({});
   }, [
     producto.id,
     producto.variante_id,
     producto.foto_url,
     producto.foto_url_2,
   ]);
+
+  // Solo dejamos disponibles las fotos que realmente cargaron.
+  const imagenesValidas = imagenes.filter(
+    (_, i) => !imagenesConError[i]
+  );
+
+  // Evita quedar apuntando a una segunda foto que falló.
+  useEffect(() => {
+    if (
+      imagenesValidas.length > 0 &&
+      indice >= imagenesValidas.length
+    ) {
+      setIndice(0);
+    }
+  }, [imagenesValidas.length, indice]);
 
   function manejarAgregar(e) {
     e.preventDefault();
@@ -72,11 +94,125 @@ function GaleriaProducto({
     });
   }
 
-  if (!imagenes.length) {
-    return (
-      <div className="product-image-container">
-        <div className="no-image">Sin imagen</div>
+  function marcarError(indiceOriginal) {
+    setImagenesConError((actual) => ({
+      ...actual,
+      [indiceOriginal]: true,
+    }));
 
+    setIndice(0);
+  }
+
+  if (!imagenesValidas.length) {
+    return (
+      <div className="galeria-producto-completa">
+        <div className="product-image-container">
+          <div className="no-image">Sin imagen</div>
+
+          {onAgregar && (
+            <button
+              type="button"
+              className={
+                agregado
+                  ? "image-cart-button image-cart-added"
+                  : "image-cart-button"
+              }
+              onClick={manejarAgregar}
+              title={
+                tieneVariantes
+                  ? "Ver variantes"
+                  : "Agregar al pedido"
+              }
+            >
+              {agregado ? "✓" : "🛒"}
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  const imagenActual =
+    imagenesValidas[indice] || imagenesValidas[0];
+
+  function anterior(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    setIndice((actual) =>
+      actual === 0
+        ? imagenesValidas.length - 1
+        : actual - 1
+    );
+  }
+
+  function siguiente(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    setIndice((actual) =>
+      actual === imagenesValidas.length - 1
+        ? 0
+        : actual + 1
+    );
+  }
+
+  return (
+    <div className="galeria-producto-completa">
+
+      {/* FOTO GRANDE */}
+      <div
+        className="product-image-container"
+        onClick={() =>
+          abrirImagen(
+            imagenesValidas,
+            indice,
+            producto.nombre
+          )
+        }
+      >
+        <img
+          src={imagenActual}
+          alt={producto.nombre}
+          className="product-image"
+          onError={() => {
+            const indiceOriginal =
+              imagenes.indexOf(imagenActual);
+
+            if (indiceOriginal >= 0) {
+              marcarError(indiceOriginal);
+            }
+          }}
+        />
+
+        {/* FLECHAS: SOLO SI HAY MÁS DE UNA FOTO */}
+        {imagenesValidas.length > 1 && (
+          <>
+            <button
+              type="button"
+              className="gallery-arrow gallery-left"
+              onClick={anterior}
+              aria-label="Foto anterior"
+            >
+              ‹
+            </button>
+
+            <button
+              type="button"
+              className="gallery-arrow gallery-right"
+              onClick={siguiente}
+              aria-label="Foto siguiente"
+            >
+              ›
+            </button>
+
+            <div className="photo-count">
+              {indice + 1}/{imagenesValidas.length}
+            </div>
+          </>
+        )}
+
+        {/* BOTÓN CARRITO */}
         {onAgregar && (
           <button
             type="button"
@@ -96,101 +232,50 @@ function GaleriaProducto({
           </button>
         )}
       </div>
-    );
-  }
 
-  function anterior(e) {
-    e.stopPropagation();
-
-    setIndice((actual) =>
-      actual === 0 ? imagenes.length - 1 : actual - 1
-    );
-  }
-
-  function siguiente(e) {
-    e.stopPropagation();
-
-    setIndice((actual) =>
-      actual === imagenes.length - 1 ? 0 : actual + 1
-    );
-  }
-
-  return (
-    <div
-      className="product-image-container"
-      onClick={() =>
-        abrirImagen(
-          imagenes,
-          indice,
-          producto.nombre
-        )
-      }
-    >
-      <img
-        src={imagenes[indice]}
-        alt={producto.nombre}
-        className="product-image"
-      />
-
-      {imagenes.length > 1 && (
-        <>
+      {/* MINIATURAS */}
+      <div className="miniaturas-galeria">
+        {imagenesValidas.map((foto, i) => (
           <button
+            key={`${producto.id}-${producto.variante_id || "p"}-${i}`}
             type="button"
-            className="gallery-arrow gallery-left"
-            onClick={anterior}
+            className={
+              i === indice
+                ? "miniatura-galeria miniatura-activa"
+                : "miniatura-galeria"
+            }
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIndice(i);
+            }}
+            aria-label={`Ver foto ${i + 1}`}
           >
-            ‹
-          </button>
+            <img
+              src={foto}
+              alt={`${producto.nombre} - foto ${i + 1}`}
+              loading="lazy"
+              onError={() => {
+                const indiceOriginal =
+                  imagenes.indexOf(foto);
 
-          <button
-            type="button"
-            className="gallery-arrow gallery-right"
-            onClick={siguiente}
-          >
-            ›
-          </button>
-
-          <div className="gallery-dots">
-            {imagenes.map((_, i) => (
-              <span
-                key={i}
-                className={
-                  i === indice
-                    ? "dot dot-active"
-                    : "dot"
+                if (indiceOriginal >= 0) {
+                  marcarError(indiceOriginal);
                 }
-              />
-            ))}
-          </div>
+              }}
+            />
 
-          <div className="photo-count">
-            {indice + 1}/{imagenes.length}
-          </div>
-        </>
-      )}
-
-      {onAgregar && (
-        <button
-          type="button"
-          className={
-            agregado
-              ? "image-cart-button image-cart-added"
-              : "image-cart-button"
-          }
-          onClick={manejarAgregar}
-          title={
-            tieneVariantes
-              ? "Ver variantes"
-              : "Agregar al pedido"
-          }
-        >
-          {agregado ? "✓" : "🛒"}
-        </button>
-      )}
+            {i === indice && (
+              <span className="miniatura-check">
+                ✓
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
-
 /* =========================================================
    VISOR
 ========================================================= */
@@ -2153,6 +2238,91 @@ export default function ProductosMayoristaPage() {
           max-width: 1400px;
           margin: 0 auto;
         }
+        /* =================================================
+   MINIATURAS DE FOTOS DE PRODUCTO
+================================================= */
+
+.galeria-producto-completa {
+  width: 100%;
+}
+
+.miniaturas-galeria {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px 11px;
+  background: #fff;
+  min-height: 68px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.miniatura-galeria {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  flex: 0 0 54px;
+  padding: 2px;
+  border: 1px solid #dedede;
+  border-radius: 9px;
+  background: #fff;
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    border-color 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.miniatura-galeria:hover {
+  transform: translateY(-2px);
+  border-color: #777;
+}
+
+.miniatura-galeria.miniatura-activa {
+  border: 2px solid #222;
+  padding: 1px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.miniatura-galeria img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.miniatura-check {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: #222;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 900;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+@media (max-width: 700px) {
+  .miniaturas-galeria {
+    gap: 6px;
+    padding: 7px 7px 9px;
+    min-height: 59px;
+  }
+
+  .miniatura-galeria {
+    width: 47px;
+    height: 47px;
+    flex-basis: 47px;
+  }
+}
 
         /* =================================================
            ENCABEZADO
