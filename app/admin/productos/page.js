@@ -1785,87 +1785,127 @@ const temporizadorResumenRef = useRef(null);
      ANIMACIÓN PRODUCTO → CARRITO
   ======================================================= */
 
-  function animarHaciaCarrito(
-    elementoImagen
+  function animarHaciaCarrito(elementoImagen) {
+  const destino = cartButtonRef.current;
+
+  if (
+    !elementoImagen ||
+    !destino ||
+    typeof window === "undefined"
   ) {
-    const destino =
-      cartButtonRef.current;
+    return;
+  }
 
-    if (
-      !elementoImagen ||
-      !destino ||
-      typeof window === "undefined"
-    ) {
-      return;
-    }
+  const origenRect =
+    elementoImagen.getBoundingClientRect();
 
-    const origenRect =
-      elementoImagen.getBoundingClientRect();
+  const destinoRect =
+    destino.getBoundingClientRect();
 
-    const destinoRect =
-      destino.getBoundingClientRect();
+  /*
+    Creamos una imagen pequeña en vez de
+    clonar la fotografía a tamaño completo.
 
-    const clon =
-      elementoImagen.cloneNode(true);
+    Esto reduce muchísimo el trabajo de Safari.
+  */
 
-    clon.className = "flying-product-image";
+  const clon = document.createElement("img");
 
-    clon.style.position = "fixed";
-    clon.style.left = `${origenRect.left}px`;
-    clon.style.top = `${origenRect.top}px`;
-    clon.style.width = `${origenRect.width}px`;
-    clon.style.height = `${origenRect.height}px`;
-    clon.style.objectFit = "cover";
-    clon.style.borderRadius = "14px";
-    clon.style.zIndex = "20000";
-    clon.style.pointerEvents = "none";
-    clon.style.margin = "0";
-    clon.style.transform = "scale(1)";
-    clon.style.opacity = "0.95";
-    clon.style.transition =
-      "left 650ms cubic-bezier(.2,.8,.2,1), top 650ms cubic-bezier(.2,.8,.2,1), width 650ms cubic-bezier(.2,.8,.2,1), height 650ms cubic-bezier(.2,.8,.2,1), opacity 650ms ease, transform 650ms ease";
+  clon.src =
+    elementoImagen.currentSrc ||
+    elementoImagen.src;
 
-    document.body.appendChild(clon);
+  const tamañoInicial = Math.min(
+    90,
+    origenRect.width
+  );
 
+  const origenX =
+    origenRect.left +
+    origenRect.width / 2 -
+    tamañoInicial / 2;
+
+  const origenY =
+    origenRect.top +
+    origenRect.height / 2 -
+    tamañoInicial / 2;
+
+  const destinoX =
+    destinoRect.left +
+    destinoRect.width / 2 -
+    tamañoInicial / 2;
+
+  const destinoY =
+    destinoRect.top +
+    destinoRect.height / 2 -
+    tamañoInicial / 2;
+
+  const moverX =
+    destinoX - origenX;
+
+  const moverY =
+    destinoY - origenY;
+
+  clon.className =
+    "flying-product-image";
+
+  clon.style.position = "fixed";
+  clon.style.left = `${origenX}px`;
+  clon.style.top = `${origenY}px`;
+
+  clon.style.width =
+    `${tamañoInicial}px`;
+
+  clon.style.height =
+    `${tamañoInicial}px`;
+
+  clon.style.objectFit = "cover";
+  clon.style.borderRadius = "14px";
+
+  clon.style.zIndex = "20000";
+  clon.style.pointerEvents = "none";
+
+  clon.style.opacity = "0.95";
+
+  clon.style.transform =
+    "translate3d(0, 0, 0) scale(1)";
+
+  clon.style.transformOrigin =
+    "center center";
+
+  clon.style.willChange =
+    "transform, opacity";
+
+  clon.style.transition =
+    "transform 520ms cubic-bezier(.22,.8,.25,1), opacity 520ms ease";
+
+  document.body.appendChild(clon);
+
+  /*
+    Dejamos que Safari pinte primero
+    la miniatura y después iniciamos
+    la animación.
+  */
+
+  requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const anchoFinal = 28;
-        const altoFinal = 28;
+      clon.style.transform =
+        `translate3d(${moverX}px, ${moverY}px, 0) scale(0.28) rotate(8deg)`;
 
-        clon.style.left = `${
-          destinoRect.left +
-          destinoRect.width / 2 -
-          anchoFinal / 2
-        }px`;
-
-        clon.style.top = `${
-          destinoRect.top +
-          destinoRect.height / 2 -
-          altoFinal / 2
-        }px`;
-
-        clon.style.width =
-          `${anchoFinal}px`;
-
-        clon.style.height =
-          `${altoFinal}px`;
-
-        clon.style.opacity = "0.15";
-        clon.style.transform =
-          "scale(0.25) rotate(8deg)";
-      });
+      clon.style.opacity = "0.15";
     });
+  });
+
+  window.setTimeout(() => {
+    clon.remove();
+
+    setCarritoAnimando(true);
 
     window.setTimeout(() => {
-      clon.remove();
-
-      setCarritoAnimando(true);
-
-      window.setTimeout(() => {
-        setCarritoAnimando(false);
-      }, 450);
-    }, 680);
-  }
+      setCarritoAnimando(false);
+    }, 350);
+  }, 550);
+}
 
   /* =======================================================
      CARRITO
@@ -2953,21 +2993,26 @@ temporizadorResumenRef.current =
         ================================================= */
 
         .flying-product-image {
-          position: fixed;
-          pointer-events: none;
-          z-index: 20000;
-          overflow: hidden;
-          box-shadow:
-            0 8px 25px
-            rgba(0, 0, 0, 0.25);
-          will-change:
-            left,
-            top,
-            width,
-            height,
-            opacity,
-            transform;
-        }
+  position: fixed;
+  pointer-events: none;
+  z-index: 20000;
+
+  display: block;
+  object-fit: cover;
+
+  overflow: hidden;
+
+  box-shadow:
+    0 6px 18px
+    rgba(0, 0, 0, 0.18);
+
+  will-change:
+    transform,
+    opacity;
+
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
 
         /* =================================================
            INFORMACIÓN TARJETA
