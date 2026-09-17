@@ -341,15 +341,136 @@ function VisorImagen({
    PRECIOS
 ========================================================= */
 
-function BloquePrecios({ costo, precio }) {
+function BloquePrecios({
+  costo,
+  precio,
+  productoId,
+  varianteId = null,
+  onPrecioActualizado,
+}) {
   const costoNumero = Number(costo || 0);
   const precioNumero = Number(precio || 0);
-  const ganancia = precioNumero - costoNumero;
+
+  const [editando, setEditando] =
+    useState(false);
+
+  const [nuevoPrecio, setNuevoPrecio] =
+    useState(String(Math.round(precioNumero)));
+
+  const [guardando, setGuardando] =
+    useState(false);
+
+  const [errorPrecio, setErrorPrecio] =
+    useState("");
+
+  useEffect(() => {
+    if (!editando) {
+      setNuevoPrecio(
+        String(Math.round(precioNumero))
+      );
+    }
+  }, [precioNumero, editando]);
+
+  const ganancia =
+    precioNumero - costoNumero;
+
+  async function guardarPrecio() {
+    const precioGuardar =
+      Number(
+        String(nuevoPrecio)
+          .replace(/\./g, "")
+          .replace(/,/g, "")
+          .replace(/\s/g, "")
+      );
+
+    if (
+      !Number.isFinite(precioGuardar) ||
+      precioGuardar < 0
+    ) {
+      setErrorPrecio(
+        "Ingresa un precio válido."
+      );
+      return;
+    }
+
+    setGuardando(true);
+    setErrorPrecio("");
+
+    try {
+      const response = await fetch(
+        "/api/precios-tienda",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+
+          body: JSON.stringify({
+            producto_id:
+              Number(productoId),
+
+            variante_id:
+              varianteId !== null &&
+              varianteId !== undefined
+                ? Number(varianteId)
+                : null,
+
+            precio_sugerido:
+              Math.round(precioGuardar),
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        throw new Error(
+          data.mensaje ||
+            "No pudimos guardar el precio."
+        );
+      }
+
+      onPrecioActualizado?.(
+        Number(data.precio_sugerido)
+      );
+
+      setNuevoPrecio(
+        String(data.precio_sugerido)
+      );
+
+      setEditando(false);
+    } catch (error) {
+      console.error(
+        "Error guardando precio:",
+        error
+      );
+
+      setErrorPrecio(
+        error.message ||
+          "No pudimos guardar el precio."
+      );
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  function cancelarEdicion() {
+    setNuevoPrecio(
+      String(Math.round(precioNumero))
+    );
+
+    setErrorPrecio("");
+    setEditando(false);
+  }
 
   return (
     <>
       <div className="price-block">
-        <p className="price-label">Tu costo</p>
+        <p className="price-label">
+          Tu costo
+        </p>
 
         <strong className="cost">
           {formatoPrecio(costoNumero)}
@@ -357,17 +478,104 @@ function BloquePrecios({ costo, precio }) {
       </div>
 
       <div className="price-block">
-        <p className="price-label">
-          Precio sugerido
-        </p>
+        <div className="price-title-row">
+          <p className="price-label">
+            Precio sugerido
+          </p>
 
-        <strong className="retail">
-          {formatoPrecio(precioNumero)}
-        </strong>
+          {!editando && (
+            <button
+              type="button"
+              className="edit-price-button"
+              onClick={() => {
+                setNuevoPrecio(
+                  String(
+                    Math.round(
+                      precioNumero
+                    )
+                  )
+                );
+
+                setErrorPrecio("");
+                setEditando(true);
+              }}
+            >
+              ✏️ Editar
+            </button>
+          )}
+        </div>
+
+        {!editando ? (
+          <strong className="retail">
+            {formatoPrecio(precioNumero)}
+          </strong>
+        ) : (
+          <div className="price-editor">
+            <div className="price-input-wrap">
+              <span>$</span>
+
+              <input
+                type="number"
+                min="0"
+                step="100"
+                inputMode="numeric"
+                value={nuevoPrecio}
+                disabled={guardando}
+                autoFocus
+                onChange={(e) => {
+                  setNuevoPrecio(
+                    e.target.value
+                  );
+
+                  setErrorPrecio("");
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    guardarPrecio();
+                  }
+
+                  if (e.key === "Escape") {
+                    cancelarEdicion();
+                  }
+                }}
+              />
+            </div>
+
+            <div className="price-editor-buttons">
+              <button
+                type="button"
+                className="save-price-button"
+                disabled={guardando}
+                onClick={guardarPrecio}
+              >
+                {guardando
+                  ? "Guardando..."
+                  : "✓ Guardar"}
+              </button>
+
+              <button
+                type="button"
+                className="cancel-price-button"
+                disabled={guardando}
+                onClick={cancelarEdicion}
+              >
+                Cancelar
+              </button>
+            </div>
+
+            {errorPrecio && (
+              <p className="price-error">
+                {errorPrecio}
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       <div>
-        <p className="price-label">Ganancia</p>
+        <p className="price-label">
+          Ganancia
+        </p>
 
         <strong
           className="profit"
@@ -2088,7 +2296,68 @@ export default function ProductosMayoristaPage() {
     setCategoriaActiva(categoria);
     setMenuAbierto(false);
   }
+  function actualizarPrecioPersonalizado(
+    productoId,
+    varianteId,
+    nuevoPrecio
+  ) {
+    setProductos((actuales) =>
+      actuales.map((producto) => {
+        if (
+          Number(producto.id) !==
+          Number(productoId)
+        ) {
+          return producto;
+        }
 
+        // PRODUCTO NORMAL
+        if (
+          varianteId === null ||
+          varianteId === undefined
+        ) {
+          return {
+            ...producto,
+            precio_detal:
+              Number(nuevoPrecio),
+            precio_personalizado:
+              Number(nuevoPrecio),
+          };
+        }
+
+        // VARIANTE
+        return {
+          ...producto,
+
+          variantes:
+            Array.isArray(
+              producto.variantes
+            )
+              ? producto.variantes.map(
+                  (variante) =>
+                    Number(
+                      variante.id
+                    ) ===
+                    Number(varianteId)
+                      ? {
+                          ...variante,
+
+                          precio_detal:
+                            Number(
+                              nuevoPrecio
+                            ),
+
+                          precio_personalizado:
+                            Number(
+                              nuevoPrecio
+                            ),
+                        }
+                      : variante
+                )
+              : [],
+        };
+      })
+    );
+  }
   /* =======================================================
      VARIANTES
   ======================================================= */
@@ -3861,13 +4130,18 @@ export default function ProductosMayoristaPage() {
 
                         {!tieneVariantes && (
                           <BloquePrecios
-                            costo={
-                              costoPrincipal
-                            }
-                            precio={
-                              precioPrincipal
-                            }
-                          />
+  costo={costoPrincipal}
+  precio={precioPrincipal}
+  productoId={producto.id}
+  varianteId={null}
+  onPrecioActualizado={(nuevoPrecio) =>
+    actualizarPrecioPersonalizado(
+      producto.id,
+      null,
+      nuevoPrecio
+    )
+  }
+/>
                         )}
 
                         {/* ================================
