@@ -428,135 +428,123 @@ function BloquePrecios({
   }
 
   return (
-    <div className="compact-prices-wrapper">
+  <div className="new-prices-wrapper">
 
-      {/* FILA COMPACTA DE PRECIOS */}
-      <div className="compact-prices">
+    {/* COSTO + GANANCIA */}
+    <div className="cost-profit-row">
 
-        {/* TU COSTO */}
-        <div className="compact-price-item">
-          <span className="compact-price-label">
-            Tu costo
-          </span>
+      <div className="cost-inline">
+        <span>Tu costo</span>
 
-          <strong className="compact-cost">
-            {formatoPrecio(costoNumero)}
-          </strong>
-        </div>
-
-        {/* PRECIO DE VENTA */}
-        <div className="compact-price-item compact-price-middle">
-          <div className="compact-price-title">
-            <span className="compact-price-label">
-              Precio venta
-            </span>
-
-            {!editando && (
-              <button
-                type="button"
-                className="compact-edit-button"
-                onClick={() => {
-                  setNuevoPrecio(
-                    String(Math.round(precioNumero))
-                  );
-                  setErrorPrecio("");
-                  setEditando(true);
-                }}
-                title="Editar precio"
-              >
-                ✏️
-              </button>
-            )}
-          </div>
-
-          <strong className="compact-retail">
-            {formatoPrecio(precioNumero)}
-          </strong>
-        </div>
-
-        {/* GANANCIA */}
-        <div className="compact-price-item">
-          <span className="compact-price-label">
-            Ganancia
-          </span>
-
-          <strong
-            className="compact-profit"
-            style={{
-              color:
-                ganancia >= 0
-                  ? "#318553"
-                  : "#c43b3b",
-            }}
-          >
-            {formatoPrecio(ganancia)}
-          </strong>
-        </div>
+        <strong>
+          {formatoPrecio(costoNumero)}
+        </strong>
       </div>
 
-      {/* EDITOR - SOLO APARECE AL TOCAR EL LÁPIZ */}
-      {editando && (
-        <div className="compact-price-editor">
-          <span className="compact-editor-label">
-            Nuevo precio de venta
-          </span>
+      <div className="profit-inline">
+        <span>Ganancia</span>
 
-          <div className="compact-editor-row">
-            <div className="compact-input-wrap">
-              <span>$</span>
+        <strong
+          style={{
+            color:
+              ganancia >= 0
+                ? "#318553"
+                : "#c43b3b",
+          }}
+        >
+          {formatoPrecio(ganancia)}
+        </strong>
+      </div>
 
-              <input
-                type="number"
-                min="0"
-                step="100"
-                inputMode="numeric"
-                value={nuevoPrecio}
-                disabled={guardando}
-                autoFocus
-                onChange={(e) => {
-                  setNuevoPrecio(e.target.value);
-                  setErrorPrecio("");
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    guardarPrecio();
-                  }
+    </div>
 
-                  if (e.key === "Escape") {
-                    cancelarEdicion();
-                  }
-                }}
-              />
-            </div>
+    {/* PRECIO DE VENTA */}
+    <div className="sale-price-box">
 
-            <button
-              type="button"
-              className="compact-save-button"
+      <div className="sale-price-header">
+        <span>Precio de venta</span>
+
+        {!editando && (
+          <button
+            type="button"
+            className="sale-edit-button"
+            onClick={() => {
+              setNuevoPrecio(
+                String(Math.round(precioNumero))
+              );
+              setErrorPrecio("");
+              setEditando(true);
+            }}
+          >
+            ✏️
+          </button>
+        )}
+      </div>
+
+      {!editando ? (
+        <strong className="sale-price-value">
+          {formatoPrecio(precioNumero)}
+        </strong>
+      ) : (
+        <div className="new-price-editor">
+
+          <div className="new-price-input">
+            <span>$</span>
+
+            <input
+              type="number"
+              min="0"
+              step="100"
+              inputMode="numeric"
+              value={nuevoPrecio}
               disabled={guardando}
-              onClick={guardarPrecio}
-            >
-              {guardando ? "..." : "✓"}
-            </button>
+              autoFocus
+              onChange={(e) => {
+                setNuevoPrecio(e.target.value);
+                setErrorPrecio("");
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  guardarPrecio();
+                }
 
-            <button
-              type="button"
-              className="compact-cancel-button"
-              disabled={guardando}
-              onClick={cancelarEdicion}
-            >
-              ✕
-            </button>
+                if (e.key === "Escape") {
+                  cancelarEdicion();
+                }
+              }}
+            />
           </div>
 
-          {errorPrecio && (
-            <p className="price-error">
-              {errorPrecio}
-            </p>
-          )}
+          <button
+            type="button"
+            className="new-save-price"
+            disabled={guardando}
+            onClick={guardarPrecio}
+          >
+            {guardando ? "..." : "✓"}
+          </button>
+
+          <button
+            type="button"
+            className="new-cancel-price"
+            disabled={guardando}
+            onClick={cancelarEdicion}
+          >
+            ✕
+          </button>
+
         </div>
       )}
+
+      {errorPrecio && (
+        <p className="price-error">
+          {errorPrecio}
+        </p>
+      )}
+
     </div>
-  );
+  </div>
+);
 }
 
 /* =========================================================
@@ -3002,197 +2990,236 @@ export default function ProductosMayoristaPage() {
           font-size: 18px;
         }
 /* =================================================
-   PRECIOS COMPACTOS
+   NUEVO DISEÑO DE PRECIOS
 ================================================= */
 
-.compact-prices-wrapper {
+.new-prices-wrapper {
   width: 100%;
+  margin-top: 10px;
 }
 
-.compact-prices {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  border: 1px solid #eeeeee;
-  border-radius: 12px;
-  overflow: hidden;
+/* COSTO + GANANCIA EN UNA SOLA LÍNEA */
+
+.cost-profit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+
+  padding: 8px 10px;
+
   background: #fafafa;
+  border: 1px solid #eeeeee;
+  border-radius: 10px 10px 0 0;
 }
 
-.compact-price-item {
+.cost-inline,
+.profit-inline {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   min-width: 0;
-  padding: 10px 9px;
 }
 
-.compact-price-item + .compact-price-item {
-  border-left: 1px solid #e8e8e8;
-}
-
-.compact-price-label {
-  display: block;
+.cost-inline span,
+.profit-inline span {
   color: #888;
   font-size: 10px;
-  line-height: 1.15;
   white-space: nowrap;
 }
 
-.compact-price-title {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-}
-
-.compact-cost,
-.compact-retail,
-.compact-profit {
-  display: block;
-  margin-top: 5px;
-  font-size: 15px;
-  line-height: 1.1;
-  white-space: nowrap;
-  letter-spacing: -0.3px;
-}
-
-.compact-cost {
+.cost-inline strong {
   color: #d97883;
+  font-size: 14px;
+  white-space: nowrap;
 }
 
-.compact-retail {
-  color: #222;
+.profit-inline strong {
+  font-size: 13px;
+  white-space: nowrap;
 }
 
-.compact-profit {
-  color: #318553;
+/* PRECIO DE VENTA */
+
+.sale-price-box {
+  padding: 9px 10px 10px;
+
+  background: #fff;
+  border: 1px solid #eeeeee;
+  border-top: none;
+
+  border-radius: 0 0 10px 10px;
 }
 
-.compact-edit-button {
-  width: 21px;
-  height: 21px;
-  flex: 0 0 21px;
-  padding: 0;
-  border: none;
-  border-radius: 50%;
-  background: #eeeeee;
-  cursor: pointer;
+.sale-price-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  line-height: 1;
-}
+  gap: 5px;
 
-.compact-edit-button:hover {
-  background: #e2e2e2;
-}
-
-/* EDITOR */
-
-.compact-price-editor {
-  margin-top: 8px;
-  padding: 10px;
-  border: 1px solid #eeeeee;
-  border-radius: 10px;
-  background: #fafafa;
-}
-
-.compact-editor-label {
-  display: block;
-  margin-bottom: 6px;
   color: #777;
   font-size: 11px;
 }
 
-.compact-editor-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 34px 34px;
-  gap: 6px;
-}
+.sale-edit-button {
+  width: 23px;
+  height: 23px;
 
-.compact-input-wrap {
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+
+  background: #eeeeee;
+
   display: flex;
   align-items: center;
-  border: 1px solid #dcdcdc;
+  justify-content: center;
+
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.sale-price-value {
+  display: block;
+
+  margin-top: 3px;
+
+  color: #222;
+
+  font-size: 19px;
+  line-height: 1.1;
+  font-weight: 900;
+}
+
+/* EDITOR */
+
+.new-price-editor {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr) 32px 32px;
+
+  gap: 5px;
+
+  margin-top: 6px;
+}
+
+.new-price-input {
+  display: flex;
+  align-items: center;
+
+  border: 1px solid #ddd;
   border-radius: 8px;
-  background: white;
+
+  background: #fff;
   overflow: hidden;
 }
 
-.compact-input-wrap span {
-  padding-left: 9px;
+.new-price-input span {
+  padding-left: 8px;
   color: #777;
   font-weight: 700;
 }
 
-.compact-input-wrap input {
+.new-price-input input {
   width: 100%;
   min-width: 0;
-  height: 36px;
+  height: 34px;
+
   border: none;
   outline: none;
-  background: transparent;
-  padding: 0 7px;
+
+  padding: 0 6px;
+
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 800;
 }
 
-.compact-save-button,
-.compact-cancel-button {
-  width: 34px;
-  height: 36px;
+.new-save-price,
+.new-cancel-price {
+  width: 32px;
+  height: 34px;
+
   padding: 0;
+
   border: none;
   border-radius: 8px;
+
   cursor: pointer;
   font-weight: 900;
 }
 
-.compact-save-button {
+.new-save-price {
   background: #318553;
   color: white;
 }
 
-.compact-cancel-button {
+.new-cancel-price {
   background: #eeeeee;
   color: #555;
 }
 
 .price-error {
-  margin: 7px 0 0;
+  margin: 6px 0 0;
   color: #c43b3b;
-  font-size: 11px;
+  font-size: 10px;
 }
 
-/* MÓVIL */
+
+/* =================================================
+   AJUSTES PARA CELULAR
+================================================= */
 
 @media (max-width: 700px) {
-  .compact-price-item {
-    padding: 8px 5px;
+
+  /* Nombre más pequeño */
+  .name {
+    margin: 5px 0 10px;
+    font-size: 13px;
+    line-height: 1.25;
   }
 
-  .compact-price-label {
-    font-size: 8.5px;
+  .new-prices-wrapper {
+    margin-top: 5px;
   }
 
-  .compact-cost,
-  .compact-retail,
-  .compact-profit {
-    margin-top: 4px;
+  .cost-profit-row {
+    padding: 7px 8px;
+    gap: 5px;
+  }
+
+  .cost-inline,
+  .profit-inline {
+    gap: 4px;
+  }
+
+  .cost-inline span,
+  .profit-inline span {
+    font-size: 9px;
+  }
+
+  .cost-inline strong {
+    font-size: 13px;
+  }
+
+  .profit-inline strong {
     font-size: 12px;
-    letter-spacing: -0.45px;
   }
 
-  .compact-price-title {
-    gap: 2px;
+  .sale-price-box {
+    padding: 7px 8px 9px;
   }
 
-  .compact-edit-button {
-    width: 18px;
-    height: 18px;
-    flex-basis: 18px;
-    font-size: 8px;
+  .sale-price-header {
+    font-size: 10px;
   }
 
-  .compact-price-editor {
-    padding: 8px;
+  .sale-price-value {
+    font-size: 18px;
+  }
+
+  .sale-edit-button {
+    width: 21px;
+    height: 21px;
+    font-size: 9px;
   }
 }
         /* =================================================
@@ -4275,10 +4302,7 @@ export default function ProductosMayoristaPage() {
                       />
 
                       <div className="card-info">
-                        <p className="reference">
-                          {producto.referencia}
-                        </p>
-
+                        
                         <h2 className="name">
                           {producto.nombre}
                         </h2>
