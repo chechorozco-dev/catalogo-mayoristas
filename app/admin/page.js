@@ -21,7 +21,9 @@ export default function AdminPage() {
 
   const [nombreEditado, setNombreEditado] = useState("");
   const [whatsappEditado, setWhatsappEditado] = useState("");
-
+const [colorPrincipal, setColorPrincipal] = useState("#000000");
+const [colorFondo, setColorFondo] = useState("#FFFFFF");
+const [guardandoColores, setGuardandoColores] = useState(false);
   useEffect(() => {
     cargarDatos();
   }, []);
@@ -96,7 +98,13 @@ export default function AdminPage() {
       setWhatsappEditado(
         tiendaData.tienda.whatsapp || ""
       );
+setColorPrincipal(
+  tiendaData.tienda.color_principal || "#000000"
+);
 
+setColorFondo(
+  tiendaData.tienda.color_fondo || "#FFFFFF"
+);
       setCargando(false);
     } catch (error) {
       console.error(
@@ -580,7 +588,71 @@ export default function AdminPage() {
       setGuardando(false);
     }
   }
+/* =========================================
+   GUARDAR COLORES
+========================================= */
 
+async function guardarColores() {
+  if (!tienda || guardandoColores) return;
+
+  setMensaje("");
+  setGuardandoColores(true);
+
+  try {
+    const response = await fetch(
+      "/api/tiendas/mi-tienda",
+      {
+        method: "PATCH",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          nombre_tienda: tienda.nombre_tienda,
+          whatsapp: tienda.whatsapp,
+          color_principal: colorPrincipal,
+          color_fondo: colorFondo,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      setMensaje(
+        data.mensaje ||
+          "No pudimos guardar los colores."
+      );
+      return;
+    }
+
+    setTienda(data.tienda);
+
+    setColorPrincipal(
+      data.tienda?.color_principal || "#000000"
+    );
+
+    setColorFondo(
+      data.tienda?.color_fondo || "#FFFFFF"
+    );
+
+    setMensaje(
+      "✅ Colores de tu página actualizados correctamente."
+    );
+  } catch (error) {
+    console.error(
+      "Error guardando colores:",
+      error
+    );
+
+    setMensaje(
+      "No pudimos guardar los colores."
+    );
+  } finally {
+    setGuardandoColores(false);
+  }
+}
   /* =========================================
      MOSTRAR WHATSAPP
   ========================================= */
@@ -1099,23 +1171,27 @@ export default function AdminPage() {
                     </label>
 
                     <input
-                      type="tel"
-                      value={
-                        whatsappEditado
-                      }
-                      onChange={(
-                        e
-                      ) =>
-                        setWhatsappEditado(
-                          e.target
-                            .value
-                        )
-                      }
-                      required
-                      style={
-                        estiloInput
-                      }
-                    />
+  type="tel"
+  value={whatsappEditado}
+  readOnly
+  style={{
+    ...estiloInput,
+    background: "#eeeeee",
+    color: "#777",
+    cursor: "not-allowed",
+  }}
+/>
+
+<p
+  style={{
+    marginTop: "-10px",
+    marginBottom: "18px",
+    fontSize: "12px",
+    color: "#888",
+  }}
+>
+  🔒 Este número está vinculado a tu cuenta y no puede modificarse.
+</p>
 
                     <button
                       type="submit"
@@ -1190,7 +1266,223 @@ export default function AdminPage() {
                   </form>
                 </div>
               )}
+{/* PERSONALIZAR PÁGINA */}
 
+<div
+  style={{
+    marginTop: "20px",
+    padding: "24px",
+    background: "#f7f7f7",
+    borderRadius: "16px",
+    border: "1px solid #eee",
+  }}
+>
+  <h2
+    style={{
+      marginTop: 0,
+      marginBottom: "8px",
+      fontSize: "22px",
+    }}
+  >
+    🎨 Personaliza tu página
+  </h2>
+
+  <p
+    style={{
+      marginTop: 0,
+      marginBottom: "22px",
+      color: "#666",
+      lineHeight: "1.5",
+    }}
+  >
+    Elige los colores de tu negocio para personalizar
+    el catálogo que compartes con tus clientes.
+  </p>
+
+  {/* COLOR PRINCIPAL */}
+
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: "15px",
+      padding: "16px",
+      background: "white",
+      borderRadius: "12px",
+      border: "1px solid #e5e5e5",
+      marginBottom: "12px",
+    }}
+  >
+    <div>
+      <div
+        style={{
+          fontWeight: "700",
+          marginBottom: "4px",
+        }}
+      >
+        Color principal
+      </div>
+
+      <div
+        style={{
+          fontSize: "13px",
+          color: "#888",
+        }}
+      >
+        Botones y detalles de tu página
+      </div>
+    </div>
+
+    <input
+      type="color"
+      value={colorPrincipal}
+      onChange={(e) =>
+        setColorPrincipal(e.target.value)
+      }
+      style={{
+        width: "55px",
+        height: "45px",
+        border: "none",
+        background: "transparent",
+        cursor: "pointer",
+      }}
+    />
+  </div>
+
+  {/* COLOR DE FONDO */}
+
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: "15px",
+      padding: "16px",
+      background: "white",
+      borderRadius: "12px",
+      border: "1px solid #e5e5e5",
+      marginBottom: "20px",
+    }}
+  >
+    <div>
+      <div
+        style={{
+          fontWeight: "700",
+          marginBottom: "4px",
+        }}
+      >
+        Color de fondo
+      </div>
+
+      <div
+        style={{
+          fontSize: "13px",
+          color: "#888",
+        }}
+      >
+        Fondo general de tu catálogo
+      </div>
+    </div>
+
+    <input
+      type="color"
+      value={colorFondo}
+      onChange={(e) =>
+        setColorFondo(e.target.value)
+      }
+      style={{
+        width: "55px",
+        height: "45px",
+        border: "none",
+        background: "transparent",
+        cursor: "pointer",
+      }}
+    />
+  </div>
+
+  {/* VISTA PREVIA */}
+
+  <div
+    style={{
+      padding: "22px",
+      borderRadius: "14px",
+      background: colorFondo,
+      border: "1px solid #ddd",
+      marginBottom: "18px",
+      transition: "all 0.2s ease",
+    }}
+  >
+    <p
+      style={{
+        margin: "0 0 12px",
+        fontSize: "13px",
+        color: "#777",
+      }}
+    >
+      Vista previa
+    </p>
+
+    <div
+      style={{
+        background: "white",
+        borderRadius: "12px",
+        padding: "18px",
+        boxShadow:
+          "0 4px 15px rgba(0,0,0,0.08)",
+      }}
+    >
+      <div
+        style={{
+          fontWeight: "800",
+          fontSize: "18px",
+          marginBottom: "12px",
+        }}
+      >
+        {tienda.nombre_tienda}
+      </div>
+
+      <button
+        type="button"
+        style={{
+          width: "100%",
+          border: "none",
+          borderRadius: "9px",
+          padding: "12px",
+          background: colorPrincipal,
+          color: "white",
+          fontWeight: "700",
+        }}
+      >
+        Agregar al pedido
+      </button>
+    </div>
+  </div>
+
+  <button
+    type="button"
+    onClick={guardarColores}
+    disabled={guardandoColores}
+    style={{
+      width: "100%",
+      border: "none",
+      padding: "15px",
+      borderRadius: "10px",
+      background: colorPrincipal,
+      color: "white",
+      fontSize: "16px",
+      fontWeight: "700",
+      cursor: guardandoColores
+        ? "not-allowed"
+        : "pointer",
+      opacity: guardandoColores ? 0.7 : 1,
+    }}
+  >
+    {guardandoColores
+      ? "Guardando..."
+      : "💾 Guardar personalización"}
+  </button>
+</div>
               {/* PRECIOS MAYORISTAS */}
 
               <div
