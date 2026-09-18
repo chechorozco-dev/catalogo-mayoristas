@@ -158,6 +158,7 @@ export default function TiendaCliente({
   productos = [],
 }) {
   const [categoriaActiva, setCategoriaActiva] = useState("Todos");
+  const [lineaActiva, setLineaActiva] = useState("Todos");
   const [busqueda, setBusqueda] = useState("");
   const [mostrarBusqueda, setMostrarBusqueda] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
@@ -222,41 +223,83 @@ const colorTextoPrincipal =
   // ========================================
 
   const productosFiltrados = useMemo(() => {
-    let lista = [...productos];
+  let lista = [...productos];
 
-    if (categoriaActiva === "Nuevos") {
-      lista.sort(
-        (a, b) =>
-          new Date(b.created_at || 0) -
-          new Date(a.created_at || 0)
+  // FILTRO POR CATEGORÍA PRINCIPAL
+
+  if (categoriaActiva === "Nuevos") {
+    lista.sort(
+      (a, b) =>
+        new Date(b.created_at || 0) -
+        new Date(a.created_at || 0)
+    );
+  } else {
+    lista = lista.filter((producto) =>
+      productoPerteneceCategoria(
+        producto,
+        categoriaActiva
+      )
+    );
+  }
+
+  // FILTRO POR LÍNEA DE PRODUCTO
+
+  if (lineaActiva === "Rodio") {
+    lista = lista.filter((producto) => {
+      const texto = limpiarTexto(
+        `${producto.nombre || ""} ${
+          producto.referencia || ""
+        } ${producto.categoria || ""}`
       );
-    } else {
-      lista = lista.filter((producto) =>
-        productoPerteneceCategoria(producto, categoriaActiva)
+
+      return texto.includes("rodio");
+    });
+  }
+
+  if (lineaActiva === "Acero") {
+    lista = lista.filter((producto) => {
+      const texto = limpiarTexto(
+        `${producto.nombre || ""} ${
+          producto.referencia || ""
+        } ${producto.categoria || ""}`
       );
-    }
 
-    const textoBusqueda = limpiarTexto(busqueda);
+      return texto.includes("acero");
+    });
+  }
 
-    if (textoBusqueda) {
-      lista = lista.filter((producto) => {
-        const variantesTexto = (producto.variantes || [])
-          .map(
-            (variante) =>
-              `${variante.nombre_variante || ""} ${
-                variante.referencia || ""
-              }`
-          )
-          .join(" ");
+  // BUSCADOR
 
-        const texto = limpiarTexto(
-          `${producto.nombre || ""} ${producto.referencia || ""} ${
-            producto.categoria || ""
-          } ${variantesTexto}`
-        );
+  const textoBusqueda = limpiarTexto(busqueda);
 
-        return texto.includes(textoBusqueda);
-      });
+  if (textoBusqueda) {
+    lista = lista.filter((producto) => {
+      const variantesTexto = (producto.variantes || [])
+        .map(
+          (variante) =>
+            `${variante.nombre_variante || ""} ${
+              variante.referencia || ""
+            }`
+        )
+        .join(" ");
+
+      const texto = limpiarTexto(
+        `${producto.nombre || ""} ${
+          producto.referencia || ""
+        } ${producto.categoria || ""} ${variantesTexto}`
+      );
+
+      return texto.includes(textoBusqueda);
+    });
+  }
+
+  return lista;
+}, [
+  productos,
+  categoriaActiva,
+  lineaActiva,
+  busqueda,
+]);
     }
 
     return lista;
@@ -837,12 +880,27 @@ const colorTextoPrincipal =
   <button
     type="button"
     className={`linea-producto ${
-      categoriaActiva === "Accesorios en Rodio"
+      lineaActiva === "Todos"
         ? "activa"
         : ""
     }`}
     onClick={() => {
-      setCategoriaActiva("Accesorios en Rodio");
+      setLineaActiva("Todos");
+      scrollInicio();
+    }}
+  >
+    Todos
+  </button>
+
+  <button
+    type="button"
+    className={`linea-producto ${
+      lineaActiva === "Rodio"
+        ? "activa"
+        : ""
+    }`}
+    onClick={() => {
+      setLineaActiva("Rodio");
       scrollInicio();
     }}
   >
@@ -852,12 +910,12 @@ const colorTextoPrincipal =
   <button
     type="button"
     className={`linea-producto ${
-      categoriaActiva === "Accesorios en Acero"
+      lineaActiva === "Acero"
         ? "activa"
         : ""
     }`}
     onClick={() => {
-      setCategoriaActiva("Accesorios en Acero");
+      setLineaActiva("Acero");
       scrollInicio();
     }}
   >
@@ -1774,23 +1832,30 @@ body {
 .lineas-producto {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
+  gap: 9px;
 
   padding: 11px 14px 10px;
+
+  overflow-x: auto;
+  white-space: nowrap;
 
   background: var(--color-fondo);
 
   border-bottom: 1px solid
     rgba(128, 128, 128, 0.18);
+
+  scrollbar-width: none;
+}
+
+.lineas-producto::-webkit-scrollbar {
+  display: none;
 }
 
 .linea-producto {
-  flex: 1;
-  max-width: 240px;
+  flex: 0 0 auto;
 
   min-height: 38px;
-  padding: 8px 12px;
+  padding: 8px 16px;
 
   border: 1px solid
     rgba(128, 128, 128, 0.28);
