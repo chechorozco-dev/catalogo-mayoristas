@@ -17,14 +17,15 @@ export default async function TiendaPage({ params }) {
   } = await supabase
     .from("tiendas")
     .select(`
-  id,
-  nombre_tienda,
-  slug,
-  whatsapp,
-  logo_url,
-  color_principal,
-  color_fondo
-`)
+      id,
+      nombre_tienda,
+      slug,
+      whatsapp,
+      logo_url,
+      color_principal,
+      color_fondo,
+      mensaje_portada
+    `)
     .eq("slug", slug)
     .eq("activa", true)
     .single();
@@ -558,30 +559,34 @@ export default async function TiendaPage({ params }) {
   return (
     <main>
       <TiendaCliente
-  nombreTienda={
-    tienda.nombre_tienda
-  }
+        nombreTienda={
+          tienda.nombre_tienda
+        }
 
-  logoUrl={
-    tienda.logo_url || ""
-  }
+        logoUrl={
+          tienda.logo_url || ""
+        }
 
-  whatsapp={
-    tienda.whatsapp || ""
-  }
+        whatsapp={
+          tienda.whatsapp || ""
+        }
 
-  colorPrincipal={
-    tienda.color_principal || "#000000"
-  }
+        colorPrincipal={
+          tienda.color_principal || "#000000"
+        }
 
-  colorFondo={
-    tienda.color_fondo || "#FFFFFF"
-  }
+        colorFondo={
+          tienda.color_fondo || "#FFFFFF"
+        }
 
-  productos={
-    productos
-  }
-/>
+        mensajePortada={
+          tienda.mensaje_portada || ""
+        }
+
+        productos={
+          productos
+        }
+      />
     </main>
   );
 }
