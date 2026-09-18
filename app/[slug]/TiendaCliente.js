@@ -45,7 +45,24 @@ function formatoPrecio(valor) {
 function limpiarWhatsapp(numero = "") {
   return String(numero).replace(/\D/g, "");
 }
+function obtenerColorTexto(hex = "#000000") {
+  const color = String(hex).replace("#", "");
 
+  if (color.length !== 6) {
+    return "#FFFFFF";
+  }
+
+  const r = parseInt(color.substring(0, 2), 16);
+  const g = parseInt(color.substring(2, 4), 16);
+  const b = parseInt(color.substring(4, 6), 16);
+
+  const luminosidad =
+    (r * 299 + g * 587 + b * 114) / 1000;
+
+  return luminosidad > 160
+    ? "#111111"
+    : "#FFFFFF";
+}
 function productoPerteneceCategoria(producto, categoria) {
   if (categoria === "Todos") return true;
 
