@@ -403,6 +403,15 @@ export async function PATCH(request) {
 
     const body =
       await request.json();
+      const colorPrincipal =
+  String(
+    body.color_principal || "#000000"
+  ).trim();
+
+const colorFondo =
+  String(
+    body.color_fondo || "#FFFFFF"
+  ).trim();
 
     const nombreTienda =
       String(
