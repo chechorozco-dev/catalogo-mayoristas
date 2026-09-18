@@ -1471,7 +1471,7 @@ body {
           align-items: center;
           justify-content: center;
           padding: 20px;
-          background: white;
+          background: var(--color-fondo);
         }
 
         .header-lateral {
@@ -1657,7 +1657,7 @@ body {
           overflow-x: auto;
           white-space: nowrap;
           padding: 0 22px;
-          background: rgba(255, 255, 255, 0.97);
+          background: var(--color-fondo);
           border-bottom: 1px solid #ededed;
           scrollbar-width: none;
         }
@@ -1710,9 +1710,9 @@ body {
         }
 
         .producto-card {
-          min-width: 0;
-          background: white;
-        }
+  min-width: 0;
+  background: var(--color-fondo);
+}
 
         .imagen-contenedor {
           position: relative;
@@ -1791,7 +1791,7 @@ body {
   justify-content: flex-start;
   gap: 7px;
   border-bottom: 1px solid #eeeeee;
-  background: #ffffff;
+  background: var(--color-fondo);
 }
 
 .miniatura-producto {
@@ -1816,7 +1816,7 @@ body {
 }
 
 .miniatura-producto.activa {
-  border: 2px solid #111111;
+  border: 2px solid var(--color-principal);
   padding: 1px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
@@ -1878,10 +1878,11 @@ body {
         }
 
         .producto-precio {
-          margin-top: 5px;
-          font-size: 18px;
-          font-weight: 700;
-        }
+  margin-top: 5px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-principal);
+}
 
         .sin-resultados {
           text-align: center;
