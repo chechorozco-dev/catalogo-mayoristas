@@ -2656,6 +2656,32 @@ temporizadorResumenRef.current =
           cursor: pointer;
           font-size: 15px;
           font-weight: 600;
+          .back-button {
+  height: 46px;
+  padding: 0 18px;
+
+  border: 2px solid #222;
+  border-radius: 12px;
+
+  background: #ffffff;
+  color: #222222;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  cursor: pointer;
+
+  font-size: 14px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.back-button-arrow {
+  font-size: 21px;
+  line-height: 1;
+}
         }
 
         /* =================================================
@@ -4296,7 +4322,12 @@ temporizadorResumenRef.current =
           .cart-top-button {
             flex: 1;
           }
-
+.back-button {
+  min-width: 120px;
+  flex-shrink: 0;
+  padding: 0 14px;
+  font-size: 13px;
+}
           .image-cart-button {
             width: 44px;
             height: 44px;
@@ -4521,14 +4552,18 @@ temporizadorResumenRef.current =
               </button>
 
               <button
-                type="button"
-                className="button"
-                onClick={() =>
-                  router.push("/admin")
-                }
-              >
-                ← Volver
-              </button>
+  type="button"
+  className="back-button"
+  onClick={() =>
+    router.push("/admin")
+  }
+>
+  <span className="back-button-arrow">
+    ←
+  </span>
+
+  <span>REGRESAR</span>
+</button>
             </div>
           </div>
 
