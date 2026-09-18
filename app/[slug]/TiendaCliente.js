@@ -20,8 +20,7 @@ const CATEGORIAS_MENU = [
   "Pulseras",
   "Earcuff",
   "Collares",
-  "Accesorios en Rodio",
-  "Accesorios en Acero",
+
 ];
 
 function limpiarTexto(valor = "") {
