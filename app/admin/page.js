@@ -72,7 +72,7 @@ export default function AdminPage() {
   const [whatsappEditado, setWhatsappEditado] = useState("");
 const [colorPrincipal, setColorPrincipal] = useState("#000000");
 const [colorFondo, setColorFondo] = useState("#FFFFFF");
-const [guardandoColores, setGuardandoColores] = useState(false);
+const 
 const colorTextoPrincipal =
   obtenerColorTexto(colorPrincipal);
 
@@ -654,71 +654,7 @@ setColorFondo(
       setGuardando(false);
     }
   }
-/* =========================================
-   GUARDAR COLORES
-========================================= */
 
-async function guardarColores() {
-  if (!tienda || guardandoColores) return;
-
-  setMensaje("");
-  setGuardandoColores(true);
-
-  try {
-    const response = await fetch(
-      "/api/tiendas/mi-tienda",
-      {
-        method: "PATCH",
-
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify({
-          nombre_tienda: tienda.nombre_tienda,
-          whatsapp: tienda.whatsapp,
-          color_principal: colorPrincipal,
-          color_fondo: colorFondo,
-        }),
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok || !data.ok) {
-      setMensaje(
-        data.mensaje ||
-          "No pudimos guardar los colores."
-      );
-      return;
-    }
-
-    setTienda(data.tienda);
-
-    setColorPrincipal(
-      data.tienda?.color_principal || "#000000"
-    );
-
-    setColorFondo(
-      data.tienda?.color_fondo || "#FFFFFF"
-    );
-
-    setMensaje(
-      "✅ Colores de tu página actualizados correctamente."
-    );
-  } catch (error) {
-    console.error(
-      "Error guardando colores:",
-      error
-    );
-
-    setMensaje(
-      "No pudimos guardar los colores."
-    );
-  } finally {
-    setGuardandoColores(false);
-  }
-}
   /* =========================================
      MOSTRAR WHATSAPP
   ========================================= */
