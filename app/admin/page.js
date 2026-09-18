@@ -863,260 +863,221 @@ setColorFondo(
           {tienda && (
             <>
               {!editando && (
-                <div
-                  style={{
-                    marginTop:
-                      "30px",
-                    padding:
-                      "24px",
-                    background:
-                      "#f7f7f7",
-                    borderRadius:
-                      "16px",
-                  }}
-                >
-                  <p
-                    style={{
-                      margin: 0,
-                      color:
-                        "#777",
-                      fontSize:
-                        "14px",
-                    }}
-                  >
-                    Tu tienda
-                  </p>
+  <div
+    style={{
+      marginTop: "24px",
+      padding: "20px",
+      background: "#f8f8f8",
+      border: "1px solid #eeeeee",
+      borderRadius: "18px",
+    }}
+  >
+    {/* INFORMACIÓN PRINCIPAL */}
 
-                  <h2
-                    style={{
-                      marginTop:
-                        "5px",
-                      marginBottom:
-                        "8px",
-                      fontSize:
-                        "27px",
-                    }}
-                  >
-                    {
-                      tienda.nombre_tienda
-                    }
-                  </h2>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "16px",
+      }}
+    >
+      {/* LOGO */}
 
-                  <p
-                    style={{
-                      margin: 0,
-                      color:
-                        "#666",
-                    }}
-                  >
-                    WhatsApp:{" "}
-                    {mostrarWhatsapp(
-                      tienda.whatsapp
-                    )}
-                  </p>
+      <div
+        style={{
+          width: "82px",
+          height: "82px",
+          flexShrink: 0,
+          borderRadius: "18px",
+          overflow: "hidden",
+          background: "#ffffff",
+          border: "1px solid #e2e2e2",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {previewLogo || tienda.logo_url ? (
+          <img
+            src={previewLogo || tienda.logo_url}
+            alt="Logo de la tienda"
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
+              display: "block",
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              textAlign: "center",
+              color: "#999",
+              fontSize: "11px",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "25px",
+                marginBottom: "3px",
+              }}
+            >
+              🖼️
+            </div>
 
-                  {/* LOGO */}
+            Sin logo
+          </div>
+        )}
+      </div>
 
-                  <div
-                    style={{
-                      marginTop:
-                        "22px",
-                      padding:
-                        "20px",
-                      borderRadius:
-                        "14px",
-                      background:
-                        "white",
-                      border:
-                        "1px solid #eee",
-                      textAlign:
-                        "center",
-                    }}
-                  >
-                    <p
-                      style={{
-                        marginTop:
-                          0,
-                        marginBottom:
-                          "14px",
-                        fontWeight:
-                          "700",
-                        fontSize:
-                          "16px",
-                      }}
-                    >
-                      Logo de tu tienda
-                    </p>
+      {/* NOMBRE Y WHATSAPP */}
 
-                    <div
-                      style={{
-                        width:
-                          "150px",
-                        height:
-                          "150px",
-                        margin:
-                          "0 auto 18px",
-                        borderRadius:
-                          "20px",
-                        overflow:
-                          "hidden",
-                        border:
-                          "1px solid #ddd",
-                        background:
-                          "#f7f7f7",
-                        display:
-                          "flex",
-                        alignItems:
-                          "center",
-                        justifyContent:
-                          "center",
-                      }}
-                    >
-                      {previewLogo ||
-                      tienda.logo_url ? (
-                        <img
-                          src={
-                            previewLogo ||
-                            tienda.logo_url
-                          }
-                          alt="Logo de la tienda"
-                          style={{
-                            width:
-                              "100%",
-                            height:
-                              "100%",
-                            objectFit:
-                              "contain",
-                            display:
-                              "block",
-                          }}
-                        />
-                      ) : (
-                        <div
-                          style={{
-                            textAlign:
-                              "center",
-                            color:
-                              "#999",
-                            fontSize:
-                              "13px",
-                            padding:
-                              "10px",
-                          }}
-                        >
-                          <div
-                            style={{
-                              fontSize:
-                                "30px",
-                              marginBottom:
-                                "5px",
-                            }}
-                          >
-                            🖼️
-                          </div>
+      <div
+        style={{
+          minWidth: 0,
+          flex: 1,
+        }}
+      >
+        <div
+          style={{
+            color: "#999",
+            fontSize: "12px",
+            fontWeight: "600",
+            marginBottom: "4px",
+          }}
+        >
+          TU TIENDA
+        </div>
 
-                          Sin logo
-                        </div>
-                      )}
-                    </div>
+        <h2
+          style={{
+            margin: 0,
+            color: "#222",
+            fontSize: "23px",
+            lineHeight: "1.2",
+            overflowWrap: "anywhere",
+          }}
+        >
+          {tienda.nombre_tienda}
+        </h2>
 
-                    <label
-                      style={{
-                        display:
-                          "inline-block",
-                        padding:
-                          "13px 20px",
-                        borderRadius:
-                          "10px",
-                        background:
-                          "#222",
-                        color:
-                          "white",
-                        fontWeight:
-                          "700",
-                        cursor:
-                          subiendoLogo
-                            ? "not-allowed"
-                            : "pointer",
-                        opacity:
-                          subiendoLogo
-                            ? 0.7
-                            : 1,
-                      }}
-                    >
-                      {subiendoLogo
-                        ? "Procesando foto..."
-                        : tienda.logo_url
-                          ? "📷 Cambiar logo"
-                          : "📷 Subir logo"}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            marginTop: "7px",
+            color: "#666",
+            fontSize: "14px",
+          }}
+        >
+          <span>💬</span>
 
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={
-                          subirLogo
-                        }
-                        disabled={
-                          subiendoLogo
-                        }
-                        style={{
-                          display:
-                            "none",
-                        }}
-                      />
-                    </label>
+          <span>
+            {mostrarWhatsapp(tienda.whatsapp)}
+          </span>
+        </div>
+      </div>
+    </div>
 
-                    <p
-                      style={{
-                        marginTop:
-                          "12px",
-                        marginBottom:
-                          0,
-                        color:
-                          "#888",
-                        fontSize:
-                          "12px",
-                        lineHeight:
-                          "1.5",
-                      }}
-                    >
-                      Selecciona una foto desde tu galería.
-                      La ajustaremos automáticamente.
-                    </p>
-                  </div>
+    {/* SEPARADOR */}
 
-                  <button
-                    type="button"
-                    onClick={
-                      empezarEdicion
-                    }
-                    style={{
-                      width:
-                        "100%",
-                      marginTop:
-                        "18px",
-                      border:
-                        "1px solid #d97883",
-                      padding:
-                        "13px",
-                      borderRadius:
-                        "10px",
-                      background:
-                        "white",
-                      color:
-                        "#d97883",
-                      fontSize:
-                        "16px",
-                      fontWeight:
-                        "700",
-                      cursor:
-                        "pointer",
-                    }}
-                  >
-                    ✏️ Editar datos de mi tienda
-                  </button>
-                </div>
-              )}
+    <div
+      style={{
+        height: "1px",
+        background: "#e8e8e8",
+        margin: "20px 0",
+      }}
+    />
+
+    {/* ACCIONES */}
+
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns:
+          "repeat(2, minmax(0, 1fr))",
+        gap: "10px",
+      }}
+    >
+      {/* CAMBIAR LOGO */}
+
+      <label
+        style={{
+          minHeight: "48px",
+          padding: "11px 10px",
+          borderRadius: "11px",
+          background: "#222",
+          color: "#fff",
+          fontWeight: "700",
+          fontSize: "14px",
+          cursor: subiendoLogo
+            ? "not-allowed"
+            : "pointer",
+          opacity: subiendoLogo ? 0.7 : 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "7px",
+          textAlign: "center",
+        }}
+      >
+        <span>📷</span>
+
+        <span>
+          {subiendoLogo
+            ? "Procesando..."
+            : tienda.logo_url
+              ? "Cambiar logo"
+              : "Subir logo"}
+        </span>
+
+        <input
+          type="file"
+          accept="image/*"
+          onChange={subirLogo}
+          disabled={subiendoLogo}
+          style={{
+            display: "none",
+          }}
+        />
+      </label>
+
+      {/* EDITAR TIENDA */}
+
+      <button
+        type="button"
+        onClick={empezarEdicion}
+        style={{
+          minHeight: "48px",
+          border: "1px solid #d97883",
+          padding: "11px 10px",
+          borderRadius: "11px",
+          background: "#ffffff",
+          color: "#d97883",
+          fontSize: "14px",
+          fontWeight: "700",
+          cursor: "pointer",
+        }}
+      >
+        ✏️ Editar tienda
+      </button>
+    </div>
+
+    <p
+      style={{
+        margin: "13px 0 0",
+        color: "#999",
+        fontSize: "11px",
+        lineHeight: "1.45",
+        textAlign: "center",
+      }}
+    >
+      Personaliza el nombre, logo y colores de la página
+      que compartes con tus clientes.
+    </p>
+  </div>
+)}
 
               {editando && (
                 <div
