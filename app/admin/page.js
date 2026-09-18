@@ -1432,6 +1432,7 @@ async function guardarColores() {
     }}
   />
 </div>
+</div>
 
 
   {/* COLOR DE FONDO */}
