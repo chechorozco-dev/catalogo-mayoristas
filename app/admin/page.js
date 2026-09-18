@@ -2,7 +2,38 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
+const PALETAS_COLORES = [
+  {
+    nombre: "Elegante",
+    principal: "#111111",
+    fondo: "#FFFFFF",
+  },
+  {
+    nombre: "Rosa",
+    principal: "#B85C72",
+    fondo: "#FFF1F4",
+  },
+  {
+    nombre: "Dorado",
+    principal: "#A67C32",
+    fondo: "#FFF8E8",
+  },
+  {
+    nombre: "Lila",
+    principal: "#7656A8",
+    fondo: "#F5F0FF",
+  },
+  {
+    nombre: "Azul",
+    principal: "#244A73",
+    fondo: "#F0F6FC",
+  },
+  {
+    nombre: "Verde",
+    principal: "#47735A",
+    fondo: "#F0F7F2",
+  },
+];
 export default function AdminPage() {
   const router = useRouter();
 
@@ -1235,7 +1266,118 @@ async function guardarColores() {
   >
     Personaliza el catálogo que compartes con tus clientes.
   </p>
+{/* PALETAS PREDISEÑADAS */}
 
+<div
+  style={{
+    marginBottom: "22px",
+  }}
+>
+  <div
+    style={{
+      fontWeight: "700",
+      marginBottom: "5px",
+    }}
+  >
+    Combinaciones recomendadas
+  </div>
+
+  <div
+    style={{
+      color: "#888",
+      fontSize: "13px",
+      marginBottom: "12px",
+    }}
+  >
+    Elige una combinación o personaliza los colores manualmente.
+  </div>
+
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns:
+        "repeat(3, minmax(0, 1fr))",
+      gap: "9px",
+    }}
+  >
+    {PALETAS_COLORES.map((paleta) => {
+      const seleccionada =
+        colorPrincipal.toLowerCase() ===
+          paleta.principal.toLowerCase() &&
+        colorFondo.toLowerCase() ===
+          paleta.fondo.toLowerCase();
+
+      return (
+        <button
+          key={paleta.nombre}
+          type="button"
+          onClick={() => {
+            setColorPrincipal(
+              paleta.principal
+            );
+
+            setColorFondo(
+              paleta.fondo
+            );
+          }}
+          style={{
+            padding: "10px 7px",
+            borderRadius: "10px",
+            border: seleccionada
+              ? `2px solid ${paleta.principal}`
+              : "1px solid #dddddd",
+            background: "#ffffff",
+            cursor: "pointer",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              marginBottom: "7px",
+            }}
+          >
+            <div
+              style={{
+                width: "27px",
+                height: "27px",
+                borderRadius:
+                  "50% 0 0 50%",
+                background:
+                  paleta.principal,
+                border:
+                  "1px solid rgba(0,0,0,0.12)",
+              }}
+            />
+
+            <div
+              style={{
+                width: "27px",
+                height: "27px",
+                borderRadius:
+                  "0 50% 50% 0",
+                background:
+                  paleta.fondo,
+                border:
+                  "1px solid rgba(0,0,0,0.12)",
+              }}
+            />
+          </div>
+
+          <div
+            style={{
+              fontSize: "12px",
+              fontWeight: "700",
+              color: "#333333",
+            }}
+          >
+            {paleta.nombre}
+          </div>
+        </button>
+      );
+    })}
+  </div>
+</div>
   {/* COLOR PRINCIPAL */}
 
   <div
@@ -1263,21 +1405,34 @@ async function guardarColores() {
       </div>
     </div>
 
-    <input
-      type="color"
-      value={colorPrincipal}
-      onChange={(e) =>
-        setColorPrincipal(e.target.value)
-      }
-      style={{
-        width: "60px",
-        height: "48px",
-        border: "none",
-        background: "transparent",
-        cursor: "pointer",
-      }}
-    />
-  </div>
+    <div
+  style={{
+    width: "64px",
+    height: "52px",
+    padding: "3px",
+    border: "2px solid #d5d5d5",
+    borderRadius: "14px",
+    background: "#ffffff",
+    boxSizing: "border-box",
+  }}
+>
+  <input
+    type="color"
+    value={colorPrincipal}
+    onChange={(e) =>
+      setColorPrincipal(e.target.value)
+    }
+    style={{
+      width: "100%",
+      height: "100%",
+      border: "none",
+      padding: 0,
+      background: "transparent",
+      cursor: "pointer",
+    }}
+  />
+</div>
+
 
   {/* COLOR DE FONDO */}
 
