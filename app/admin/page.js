@@ -532,12 +532,18 @@ setColorFondo(
             },
 
             body: JSON.stringify({
-              nombre_tienda:
-                nombreEditado,
+  nombre_tienda:
+    nombreEditado,
 
-              whatsapp:
-                whatsappEditado,
-            }),
+  whatsapp:
+    whatsappEditado,
+
+  color_principal:
+    colorPrincipal,
+
+  color_fondo:
+    colorFondo,
+}),
           }
         );
 
@@ -572,7 +578,13 @@ setColorFondo(
         tiendaActualizada.whatsapp ||
           ""
       );
+setColorPrincipal(
+  tiendaActualizada.color_principal || "#000000"
+);
 
+setColorFondo(
+  tiendaActualizada.color_fondo || "#FFFFFF"
+);
       setEditando(false);
 
       setMensaje(
