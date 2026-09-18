@@ -72,7 +72,6 @@ export default function AdminPage() {
   const [whatsappEditado, setWhatsappEditado] = useState("");
 const [colorPrincipal, setColorPrincipal] = useState("#000000");
 const [colorFondo, setColorFondo] = useState("#FFFFFF");
-const 
 const colorTextoPrincipal =
   obtenerColorTexto(colorPrincipal);
 
