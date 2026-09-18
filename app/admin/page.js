@@ -1353,37 +1353,356 @@ setTiktok(
     style={estiloInput}
   />
 </div>
-                    <label
-                      style={{
-                        fontWeight:
-                          "600",
-                      }}
-                    >
-                      WhatsApp
-                    </label>
+                   {/* =========================================
+    INFORMACIÓN DE LA TIENDA
+========================================= */}
 
-                    <input
-  type="tel"
-  value={whatsappEditado}
-  readOnly
+<div
   style={{
-    ...estiloInput,
-    background: "#eeeeee",
-    color: "#777",
-    cursor: "not-allowed",
-  }}
-/>
-
-<p
-  style={{
-    marginTop: "-10px",
+    background: "#ffffff",
+    border: "1px solid #e8e8e8",
+    borderRadius: "16px",
+    padding: "20px",
     marginBottom: "18px",
-    fontSize: "12px",
-    color: "#888",
   }}
 >
-  🔒 Este número está vinculado a tu cuenta y no puede modificarse.
-</p>
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: "10px",
+      marginBottom: "5px",
+    }}
+  >
+    <div
+      style={{
+        width: "36px",
+        height: "36px",
+        borderRadius: "10px",
+        background: "#fff0f2",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "18px",
+        flexShrink: 0,
+      }}
+    >
+      🏪
+    </div>
+
+    <div>
+      <div
+        style={{
+          fontSize: "17px",
+          fontWeight: "800",
+          color: "#222",
+        }}
+      >
+        Información de mi tienda
+      </div>
+
+      <div
+        style={{
+          marginTop: "2px",
+          fontSize: "12px",
+          color: "#888",
+        }}
+      >
+        Datos principales que verán tus clientes.
+      </div>
+    </div>
+  </div>
+
+  {/* NOMBRE */}
+
+  <div
+    style={{
+      marginTop: "20px",
+    }}
+  >
+    <label
+      style={{
+        display: "block",
+        fontWeight: "700",
+        fontSize: "14px",
+        marginBottom: "2px",
+      }}
+    >
+      Nombre de la tienda
+    </label>
+
+    <input
+      type="text"
+      value={nombreEditado}
+      onChange={(e) =>
+        setNombreEditado(e.target.value)
+      }
+      required
+      style={estiloInput}
+    />
+  </div>
+
+  {/* MENSAJE */}
+
+  <div>
+    <label
+      style={{
+        display: "block",
+        fontWeight: "700",
+        fontSize: "14px",
+        marginBottom: "2px",
+      }}
+    >
+      Mensaje de tu tienda
+    </label>
+
+    <textarea
+      value={mensajePortada}
+      onChange={(e) =>
+        setMensajePortada(
+          e.target.value.slice(0, 120)
+        )
+      }
+      maxLength={120}
+      rows={3}
+      placeholder="Ej: ✨ Joyas que resaltan tu estilo"
+      style={{
+        ...estiloInput,
+        minHeight: "88px",
+        resize: "vertical",
+        marginBottom: "6px",
+        fontFamily: "inherit",
+        lineHeight: "1.45",
+      }}
+    />
+
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        gap: "10px",
+        color: "#888",
+        fontSize: "11px",
+        marginBottom: "18px",
+      }}
+    >
+      <span>
+        Aparecerá debajo del nombre de tu tienda.
+      </span>
+
+      <span
+        style={{
+          flexShrink: 0,
+          fontWeight: "700",
+        }}
+      >
+        {mensajePortada.length}/120
+      </span>
+    </div>
+  </div>
+
+  {/* WHATSAPP */}
+
+  <div>
+    <label
+      style={{
+        display: "block",
+        fontWeight: "700",
+        fontSize: "14px",
+        marginBottom: "2px",
+      }}
+    >
+      WhatsApp
+    </label>
+
+    <input
+      type="tel"
+      value={whatsappEditado}
+      readOnly
+      style={{
+        ...estiloInput,
+        marginBottom: "6px",
+        background: "#f2f2f2",
+        color: "#777",
+        cursor: "not-allowed",
+      }}
+    />
+
+    <div
+      style={{
+        display: "flex",
+        gap: "5px",
+        alignItems: "flex-start",
+        color: "#888",
+        fontSize: "11px",
+        lineHeight: "1.4",
+      }}
+    >
+      <span>🔒</span>
+
+      <span>
+        Este número está vinculado a tu cuenta y no puede modificarse.
+      </span>
+    </div>
+  </div>
+</div>
+
+
+{/* =========================================
+    REDES SOCIALES
+========================================= */}
+
+<div
+  style={{
+    background: "#ffffff",
+    border: "1px solid #e8e8e8",
+    borderRadius: "16px",
+    padding: "20px",
+    marginBottom: "18px",
+  }}
+>
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: "10px",
+      marginBottom: "5px",
+    }}
+  >
+    <div
+      style={{
+        width: "36px",
+        height: "36px",
+        borderRadius: "10px",
+        background: "#fff0f2",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "18px",
+        flexShrink: 0,
+      }}
+    >
+      📱
+    </div>
+
+    <div>
+      <div
+        style={{
+          fontSize: "17px",
+          fontWeight: "800",
+          color: "#222",
+        }}
+      >
+        Redes sociales
+      </div>
+
+      <div
+        style={{
+          marginTop: "2px",
+          fontSize: "12px",
+          color: "#888",
+        }}
+      >
+        Solo aparecerán las redes que configures.
+      </div>
+    </div>
+  </div>
+
+  {/* INSTAGRAM */}
+
+  <div
+    style={{
+      marginTop: "20px",
+    }}
+  >
+    <label
+      style={{
+        display: "block",
+        fontWeight: "700",
+        fontSize: "14px",
+        marginBottom: "2px",
+      }}
+    >
+      Instagram
+    </label>
+
+    <input
+      type="text"
+      value={instagram}
+      onChange={(e) =>
+        setInstagram(e.target.value)
+      }
+      placeholder="@mitienda"
+      maxLength={200}
+      style={estiloInput}
+    />
+  </div>
+
+  {/* TIKTOK */}
+
+  <div>
+    <label
+      style={{
+        display: "block",
+        fontWeight: "700",
+        fontSize: "14px",
+        marginBottom: "2px",
+      }}
+    >
+      TikTok
+    </label>
+
+    <input
+      type="text"
+      value={tiktok}
+      onChange={(e) =>
+        setTiktok(e.target.value)
+      }
+      placeholder="@mitienda"
+      maxLength={200}
+      style={estiloInput}
+    />
+  </div>
+
+  {/* FACEBOOK */}
+
+  <div>
+    <label
+      style={{
+        display: "block",
+        fontWeight: "700",
+        fontSize: "14px",
+        marginBottom: "2px",
+      }}
+    >
+      Facebook
+    </label>
+
+    <input
+      type="text"
+      value={facebook}
+      onChange={(e) =>
+        setFacebook(e.target.value)
+      }
+      placeholder="https://www.facebook.com/mitienda"
+      maxLength={200}
+      style={{
+        ...estiloInput,
+        marginBottom: "6px",
+      }}
+    />
+
+    <div
+      style={{
+        color: "#888",
+        fontSize: "11px",
+        lineHeight: "1.4",
+      }}
+    >
+      Pega el enlace completo de tu página o perfil de Facebook.
+    </div>
+  </div>
+</div>
 {/* PERSONALIZACIÓN DE COLORES */}
 
 <div
