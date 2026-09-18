@@ -233,7 +233,7 @@ export async function GET() {
       await fetch(
         `${supabaseUrl}/rest/v1/tiendas?id=eq.${encodeURIComponent(
           cliente.tienda_id
-        )}&activa=eq.true&select=id,nombre_tienda,slug,whatsapp,logo_url,color_principal,color_fondo,activa,creado_en`,
+        )}&activa=eq.true&select=id,nombre_tienda,slug,whatsapp,logo_url,color_principal,color_fondo,mensaje_portada,activa,creado_en`,
         {
           method: "GET",
           headers,
@@ -403,15 +403,23 @@ export async function PATCH(request) {
 
     const body =
       await request.json();
-      const colorPrincipal =
-  String(
-    body.color_principal || "#000000"
-  ).trim();
 
-const colorFondo =
-  String(
-    body.color_fondo || "#FFFFFF"
-  ).trim();
+    const colorPrincipal =
+      String(
+        body.color_principal || "#000000"
+      ).trim();
+
+    const colorFondo =
+      String(
+        body.color_fondo || "#FFFFFF"
+      ).trim();
+
+    const mensajePortada =
+      String(
+        body.mensaje_portada || ""
+      )
+        .trim()
+        .slice(0, 120);
 
     const nombreTienda =
       String(
@@ -484,14 +492,16 @@ const colorFondo =
           },
 
           body: JSON.stringify({
-  nombre_tienda:
-    nombreTienda,
-  whatsapp,
-  color_principal:
-    colorPrincipal,
-  color_fondo:
-    colorFondo,
-}),
+            nombre_tienda:
+              nombreTienda,
+            whatsapp,
+            color_principal:
+              colorPrincipal,
+            color_fondo:
+              colorFondo,
+            mensaje_portada:
+              mensajePortada,
+          }),
         }
       );
 
