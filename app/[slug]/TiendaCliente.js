@@ -1567,7 +1567,7 @@ body {
           justify-content: center;
           align-items: center;
           border-radius: 999px;
-          background: #181818;
+          background: var(--color-principal);
           color: white;
           font-size: 13px;
           font-weight: 700;
@@ -1677,9 +1677,9 @@ body {
         }
 
         .categoria-superior.activa {
-          font-weight: 700;
-          border-bottom-color: #111;
-        }
+  font-weight: 700;
+  border-bottom-color: var(--color-principal);
+}
 
         .titulo-catalogo {
           max-width: 1440px;
@@ -1776,7 +1776,7 @@ body {
           justify-content: center;
           align-items: center;
           border-radius: 50%;
-          background: #111;
+          background: var(--color-principal);
           color: white;
           border: 2px solid white;
         }
