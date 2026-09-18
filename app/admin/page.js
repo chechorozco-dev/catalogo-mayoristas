@@ -531,35 +531,50 @@ setColorFondo(
   ========================================= */
 
   function empezarEdicion() {
-    if (!tienda) return;
+  if (!tienda) return;
 
-    setNombreEditado(
-      tienda.nombre_tienda || ""
-    );
+  setNombreEditado(
+    tienda.nombre_tienda || ""
+  );
 
-    setWhatsappEditado(
-      tienda.whatsapp || ""
-    );
+  setWhatsappEditado(
+    tienda.whatsapp || ""
+  );
 
-    setMensaje("");
-    setEditando(true);
-  }
+  setColorPrincipal(
+    tienda.color_principal || "#000000"
+  );
 
-  function cancelarEdicion() {
-    if (!tienda) return;
+  setColorFondo(
+    tienda.color_fondo || "#FFFFFF"
+  );
 
-    setNombreEditado(
-      tienda.nombre_tienda || ""
-    );
+  setMensaje("");
+  setEditando(true);
+}
 
-    setWhatsappEditado(
-      tienda.whatsapp || ""
-    );
+function cancelarEdicion() {
+  if (!tienda) return;
 
-    setMensaje("");
-    setEditando(false);
-  }
+  setNombreEditado(
+    tienda.nombre_tienda || ""
+  );
 
+  setWhatsappEditado(
+    tienda.whatsapp || ""
+  );
+
+  setColorPrincipal(
+    tienda.color_principal || "#000000"
+  );
+
+  setColorFondo(
+    tienda.color_fondo || "#FFFFFF"
+  );
+
+  setMensaje("");
+  setEditando(false);
+}
   /* =========================================
      GUARDAR CAMBIOS
   ========================================= */
