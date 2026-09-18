@@ -109,6 +109,16 @@ function limpiarTelefono(valor) {
 }
 
 /* =========================================
+   LIMPIAR RED SOCIAL
+========================================= */
+
+function limpiarRedSocial(valor) {
+  return String(valor || "")
+    .trim()
+    .slice(0, 200);
+}
+
+/* =========================================
    GET - CARGAR TIENDA
 ========================================= */
 
@@ -233,7 +243,7 @@ export async function GET() {
       await fetch(
         `${supabaseUrl}/rest/v1/tiendas?id=eq.${encodeURIComponent(
           cliente.tienda_id
-        )}&activa=eq.true&select=id,nombre_tienda,slug,whatsapp,logo_url,color_principal,color_fondo,mensaje_portada,activa,creado_en`,
+        )}&activa=eq.true&select=id,nombre_tienda,slug,whatsapp,logo_url,color_principal,color_fondo,mensaje_portada,instagram,facebook,tiktok,activa,creado_en`,
         {
           method: "GET",
           headers,
@@ -421,6 +431,25 @@ export async function PATCH(request) {
         .trim()
         .slice(0, 120);
 
+    /* =========================================
+       REDES SOCIALES
+    ========================================= */
+
+    const instagram =
+      limpiarRedSocial(
+        body.instagram
+      );
+
+    const facebook =
+      limpiarRedSocial(
+        body.facebook
+      );
+
+    const tiktok =
+      limpiarRedSocial(
+        body.tiktok
+      );
+
     const nombreTienda =
       String(
         body.nombre_tienda || ""
@@ -494,13 +523,23 @@ export async function PATCH(request) {
           body: JSON.stringify({
             nombre_tienda:
               nombreTienda,
+
             whatsapp,
+
             color_principal:
               colorPrincipal,
+
             color_fondo:
               colorFondo,
+
             mensaje_portada:
               mensajePortada,
+
+            instagram,
+
+            facebook,
+
+            tiktok,
           }),
         }
       );
