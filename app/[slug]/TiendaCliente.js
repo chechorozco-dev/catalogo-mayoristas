@@ -177,6 +177,8 @@ export default function TiendaCliente({
   const carritoRef = useRef(null);
 const colorTextoPrincipal =
   obtenerColorTexto(colorPrincipal);
+  const colorTextoFondo =
+  obtenerColorTexto(colorFondo);
   // ========================================
   // CARGAR CARRITO
   // ========================================
@@ -1477,6 +1479,7 @@ const colorTextoPrincipal =
   --color-principal: ${colorPrincipal};
   --color-fondo: ${colorFondo};
   --texto-principal: ${colorTextoPrincipal};
+  --texto-fondo: ${colorTextoFondo};
 }
 
   * {
@@ -1512,6 +1515,7 @@ body {
         .tienda {
   min-height: 100vh;
   background: var(--color-fondo);
+  color: var(--texto-fondo);
 }
 
         /* HEADER */
@@ -1524,6 +1528,7 @@ body {
           justify-content: center;
           padding: 20px;
           background: var(--color-fondo);
+          color: var(--texto-fondo);
         }
 
         .header-lateral {
@@ -1550,7 +1555,7 @@ body {
           padding: 7px;
           font-size: 26px;
           cursor: pointer;
-          color: #111;
+          color: var(--texto-fondo);
         }
 
         .buscar-btn {
@@ -1724,7 +1729,7 @@ body {
           border: none;
           border-bottom: 3px solid transparent;
           background: transparent;
-          color: #333;
+          color: var(--texto-fondo);
           font-size: 17px;
         }
 
@@ -1745,8 +1750,9 @@ body {
         }
 
         .titulo-catalogo span {
-          color: #888;
-        }
+  color: var(--texto-fondo);
+  opacity: 0.65;
+}
 
         /* PRODUCTOS */
 
@@ -1904,6 +1910,7 @@ body {
         .producto-info {
           padding: 9px 7px 0;
           cursor: pointer;
+          color: var(--texto-fondo);
         }
 
         .producto-nombre {
