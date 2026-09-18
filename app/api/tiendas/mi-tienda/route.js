@@ -233,7 +233,7 @@ export async function GET() {
       await fetch(
         `${supabaseUrl}/rest/v1/tiendas?id=eq.${encodeURIComponent(
           cliente.tienda_id
-        )}&activa=eq.true&select=id,nombre_tienda,slug,whatsapp,logo_url,activa,creado_en`,
+        )}&activa=eq.true&select=id,nombre_tienda,slug,whatsapp,logo_url,color_principal,color_fondo,activa,creado_en`,
         {
           method: "GET",
           headers,
