@@ -185,12 +185,16 @@ export default function TiendaCliente({
       return `https://www.tiktok.com/@${usuario}`;
     }
 
-    if (red === "facebook") {
-      return `https://www.facebook.com/${usuario.replace(
-        /\s+/g,
-        ""
-      )}`;
-    }
+   if (red === "facebook") {
+  if (
+    texto.startsWith("facebook.com/") ||
+    texto.startsWith("www.facebook.com/")
+  ) {
+    return `https://${texto}`;
+  }
+
+  return "";
+}
 
     return "";
   }
