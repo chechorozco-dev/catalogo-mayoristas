@@ -831,7 +831,39 @@ const colorTextoPrincipal =
             </button>
           ))}
         </nav>
+{/* LÍNEAS DE PRODUCTO */}
 
+<nav className="lineas-producto">
+  <button
+    type="button"
+    className={`linea-producto ${
+      categoriaActiva === "Accesorios en Rodio"
+        ? "activa"
+        : ""
+    }`}
+    onClick={() => {
+      setCategoriaActiva("Accesorios en Rodio");
+      scrollInicio();
+    }}
+  >
+    Accesorios en Rodio
+  </button>
+
+  <button
+    type="button"
+    className={`linea-producto ${
+      categoriaActiva === "Accesorios en Acero"
+        ? "activa"
+        : ""
+    }`}
+    onClick={() => {
+      setCategoriaActiva("Accesorios en Acero");
+      scrollInicio();
+    }}
+  >
+    Accesorios en Acero
+  </button>
+</nav>
         {/* TÍTULO */}
 
         <div className="titulo-catalogo">
@@ -1737,7 +1769,49 @@ body {
   font-weight: 700;
   border-bottom-color: var(--color-principal);
 }
+/* LÍNEAS DE PRODUCTO */
 
+.lineas-producto {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  padding: 11px 14px 10px;
+
+  background: var(--color-fondo);
+
+  border-bottom: 1px solid
+    rgba(128, 128, 128, 0.18);
+}
+
+.linea-producto {
+  flex: 1;
+  max-width: 240px;
+
+  min-height: 38px;
+  padding: 8px 12px;
+
+  border: 1px solid
+    rgba(128, 128, 128, 0.28);
+
+  border-radius: 999px;
+
+  background: transparent;
+  color: var(--texto-fondo);
+
+  font-size: 13px;
+  font-weight: 600;
+
+  white-space: nowrap;
+}
+
+.linea-producto.activa {
+  background: var(--color-principal);
+  border-color: var(--color-principal);
+  color: var(--texto-principal);
+  font-weight: 700;
+}
         .titulo-catalogo {
           max-width: 1440px;
           margin: auto;
