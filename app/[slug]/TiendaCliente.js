@@ -1028,6 +1028,39 @@ export default function TiendaCliente({
           </button>
         )}
       </div>
+      {/* WHATSAPP FLOTANTE */}
+
+      {limpiarWhatsapp(whatsapp) && (
+        <button
+          type="button"
+          className={`whatsapp-flotante ${
+            cantidadTotal > 0 ? "con-carrito" : ""
+          }`}
+          onClick={() => {
+            const numero = limpiarWhatsapp(whatsapp);
+
+            const mensaje = encodeURIComponent(
+              `Hola ${nombreTienda} 👋 Tengo una consulta sobre los productos de tu página.`
+            );
+
+            window.open(
+              `https://wa.me/${numero}?text=${mensaje}`,
+              "_blank"
+            );
+          }}
+          aria-label={`Escribir a ${nombreTienda} por WhatsApp`}
+        >
+          <svg
+            viewBox="0 0 32 32"
+            aria-hidden="true"
+          >
+            <path
+              fill="currentColor"
+              d="M16.04 3C9.4 3 4 8.3 4 14.84c0 2.3.68 4.55 1.97 6.47L4 29l7.9-2.05a12.2 12.2 0 0 0 4.14.72C22.68 27.67 28 22.36 28 15.8 28 9.25 22.68 3 16.04 3Zm0 21.67c-1.28 0-2.53-.34-3.63-.97l-.52-.3-4.69 1.22 1.25-4.53-.34-.54a8.74 8.74 0 0 1-1.35-4.71c0-4.86 4.05-8.82 9.28-8.82 5.22 0 9.2 4.62 9.2 9.78 0 4.86-3.98 8.87-9.2 8.87Zm5.1-6.63c-.28-.14-1.66-.81-1.92-.9-.26-.1-.45-.14-.64.14-.19.28-.73.9-.9 1.08-.16.19-.33.21-.61.07-.28-.14-1.18-.43-2.25-1.38a8.3 8.3 0 0 1-1.56-1.93c-.16-.28-.02-.43.12-.57.13-.12.28-.33.42-.5.14-.16.19-.28.28-.47.1-.19.05-.35-.02-.5-.07-.14-.64-1.53-.88-2.1-.23-.55-.47-.48-.64-.49h-.55c-.19 0-.5.07-.76.35-.26.28-1 1-1 2.44s1.04 2.83 1.18 3.02c.14.19 2.05 3.1 4.96 4.35.69.3 1.23.48 1.65.61.69.22 1.32.19 1.82.12.56-.08 1.66-.67 1.9-1.32.23-.65.23-1.2.16-1.32-.07-.12-.26-.19-.54-.33Z"
+            />
+          </svg>
+        </button>
+      )}
 
       {/* MENÚ LATERAL */}
 
@@ -2382,7 +2415,68 @@ body {
           color: white;
           font-weight: 700;
         }
+/* WHATSAPP FLOTANTE */
 
+.whatsapp-flotante {
+  position: fixed;
+  right: 20px;
+  bottom: 24px;
+  z-index: 9000;
+
+  width: 64px;
+  height: 64px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  border-radius: 50%;
+
+  background: #25d366;
+  color: white;
+
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.22);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.whatsapp-flotante svg {
+  width: 37px;
+  height: 37px;
+}
+
+.whatsapp-flotante:hover {
+  transform: scale(1.07);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.28);
+}
+
+/* Si aparece la barra del carrito,
+   subimos WhatsApp para que no se tapen */
+
+.whatsapp-flotante.con-carrito {
+  bottom: 105px;
+}
+
+@media (max-width: 650px) {
+  .whatsapp-flotante {
+    right: 16px;
+    bottom: 18px;
+    width: 60px;
+    height: 60px;
+  }
+
+  .whatsapp-flotante.con-carrito {
+    bottom: 100px;
+  }
+
+  .whatsapp-flotante svg {
+    width: 35px;
+    height: 35px;
+  }
+}
         /* TABLET */
 
         @media (max-width: 900px) {
