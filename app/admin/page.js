@@ -176,9 +176,9 @@ setColorFondo(
       setMensajePortada(
   tiendaData.tienda.mensaje_portada || ""
 );
-      setInstagram(tienda.instagram || "");
-setFacebook(tienda.facebook || "");
-setTiktok(tienda.tiktok || "");
+     setInstagram(tienda?.instagram || "");
+setFacebook(tienda?.facebook || "");
+setTiktok(tienda?.tiktok || "");
       setCargando(false);
     } catch (error) {
       console.error(
@@ -598,9 +598,9 @@ function cancelarEdicion() {
 setMensajePortada(
   tienda.mensaje_portada || ""
 );
-  setInstagram(tienda.instagram || "");
-setFacebook(tienda.facebook || "");
-setTiktok(tienda.tiktok || "");
+ setInstagram(tienda?.instagram || "");
+setFacebook(tienda?.facebook || "");
+setTiktok(tienda?.tiktok || "");
   setMensaje("");
   setEditando(false);
 }
