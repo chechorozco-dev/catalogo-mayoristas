@@ -155,6 +155,7 @@ export default function TiendaCliente({
   whatsapp,
   colorPrincipal = "#000000",
   colorFondo = "#FFFFFF",
+  mensajePortada = "",
   productos = [],
 }) {
   const [categoriaActiva, setCategoriaActiva] = useState("Todos");
@@ -804,9 +805,15 @@ const colorTextoPrincipal =
               </div>
             )}
 
-            <div className="nombre-tienda">
-              {nombreTienda}
-            </div>
+          <div className="nombre-tienda">
+  {nombreTienda}
+</div>
+
+{mensajePortada && (
+  <div className="mensaje-portada">
+    {mensajePortada}
+  </div>
+)}
           </div>
 
           <div className="header-lateral header-derecha">
@@ -1685,6 +1692,17 @@ body {
           font-weight: 700;
           text-transform: uppercase;
         }
+        .mensaje-portada {
+  max-width: 360px;
+  margin-top: 1px;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.35;
+  text-align: center;
+  color: var(--texto-fondo);
+  opacity: 0.72;
+  white-space: normal;
+}
 
         .carrito-header {
           position: relative;
