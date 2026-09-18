@@ -484,10 +484,14 @@ const colorFondo =
           },
 
           body: JSON.stringify({
-            nombre_tienda:
-              nombreTienda,
-            whatsapp,
-          }),
+  nombre_tienda:
+    nombreTienda,
+  whatsapp,
+  color_principal:
+    colorPrincipal,
+  color_fondo:
+    colorFondo,
+}),
         }
       );
 
