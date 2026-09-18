@@ -1421,7 +1421,6 @@ export default function TiendaCliente({
         </div>
       )}
 
-      <style jsx global>{`
         <style jsx global>{`
   :root {
     --color-principal: ${colorPrincipal};
