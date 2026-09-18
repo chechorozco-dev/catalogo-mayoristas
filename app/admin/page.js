@@ -34,6 +34,24 @@ const PALETAS_COLORES = [
     fondo: "#F0F7F2",
   },
 ];
+function obtenerColorTexto(hex = "#000000") {
+  const color = String(hex).replace("#", "");
+
+  if (color.length !== 6) {
+    return "#FFFFFF";
+  }
+
+  const r = parseInt(color.substring(0, 2), 16);
+  const g = parseInt(color.substring(2, 4), 16);
+  const b = parseInt(color.substring(4, 6), 16);
+
+  const luminosidad =
+    (r * 299 + g * 587 + b * 114) / 1000;
+
+  return luminosidad > 160
+    ? "#111111"
+    : "#FFFFFF";
+}
 export default function AdminPage() {
   const router = useRouter();
 
@@ -55,6 +73,11 @@ export default function AdminPage() {
 const [colorPrincipal, setColorPrincipal] = useState("#000000");
 const [colorFondo, setColorFondo] = useState("#FFFFFF");
 const [guardandoColores, setGuardandoColores] = useState(false);
+const colorTextoPrincipal =
+  obtenerColorTexto(colorPrincipal);
+
+const colorTextoFondo =
+  obtenerColorTexto(colorFondo);
   useEffect(() => {
     cargarDatos();
   }, []);
@@ -1499,6 +1522,7 @@ async function guardarColores() {
       background: colorFondo,
       border: "1px solid #ddd",
       borderRadius: "12px",
+      color: colorTextoFondo,
     }}
   >
     <div
@@ -1524,7 +1548,7 @@ async function guardarColores() {
           borderRadius: "8px",
           textAlign: "center",
           background: colorPrincipal,
-          color: "#ffffff",
+          color: colorTextoPrincipal,
           fontWeight: "700",
         }}
       >
