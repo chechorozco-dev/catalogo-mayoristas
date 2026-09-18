@@ -16,16 +16,9 @@ export default async function TiendaPage({ params }) {
     error: tiendaError,
   } = await supabase
     .from("tiendas")
-    .select(`
-      id,
-      nombre_tienda,
-      slug,
-      whatsapp,
-      logo_url,
-      color_principal,
-      color_fondo,
-      mensaje_portada
-    `)
+    .select(
+  "id,nombre_tienda,slug,whatsapp,logo_url,color_principal,color_fondo,mensaje_portada,instagram,facebook,tiktok"
+)
     .eq("slug", slug)
     .eq("activa", true)
     .single();
@@ -582,6 +575,9 @@ export default async function TiendaPage({ params }) {
         mensajePortada={
           tienda.mensaje_portada || ""
         }
+instagram={tienda.instagram || ""}
+facebook={tienda.facebook || ""}
+tiktok={tienda.tiktok || ""}
 
         productos={
           productos
