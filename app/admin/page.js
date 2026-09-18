@@ -71,6 +71,9 @@ export default function AdminPage() {
   const [nombreEditado, setNombreEditado] = useState("");
   const [whatsappEditado, setWhatsappEditado] = useState("");
   const [mensajePortada, setMensajePortada] = useState("");
+  const [instagram, setInstagram] = useState("");
+const [facebook, setFacebook] = useState("");
+const [tiktok, setTiktok] = useState("");
 
 const [colorPrincipal, setColorPrincipal] = useState("#000000");
 const [colorFondo, setColorFondo] = useState("#FFFFFF");
@@ -156,13 +159,26 @@ const colorTextoFondo =
 setColorPrincipal(
   tiendaData.tienda.color_principal || "#000000"
 );
+setInstagram(
+  tiendaData.tienda.instagram || ""
+);
 
+setFacebook(
+  tiendaData.tienda.facebook || ""
+);
+
+setTiktok(
+  tiendaData.tienda.tiktok || ""
+);
 setColorFondo(
   tiendaData.tienda.color_fondo || "#FFFFFF"
 );
       setMensajePortada(
   tiendaData.tienda.mensaje_portada || ""
 );
+      setInstagram(tienda.instagram || "");
+setFacebook(tienda.facebook || "");
+setTiktok(tienda.tiktok || "");
       setCargando(false);
     } catch (error) {
       console.error(
@@ -582,6 +598,9 @@ function cancelarEdicion() {
 setMensajePortada(
   tienda.mensaje_portada || ""
 );
+  setInstagram(tienda.instagram || "");
+setFacebook(tienda.facebook || "");
+setTiktok(tienda.tiktok || "");
   setMensaje("");
   setEditando(false);
 }
@@ -624,6 +643,9 @@ setMensajePortada(
 
   mensaje_portada:
     mensajePortada,
+            instagram,
+facebook,
+tiktok,
 }),
           }
         );
@@ -668,6 +690,17 @@ setColorFondo(
 );
       setMensajePortada(
   tiendaActualizada.mensaje_portada || ""
+);
+      setInstagram(
+  tiendaActualizada.instagram || ""
+);
+
+setFacebook(
+  tiendaActualizada.facebook || ""
+);
+
+setTiktok(
+  tiendaActualizada.tiktok || ""
 );
       setEditando(false);
 
@@ -1210,6 +1243,114 @@ setColorFondo(
       {mensajePortada.length}/120
     </span>
   </div>
+</div>
+        {/* REDES SOCIALES */}
+
+<div
+  style={{
+    marginBottom: "22px",
+    padding: "18px",
+    border: "1px solid #eeeeee",
+    borderRadius: "14px",
+    background: "#fafafa",
+  }}
+>
+  <div
+    style={{
+      fontSize: "16px",
+      fontWeight: "800",
+      marginBottom: "5px",
+    }}
+  >
+    📱 Redes sociales
+  </div>
+
+  <div
+    style={{
+      fontSize: "13px",
+      color: "#777",
+      lineHeight: "1.4",
+      marginBottom: "16px",
+    }}
+  >
+    Agrega las redes sociales de tu negocio.
+    Solo aparecerán en tu página las que configures.
+  </div>
+
+  {/* INSTAGRAM */}
+
+  <label
+    style={{
+      display: "block",
+      fontWeight: "600",
+      marginBottom: "6px",
+    }}
+  >
+    Instagram
+  </label>
+
+  <input
+    type="text"
+    value={instagram}
+    onChange={(e) =>
+      setInstagram(e.target.value)
+    }
+    placeholder="@mitienda"
+    maxLength={200}
+    style={{
+      ...estiloInput,
+      marginBottom: "14px",
+    }}
+  />
+
+  {/* FACEBOOK */}
+
+  <label
+    style={{
+      display: "block",
+      fontWeight: "600",
+      marginBottom: "6px",
+    }}
+  >
+    Facebook
+  </label>
+
+  <input
+    type="text"
+    value={facebook}
+    onChange={(e) =>
+      setFacebook(e.target.value)
+    }
+    placeholder="Mi Tienda"
+    maxLength={200}
+    style={{
+      ...estiloInput,
+      marginBottom: "14px",
+    }}
+  />
+
+  {/* TIKTOK */}
+
+  <label
+    style={{
+      display: "block",
+      fontWeight: "600",
+      marginBottom: "6px",
+    }}
+  >
+    TikTok
+  </label>
+
+  <input
+    type="text"
+    value={tiktok}
+    onChange={(e) =>
+      setTiktok(e.target.value)
+    }
+    placeholder="@mitienda"
+    maxLength={200}
+    style={estiloInput}
+  />
 </div>
                     <label
                       style={{
