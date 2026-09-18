@@ -4,7 +4,126 @@ import TiendaCliente from "./TiendaCliente";
 
 export const dynamic = "force-dynamic";
 
-export default async function TiendaPage({ params }) {
+/* =========================================
+   METADATOS PARA WHATSAPP / REDES SOCIALES
+========================================= */
+
+export async function generateMetadata({ params }) {
+  try {
+    const { slug } = await params;
+
+    const {
+      data: tienda,
+      error,
+    } = await supabase
+      .from("tiendas")
+      .select(
+        "nombre_tienda,slug,logo_url,mensaje_portada"
+      )
+      .eq("slug", slug)
+      .eq("activa", true)
+      .single();
+
+    if (error || !tienda) {
+      return {
+        title: "Catálogo digital",
+        description:
+          "Catálogo digital de productos",
+      };
+    }
+
+    const nombreTienda =
+      tienda.nombre_tienda ||
+      "Catálogo digital";
+
+    const descripcion =
+      tienda.mensaje_portada ||
+      `Descubre los productos de ${nombreTienda}`;
+
+    const urlCatalogo =
+      `https://mi-catalogo-accesorios.vercel.app/${encodeURIComponent(
+        tienda.slug
+      )}`;
+
+    const imagen =
+      tienda.logo_url || null;
+
+    return {
+      title: nombreTienda,
+
+      description: descripcion,
+
+      alternates: {
+        canonical: urlCatalogo,
+      },
+
+      openGraph: {
+        title: nombreTienda,
+
+        description: descripcion,
+
+        url: urlCatalogo,
+
+        siteName: nombreTienda,
+
+        type: "website",
+
+        locale: "es_CO",
+
+        ...(imagen
+          ? {
+              images: [
+                {
+                  url: imagen,
+                  alt: nombreTienda,
+                },
+              ],
+            }
+          : {}),
+      },
+
+      twitter: {
+        card: imagen
+          ? "summary_large_image"
+          : "summary",
+
+        title: nombreTienda,
+
+        description: descripcion,
+
+        ...(imagen
+          ? {
+              images: [imagen],
+            }
+          : {}),
+      },
+
+      robots: {
+        index: true,
+        follow: true,
+      },
+    };
+  } catch (error) {
+    console.error(
+      "ERROR GENERANDO METADATA:",
+      error
+    );
+
+    return {
+      title: "Catálogo digital",
+      description:
+        "Catálogo digital de productos",
+    };
+  }
+}
+
+/* =========================================
+   PÁGINA DE LA TIENDA
+========================================= */
+
+export default async function TiendaPage({
+  params,
+}) {
   const { slug } = await params;
 
   // =========================================
@@ -17,8 +136,8 @@ export default async function TiendaPage({ params }) {
   } = await supabase
     .from("tiendas")
     .select(
-  "id,nombre_tienda,slug,whatsapp,logo_url,color_principal,color_fondo,mensaje_portada,instagram,facebook,tiktok"
-)
+      "id,nombre_tienda,slug,whatsapp,logo_url,color_principal,color_fondo,mensaje_portada,instagram,facebook,tiktok"
+    )
     .eq("slug", slug)
     .eq("activa", true)
     .single();
@@ -63,7 +182,9 @@ export default async function TiendaPage({ params }) {
           margin: "auto",
         }}
       >
-        <h1>{tienda.nombre_tienda}</h1>
+        <h1>
+          {tienda.nombre_tienda}
+        </h1>
 
         <h2
           style={{
@@ -138,7 +259,9 @@ export default async function TiendaPage({ params }) {
 
   let variantesData = [];
 
-  if (idsProductosConVariantes.length > 0) {
+  if (
+    idsProductosConVariantes.length > 0
+  ) {
     try {
       const ids =
         idsProductosConVariantes
@@ -168,9 +291,8 @@ export default async function TiendaPage({ params }) {
           `&activo=eq.true` +
           `&order=orden.asc`;
 
-        const respuesta = await fetch(
-          url,
-          {
+        const respuesta =
+          await fetch(url, {
             method: "GET",
 
             headers: {
@@ -182,8 +304,7 @@ export default async function TiendaPage({ params }) {
             },
 
             cache: "no-store",
-          }
-        );
+          });
 
         const texto =
           await respuesta.text();
@@ -204,8 +325,11 @@ export default async function TiendaPage({ params }) {
           const datos =
             JSON.parse(texto);
 
-          if (Array.isArray(datos)) {
-            variantesData = datos;
+          if (
+            Array.isArray(datos)
+          ) {
+            variantesData =
+              datos;
           }
         }
       }
@@ -287,7 +411,9 @@ export default async function TiendaPage({ params }) {
         JSON.parse(textoPrecios);
 
       if (
-        Array.isArray(datosPrecios)
+        Array.isArray(
+          datosPrecios
+        )
       ) {
         preciosPersonalizados =
           datosPrecios;
@@ -327,7 +453,8 @@ export default async function TiendaPage({ params }) {
           const mismoProducto =
             Number(
               precio.producto_id
-            ) === Number(productoId);
+            ) ===
+            Number(productoId);
 
           if (!mismoProducto) {
             return false;
@@ -350,7 +477,8 @@ export default async function TiendaPage({ params }) {
           return (
             Number(
               precio.variante_id
-            ) === Number(varianteId)
+            ) ===
+            Number(varianteId)
           );
         }
       );
@@ -400,58 +528,61 @@ export default async function TiendaPage({ params }) {
                   b.orden || 0
                 )
             )
-            .map((variante) => {
-              // ===============================
-              // PRECIO PERSONALIZADO VARIANTE
-              // ===============================
+            .map(
+              (variante) => {
+                // ===============================
+                // PRECIO PERSONALIZADO VARIANTE
+                // ===============================
 
-              const precioPersonalizado =
-                obtenerPrecioPersonalizado(
-                  producto.id,
-                  variante.id
-                );
+                const precioPersonalizado =
+                  obtenerPrecioPersonalizado(
+                    producto.id,
+                    variante.id
+                  );
 
-              const precioFinal =
-                precioPersonalizado !== null
-                  ? precioPersonalizado
-                  : Number(
-                      variante.precio_detal ||
-                        0
-                    );
+                const precioFinal =
+                  precioPersonalizado !==
+                  null
+                    ? precioPersonalizado
+                    : Number(
+                        variante.precio_detal ||
+                          0
+                      );
 
-              return {
-                id:
-                  variante.id,
+                return {
+                  id:
+                    variante.id,
 
-                producto_id:
-                  variante.producto_id,
+                  producto_id:
+                    variante.producto_id,
 
-                nombre_variante:
-                  variante.nombre_variante,
+                  nombre_variante:
+                    variante.nombre_variante,
 
-                referencia:
-                  variante.referencia,
+                  referencia:
+                    variante.referencia,
 
-                foto_url:
-                  variante.foto_url,
+                  foto_url:
+                    variante.foto_url,
 
-                foto_url_2:
-                  variante.foto_url_2,
+                  foto_url_2:
+                    variante.foto_url_2,
 
-                // =============================
-                // PRECIO QUE VERÁ EL CLIENTE
-                // =============================
+                  // =============================
+                  // PRECIO QUE VERÁ EL CLIENTE
+                  // =============================
 
-                precio:
-                  precioFinal,
+                  precio:
+                    precioFinal,
 
-                activo:
-                  variante.activo,
+                  activo:
+                    variante.activo,
 
-                orden:
-                  variante.orden,
-              };
-            });
+                  orden:
+                    variante.orden,
+                };
+              }
+            );
 
         // =====================================
         // ¿REALMENTE TIENE VARIANTES?
@@ -460,7 +591,8 @@ export default async function TiendaPage({ params }) {
         const tieneVariantes =
           producto.tiene_variantes ===
             true &&
-          variantesDelProducto.length > 0;
+          variantesDelProducto.length >
+            0;
 
         // =====================================
         // PRIMERA VARIANTE
@@ -565,19 +697,31 @@ export default async function TiendaPage({ params }) {
         }
 
         colorPrincipal={
-          tienda.color_principal || "#000000"
+          tienda.color_principal ||
+          "#000000"
         }
 
         colorFondo={
-          tienda.color_fondo || "#FFFFFF"
+          tienda.color_fondo ||
+          "#FFFFFF"
         }
 
         mensajePortada={
-          tienda.mensaje_portada || ""
+          tienda.mensaje_portada ||
+          ""
         }
-instagram={tienda.instagram || ""}
-facebook={tienda.facebook || ""}
-tiktok={tienda.tiktok || ""}
+
+        instagram={
+          tienda.instagram || ""
+        }
+
+        facebook={
+          tienda.facebook || ""
+        }
+
+        tiktok={
+          tienda.tiktok || ""
+        }
 
         productos={
           productos
