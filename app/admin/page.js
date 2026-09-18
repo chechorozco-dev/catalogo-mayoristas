@@ -1724,8 +1724,12 @@ async function guardarColores() {
     </div>
   </div>
 </div>
-                    <button
-                      type="submit"
+
+{/* CIERRA PERSONALIZACIÓN DE COLORES */}
+</div>
+
+<button
+  type="submit"
                       disabled={
                         guardando
                       }
