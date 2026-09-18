@@ -2082,8 +2082,8 @@ body {
         }
 
         .galeria-punto.activo {
-          background: #111;
-        }
+  background: var(--color-principal);
+}
 
         .producto-modal-info {
           padding: 23px;
@@ -2145,10 +2145,10 @@ body {
         }
 
         .variante-boton.seleccionada {
-          border: 2px solid #111;
-          padding: 6px;
-          background: #fafafa;
-        }
+  border: 2px solid var(--color-principal);
+  padding: 6px;
+  background: #fafafa;
+}
 
         .variante-boton img {
           width: 44px;
@@ -2167,15 +2167,15 @@ body {
         }
 
         .agregar-modal {
-          width: 100%;
-          height: 52px;
-          margin-top: 15px;
-          border: none;
-          border-radius: 6px;
-          background: #111;
-          color: white;
-          font-weight: 700;
-        }
+  width: 100%;
+  height: 52px;
+  margin-top: 15px;
+  border: none;
+  border-radius: 6px;
+  background: var(--color-principal);
+  color: white;
+  font-weight: 700;
+}
 
         /* RECOMENDACIONES */
 
