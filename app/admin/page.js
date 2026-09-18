@@ -70,6 +70,8 @@ export default function AdminPage() {
 
   const [nombreEditado, setNombreEditado] = useState("");
   const [whatsappEditado, setWhatsappEditado] = useState("");
+  const [mensajePortada, setMensajePortada] = useState("");
+
 const [colorPrincipal, setColorPrincipal] = useState("#000000");
 const [colorFondo, setColorFondo] = useState("#FFFFFF");
 const colorTextoPrincipal =
@@ -157,6 +159,9 @@ setColorPrincipal(
 
 setColorFondo(
   tiendaData.tienda.color_fondo || "#FFFFFF"
+);
+      setMensajePortada(
+  tiendaData.tienda.mensaje_portada || ""
 );
       setCargando(false);
     } catch (error) {
@@ -548,6 +553,9 @@ setColorFondo(
   setColorFondo(
     tienda.color_fondo || "#FFFFFF"
   );
+    setMensajePortada(
+  tienda.mensaje_portada || ""
+);
 
   setMensaje("");
   setEditando(true);
@@ -571,7 +579,9 @@ function cancelarEdicion() {
   setColorFondo(
     tienda.color_fondo || "#FFFFFF"
   );
-
+setMensajePortada(
+  tienda.mensaje_portada || ""
+);
   setMensaje("");
   setEditando(false);
 }
@@ -599,7 +609,7 @@ function cancelarEdicion() {
                 "application/json",
             },
 
-            body: JSON.stringify({
+          body: JSON.stringify({
   nombre_tienda:
     nombreEditado,
 
@@ -611,6 +621,9 @@ function cancelarEdicion() {
 
   color_fondo:
     colorFondo,
+
+  mensaje_portada:
+    mensajePortada,
 }),
           }
         );
@@ -652,6 +665,9 @@ setColorPrincipal(
 
 setColorFondo(
   tiendaActualizada.color_fondo || "#FFFFFF"
+);
+      setMensajePortada(
+  tiendaActualizada.mensaje_portada || ""
 );
       setEditando(false);
 
@@ -1137,7 +1153,64 @@ setColorFondo(
                         estiloInput
                       }
                     />
+{/* MENSAJE DE PORTADA */}
 
+<div
+  style={{
+    marginBottom: "18px",
+  }}
+>
+  <label
+    style={{
+      fontWeight: "600",
+    }}
+  >
+    Mensaje de tu tienda
+  </label>
+
+  <textarea
+    value={mensajePortada}
+    onChange={(e) =>
+      setMensajePortada(
+        e.target.value.slice(0, 120)
+      )
+    }
+    maxLength={120}
+    rows={3}
+    placeholder="Ej: ✨ Joyas que resaltan tu estilo"
+    style={{
+      ...estiloInput,
+      minHeight: "88px",
+      resize: "vertical",
+      marginBottom: "6px",
+      fontFamily: "inherit",
+      lineHeight: "1.45",
+    }}
+  />
+
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      gap: "12px",
+      color: "#888",
+      fontSize: "12px",
+    }}
+  >
+    <span>
+      Este mensaje aparecerá en tu página.
+    </span>
+
+    <span
+      style={{
+        flexShrink: 0,
+        fontWeight: "600",
+      }}
+    >
+      {mensajePortada.length}/120
+    </span>
+  </div>
+</div>
                     <label
                       style={{
                         fontWeight:
@@ -1515,6 +1588,19 @@ setColorFondo(
         >
           {nombreEditado || "Mi tienda"}
         </div>
+          {mensajePortada && (
+  <div
+    style={{
+      marginTop: "3px",
+      fontSize: "11px",
+      lineHeight: "1.3",
+      opacity: 0.75,
+      whiteSpace: "normal",
+    }}
+  >
+    {mensajePortada}
+  </div>
+)}
       </div>
 
       <div
