@@ -1515,44 +1515,211 @@ async function guardarColores() {
 
   {/* VISTA PREVIA */}
 
+<div
+  style={{
+    marginTop: "22px",
+  }}
+>
   <div
     style={{
-      marginTop: "20px",
-      padding: "18px",
-      background: colorFondo,
-      border: "1px solid #ddd",
-      borderRadius: "12px",
-      color: colorTextoFondo,
+      fontWeight: "700",
+      marginBottom: "8px",
     }}
   >
+    Vista previa
+  </div>
+
+  <div
+    style={{
+      background: colorFondo,
+      color: colorTextoFondo,
+      border: "1px solid #ddd",
+      borderRadius: "16px",
+      overflow: "hidden",
+      boxShadow: "0 5px 18px rgba(0,0,0,0.08)",
+    }}
+  >
+    {/* MINI ENCABEZADO */}
+
     <div
       style={{
-        background: "#ffffff",
-        padding: "16px",
-        borderRadius: "10px",
-        boxShadow: "0 3px 12px rgba(0,0,0,0.08)",
+        padding: "14px 16px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "10px",
+        borderBottom: `2px solid ${colorPrincipal}`,
       }}
     >
       <div
         style={{
-          fontWeight: "800",
-          marginBottom: "12px",
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          minWidth: 0,
         }}
       >
-        {nombreEditado || "Mi tienda"}
+        {(previewLogo || tienda?.logo_url) ? (
+          <img
+            src={previewLogo || tienda.logo_url}
+            alt=""
+            style={{
+              width: "42px",
+              height: "42px",
+              borderRadius: "50%",
+              objectFit: "contain",
+              background: "#ffffff",
+              border: "1px solid rgba(0,0,0,0.1)",
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              width: "42px",
+              height: "42px",
+              borderRadius: "50%",
+              background: colorPrincipal,
+              color: colorTextoPrincipal,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontWeight: "800",
+              flexShrink: 0,
+            }}
+          >
+            {(nombreEditado || "M")
+              .charAt(0)
+              .toUpperCase()}
+          </div>
+        )}
+
+        <div
+          style={{
+            fontWeight: "800",
+            fontSize: "15px",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {nombreEditado || "Mi tienda"}
+        </div>
       </div>
 
       <div
         style={{
-          padding: "11px",
-          borderRadius: "8px",
-          textAlign: "center",
-          background: colorPrincipal,
-          color: colorTextoPrincipal,
-          fontWeight: "700",
+          fontSize: "20px",
         }}
       >
-        Agregar al pedido
+        🛒
+      </div>
+    </div>
+
+    {/* MINI CATEGORÍAS */}
+
+    <div
+      style={{
+        display: "flex",
+        gap: "16px",
+        padding: "11px 16px 8px",
+        fontSize: "11px",
+        fontWeight: "600",
+      }}
+    >
+      <div
+        style={{
+          paddingBottom: "5px",
+          borderBottom: `2px solid ${colorPrincipal}`,
+        }}
+      >
+        Todos
+      </div>
+
+      <div>Aretes</div>
+
+      <div>Juegos</div>
+    </div>
+
+    {/* MINI PRODUCTO */}
+
+    <div
+      style={{
+        padding: "12px 16px 18px",
+      }}
+    >
+      <div
+        style={{
+          background: "#ffffff",
+          borderRadius: "12px",
+          overflow: "hidden",
+          boxShadow: "0 3px 12px rgba(0,0,0,0.09)",
+        }}
+      >
+        <div
+          style={{
+            height: "95px",
+            background:
+              "linear-gradient(135deg, #f5f5f5, #e9e9e9)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "35px",
+          }}
+        >
+          ✨
+        </div>
+
+        <div
+          style={{
+            padding: "12px",
+            color: "#222222",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "11px",
+              color: "#888888",
+              marginBottom: "3px",
+            }}
+          >
+            RA0000
+          </div>
+
+          <div
+            style={{
+              fontWeight: "700",
+              fontSize: "14px",
+            }}
+          >
+            Aretes dorados
+          </div>
+
+          <div
+            style={{
+              marginTop: "5px",
+              marginBottom: "10px",
+              fontSize: "15px",
+              fontWeight: "800",
+              color: colorPrincipal,
+            }}
+          >
+            $25.000
+          </div>
+
+          <div
+            style={{
+              padding: "10px",
+              borderRadius: "8px",
+              textAlign: "center",
+              background: colorPrincipal,
+              color: colorTextoPrincipal,
+              fontWeight: "700",
+              fontSize: "13px",
+            }}
+          >
+            Agregar al pedido
+          </div>
+        </div>
       </div>
     </div>
   </div>
