@@ -176,9 +176,7 @@ setColorFondo(
       setMensajePortada(
   tiendaData.tienda.mensaje_portada || ""
 );
-     setInstagram(tienda?.instagram || "");
-setFacebook(tienda?.facebook || "");
-setTiktok(tienda?.tiktok || "");
+    
       setCargando(false);
     } catch (error) {
       console.error(
@@ -572,6 +570,9 @@ setTiktok(tienda?.tiktok || "");
     setMensajePortada(
   tienda.mensaje_portada || ""
 );
+    setInstagram(tienda.instagram || "");
+setFacebook(tienda.facebook || "");
+setTiktok(tienda.tiktok || "");
 
   setMensaje("");
   setEditando(true);
