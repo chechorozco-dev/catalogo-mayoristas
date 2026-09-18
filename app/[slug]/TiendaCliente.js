@@ -175,7 +175,8 @@ export default function TiendaCliente({
   const [fotosTarjetas, setFotosTarjetas] = useState({});
 
   const carritoRef = useRef(null);
-
+const colorTextoPrincipal =
+  obtenerColorTexto(colorPrincipal);
   // ========================================
   // CARGAR CARRITO
   // ========================================
@@ -1472,10 +1473,11 @@ export default function TiendaCliente({
       )}
 
         <style jsx global>{`
-  :root {
-    --color-principal: ${colorPrincipal};
-    --color-fondo: ${colorFondo};
-  }
+ :root {
+  --color-principal: ${colorPrincipal};
+  --color-fondo: ${colorFondo};
+  --texto-principal: ${colorTextoPrincipal};
+}
 
   * {
     box-sizing: border-box;
@@ -1618,7 +1620,7 @@ body {
           align-items: center;
           border-radius: 999px;
           background: var(--color-principal);
-          color: white;
+          color: var(--texto-principal);
           font-size: 13px;
           font-weight: 700;
           border: 2px solid white;
@@ -1827,7 +1829,7 @@ body {
           align-items: center;
           border-radius: 50%;
           background: var(--color-principal);
-          color: white;
+          color: var(--texto-principal);
           border: 2px solid white;
         }
 
@@ -2190,7 +2192,7 @@ body {
   border: none;
   border-radius: 6px;
   background: var(--color-principal);
-  color: white;
+  color: var(--texto-principal);
   font-weight: 700;
 }
 
