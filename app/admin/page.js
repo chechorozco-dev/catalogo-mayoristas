@@ -1713,213 +1713,226 @@ setColorFondo(
                 </div>
               )}
 
-              {/* PRECIOS MAYORISTAS */}
+              {/* ACCESOS PRINCIPALES */}
 
-              <div
-                style={{
-                  marginTop:
-                    "20px",
-                  padding:
-                    "24px",
-                  background:
-                    "#222",
-                  color:
-                    "white",
-                  borderRadius:
-                    "16px",
-                }}
-              >
-                <h2
-                  style={{
-                    marginTop:
-                      0,
-                    marginBottom:
-                      "8px",
-                    fontSize:
-                      "22px",
-                  }}
-                >
-                  Tus precios de mayorista
-                </h2>
+<div
+  style={{
+    display: "grid",
+    gap: "14px",
+    marginTop: "18px",
+  }}
+>
+  {/* PRODUCTOS Y PRECIOS */}
 
-                <p
-                  style={{
-                    marginTop:
-                      0,
-                    marginBottom:
-                      "18px",
-                    color:
-                      "#ddd",
-                    lineHeight:
-                      "1.5",
-                  }}
-                >
-                  Consulta tu costo, el precio sugerido de venta y la ganancia de cada producto.
-                </p>
+  <div
+    style={{
+      padding: "20px",
+      background: "#ffffff",
+      border: "1px solid #e9e9e9",
+      borderRadius: "18px",
+      boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
+    }}
+  >
+    <div
+      style={{
+        display: "flex",
+        alignItems: "flex-start",
+        gap: "14px",
+      }}
+    >
+      <div
+        style={{
+          width: "48px",
+          height: "48px",
+          flexShrink: 0,
+          borderRadius: "14px",
+          background: "#fff0f2",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "23px",
+        }}
+      >
+        💰
+      </div>
 
-                <button
-                  type="button"
-                  onClick={
-                    verProductosYPrecios
-                  }
-                  style={{
-                    width:
-                      "100%",
-                    border:
-                      "none",
-                    padding:
-                      "15px",
-                    borderRadius:
-                      "10px",
-                    background:
-                      "#d97883",
-                    color:
-                      "white",
-                    fontSize:
-                      "16px",
-                    fontWeight:
-                      "700",
-                    cursor:
-                      "pointer",
-                  }}
-                >
-                  💰 Ver productos y precios
-                </button>
-              </div>
+      <div style={{ flex: 1 }}>
+        <h2
+          style={{
+            margin: 0,
+            fontSize: "20px",
+            color: "#222",
+          }}
+        >
+          Productos y precios
+        </h2>
 
-              {/* ENLACE */}
+        <p
+          style={{
+            margin: "6px 0 0",
+            color: "#777",
+            fontSize: "14px",
+            lineHeight: "1.45",
+          }}
+        >
+          Consulta tus costos, precios sugeridos y
+          ganancias.
+        </p>
+      </div>
+    </div>
 
-              <div
-                style={{
-                  marginTop:
-                    "20px",
-                  padding:
-                    "24px",
-                  border:
-                    "1px solid #eee",
-                  borderRadius:
-                    "16px",
-                }}
-              >
-                <h2
-                  style={{
-                    marginTop:
-                      0,
-                    marginBottom:
-                      "8px",
-                    fontSize:
-                      "22px",
-                  }}
-                >
-                  Enlace de tu catálogo
-                </h2>
+    <button
+      type="button"
+      onClick={verProductosYPrecios}
+      style={{
+        width: "100%",
+        marginTop: "16px",
+        border: "none",
+        padding: "14px",
+        borderRadius: "11px",
+        background: "#d97883",
+        color: "#ffffff",
+        fontSize: "15px",
+        fontWeight: "700",
+        cursor: "pointer",
+      }}
+    >
+      Ver productos y precios →
+    </button>
+  </div>
 
-                <p
-                  style={{
-                    color:
-                      "#666",
-                    lineHeight:
-                      "1.5",
-                    marginTop:
-                      0,
-                  }}
-                >
-                  Este es el enlace que debes compartir con tus clientes.
-                </p>
+  {/* COMPARTIR CATÁLOGO */}
 
-                <div
-                  style={{
-                    background:
-                      "#f7f7f7",
-                    padding:
-                      "14px",
-                    borderRadius:
-                      "10px",
-                    wordBreak:
-                      "break-all",
-                    fontWeight:
-                      "600",
-                    marginTop:
-                      "15px",
-                  }}
-                >
-                  {typeof window !==
-                  "undefined"
-                    ? `${window.location.origin}/${tienda.slug}`
-                    : `/${tienda.slug}`}
-                </div>
+  <div
+    style={{
+      padding: "20px",
+      background: "#ffffff",
+      border: "1px solid #e9e9e9",
+      borderRadius: "18px",
+      boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
+    }}
+  >
+    <div
+      style={{
+        display: "flex",
+        alignItems: "flex-start",
+        gap: "14px",
+      }}
+    >
+      <div
+        style={{
+          width: "48px",
+          height: "48px",
+          flexShrink: 0,
+          borderRadius: "14px",
+          background: "#fff0f2",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "23px",
+        }}
+      >
+        🔗
+      </div>
 
-                <div
-                  style={{
-                    display:
-                      "grid",
-                    gridTemplateColumns:
-                      "repeat(auto-fit, minmax(180px, 1fr))",
-                    gap:
-                      "10px",
-                    marginTop:
-                      "14px",
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={
-                      copiarEnlace
-                    }
-                    style={{
-                      border:
-                        "none",
-                      padding:
-                        "14px",
-                      borderRadius:
-                        "10px",
-                      background:
-                        copiado
-                          ? "#50a773"
-                          : "#d97883",
-                      color:
-                        "white",
-                      fontSize:
-                        "16px",
-                      fontWeight:
-                        "700",
-                      cursor:
-                        "pointer",
-                    }}
-                  >
-                    {copiado
-                      ? "✓ Enlace copiado"
-                      : "📋 Copiar enlace"}
-                  </button>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <h2
+          style={{
+            margin: 0,
+            fontSize: "20px",
+            color: "#222",
+          }}
+        >
+          Compartir mi catálogo
+        </h2>
 
-                  <button
-                    type="button"
-                    onClick={
-                      verCatalogo
-                    }
-                    style={{
-                      border:
-                        "1px solid #d97883",
-                      padding:
-                        "14px",
-                      borderRadius:
-                        "10px",
-                      background:
-                        "white",
-                      color:
-                        "#d97883",
-                      fontSize:
-                        "16px",
-                      fontWeight:
-                        "700",
-                      cursor:
-                        "pointer",
-                    }}
-                  >
-                    👁️ Ver mi catálogo
-                  </button>
-                </div>
-              </div>
+        <p
+          style={{
+            margin: "6px 0 0",
+            color: "#777",
+            fontSize: "14px",
+            lineHeight: "1.45",
+          }}
+        >
+          Envía este enlace a tus clientes para que
+          vean tus productos.
+        </p>
+      </div>
+    </div>
+
+    {/* ENLACE */}
+
+    <div
+      style={{
+        marginTop: "16px",
+        padding: "12px 14px",
+        background: "#f7f7f7",
+        borderRadius: "10px",
+        color: "#555",
+        fontSize: "13px",
+        fontWeight: "600",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {typeof window !== "undefined"
+        ? `${window.location.host}/${tienda.slug}`
+        : `/${tienda.slug}`}
+    </div>
+
+    {/* BOTONES */}
+
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: "9px",
+        marginTop: "12px",
+      }}
+    >
+      <button
+        type="button"
+        onClick={copiarEnlace}
+        style={{
+          border: "none",
+          minHeight: "46px",
+          padding: "11px 8px",
+          borderRadius: "10px",
+          background: copiado
+            ? "#50a773"
+            : "#d97883",
+          color: "#ffffff",
+          fontSize: "14px",
+          fontWeight: "700",
+          cursor: "pointer",
+        }}
+      >
+        {copiado
+          ? "✓ Copiado"
+          : "📋 Copiar enlace"}
+      </button>
+
+      <button
+        type="button"
+        onClick={verCatalogo}
+        style={{
+          border: "1px solid #d97883",
+          minHeight: "46px",
+          padding: "11px 8px",
+          borderRadius: "10px",
+          background: "#ffffff",
+          color: "#d97883",
+          fontSize: "14px",
+          fontWeight: "700",
+          cursor: "pointer",
+        }}
+      >
+        👁️ Ver catálogo
+      </button>
+    </div>
+  </div>
+</div>
             </>
           )}
         </div>
