@@ -1192,7 +1192,166 @@ async function guardarColores() {
 >
   🔒 Este número está vinculado a tu cuenta y no puede modificarse.
 </p>
+{/* PERSONALIZACIÓN DE COLORES */}
 
+<div
+  style={{
+    marginTop: "8px",
+    marginBottom: "22px",
+    padding: "18px",
+    background: "#ffffff",
+    border: "1px solid #e5e5e5",
+    borderRadius: "14px",
+  }}
+>
+  <h3
+    style={{
+      margin: "0 0 6px",
+      fontSize: "19px",
+    }}
+  >
+    🎨 Colores de mi página
+  </h3>
+
+  <p
+    style={{
+      margin: "0 0 18px",
+      color: "#777",
+      fontSize: "14px",
+      lineHeight: "1.5",
+    }}
+  >
+    Personaliza el catálogo que compartes con tus clientes.
+  </p>
+
+  {/* COLOR PRINCIPAL */}
+
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: "15px",
+      marginBottom: "15px",
+    }}
+  >
+    <div>
+      <div style={{ fontWeight: "700" }}>
+        Color principal
+      </div>
+
+      <div
+        style={{
+          color: "#888",
+          fontSize: "13px",
+          marginTop: "3px",
+        }}
+      >
+        Botones y detalles
+      </div>
+    </div>
+
+    <input
+      type="color"
+      value={colorPrincipal}
+      onChange={(e) =>
+        setColorPrincipal(e.target.value)
+      }
+      style={{
+        width: "60px",
+        height: "48px",
+        border: "none",
+        background: "transparent",
+        cursor: "pointer",
+      }}
+    />
+  </div>
+
+  {/* COLOR DE FONDO */}
+
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: "15px",
+    }}
+  >
+    <div>
+      <div style={{ fontWeight: "700" }}>
+        Color de fondo
+      </div>
+
+      <div
+        style={{
+          color: "#888",
+          fontSize: "13px",
+          marginTop: "3px",
+        }}
+      >
+        Fondo general del catálogo
+      </div>
+    </div>
+
+    <input
+      type="color"
+      value={colorFondo}
+      onChange={(e) =>
+        setColorFondo(e.target.value)
+      }
+      style={{
+        width: "60px",
+        height: "48px",
+        border: "none",
+        background: "transparent",
+        cursor: "pointer",
+      }}
+    />
+  </div>
+
+  {/* VISTA PREVIA */}
+
+  <div
+    style={{
+      marginTop: "20px",
+      padding: "18px",
+      background: colorFondo,
+      border: "1px solid #ddd",
+      borderRadius: "12px",
+    }}
+  >
+    <div
+      style={{
+        background: "#ffffff",
+        padding: "16px",
+        borderRadius: "10px",
+        boxShadow: "0 3px 12px rgba(0,0,0,0.08)",
+      }}
+    >
+      <div
+        style={{
+          fontWeight: "800",
+          marginBottom: "12px",
+        }}
+      >
+        {nombreEditado || "Mi tienda"}
+      </div>
+
+      <div
+        style={{
+          padding: "11px",
+          borderRadius: "8px",
+          textAlign: "center",
+          background: colorPrincipal,
+          color: "#ffffff",
+          fontWeight: "700",
+        }}
+      >
+        Agregar al pedido
+      </div>
+    </div>
+  </div>
+</div>
                     <button
                       type="submit"
                       disabled={
@@ -1266,223 +1425,7 @@ async function guardarColores() {
                   </form>
                 </div>
               )}
-{/* PERSONALIZAR PÁGINA */}
 
-<div
-  style={{
-    marginTop: "20px",
-    padding: "24px",
-    background: "#f7f7f7",
-    borderRadius: "16px",
-    border: "1px solid #eee",
-  }}
->
-  <h2
-    style={{
-      marginTop: 0,
-      marginBottom: "8px",
-      fontSize: "22px",
-    }}
-  >
-    🎨 Personaliza tu página
-  </h2>
-
-  <p
-    style={{
-      marginTop: 0,
-      marginBottom: "22px",
-      color: "#666",
-      lineHeight: "1.5",
-    }}
-  >
-    Elige los colores de tu negocio para personalizar
-    el catálogo que compartes con tus clientes.
-  </p>
-
-  {/* COLOR PRINCIPAL */}
-
-  <div
-    style={{
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      gap: "15px",
-      padding: "16px",
-      background: "white",
-      borderRadius: "12px",
-      border: "1px solid #e5e5e5",
-      marginBottom: "12px",
-    }}
-  >
-    <div>
-      <div
-        style={{
-          fontWeight: "700",
-          marginBottom: "4px",
-        }}
-      >
-        Color principal
-      </div>
-
-      <div
-        style={{
-          fontSize: "13px",
-          color: "#888",
-        }}
-      >
-        Botones y detalles de tu página
-      </div>
-    </div>
-
-    <input
-      type="color"
-      value={colorPrincipal}
-      onChange={(e) =>
-        setColorPrincipal(e.target.value)
-      }
-      style={{
-        width: "55px",
-        height: "45px",
-        border: "none",
-        background: "transparent",
-        cursor: "pointer",
-      }}
-    />
-  </div>
-
-  {/* COLOR DE FONDO */}
-
-  <div
-    style={{
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      gap: "15px",
-      padding: "16px",
-      background: "white",
-      borderRadius: "12px",
-      border: "1px solid #e5e5e5",
-      marginBottom: "20px",
-    }}
-  >
-    <div>
-      <div
-        style={{
-          fontWeight: "700",
-          marginBottom: "4px",
-        }}
-      >
-        Color de fondo
-      </div>
-
-      <div
-        style={{
-          fontSize: "13px",
-          color: "#888",
-        }}
-      >
-        Fondo general de tu catálogo
-      </div>
-    </div>
-
-    <input
-      type="color"
-      value={colorFondo}
-      onChange={(e) =>
-        setColorFondo(e.target.value)
-      }
-      style={{
-        width: "55px",
-        height: "45px",
-        border: "none",
-        background: "transparent",
-        cursor: "pointer",
-      }}
-    />
-  </div>
-
-  {/* VISTA PREVIA */}
-
-  <div
-    style={{
-      padding: "22px",
-      borderRadius: "14px",
-      background: colorFondo,
-      border: "1px solid #ddd",
-      marginBottom: "18px",
-      transition: "all 0.2s ease",
-    }}
-  >
-    <p
-      style={{
-        margin: "0 0 12px",
-        fontSize: "13px",
-        color: "#777",
-      }}
-    >
-      Vista previa
-    </p>
-
-    <div
-      style={{
-        background: "white",
-        borderRadius: "12px",
-        padding: "18px",
-        boxShadow:
-          "0 4px 15px rgba(0,0,0,0.08)",
-      }}
-    >
-      <div
-        style={{
-          fontWeight: "800",
-          fontSize: "18px",
-          marginBottom: "12px",
-        }}
-      >
-        {tienda.nombre_tienda}
-      </div>
-
-      <button
-        type="button"
-        style={{
-          width: "100%",
-          border: "none",
-          borderRadius: "9px",
-          padding: "12px",
-          background: colorPrincipal,
-          color: "white",
-          fontWeight: "700",
-        }}
-      >
-        Agregar al pedido
-      </button>
-    </div>
-  </div>
-
-  <button
-    type="button"
-    onClick={guardarColores}
-    disabled={guardandoColores}
-    style={{
-      width: "100%",
-      border: "none",
-      padding: "15px",
-      borderRadius: "10px",
-      background: colorPrincipal,
-      color: "white",
-      fontSize: "16px",
-      fontWeight: "700",
-      cursor: guardandoColores
-        ? "not-allowed"
-        : "pointer",
-      opacity: guardandoColores ? 0.7 : 1,
-    }}
-  >
-    {guardandoColores
-      ? "Guardando..."
-      : "💾 Guardar personalización"}
-  </button>
-</div>
               {/* PRECIOS MAYORISTAS */}
 
               <div
