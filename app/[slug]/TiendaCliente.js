@@ -300,10 +300,7 @@ const colorTextoPrincipal =
   lineaActiva,
   busqueda,
 ]);
-    }
-
-    return lista;
-  }, [productos, categoriaActiva, busqueda]);
+    
 
   // ========================================
   // PRODUCTOS RECOMENDADOS
