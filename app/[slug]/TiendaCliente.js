@@ -155,8 +155,59 @@ export default function TiendaCliente({
   colorPrincipal = "#000000",
   colorFondo = "#FFFFFF",
   mensajePortada = "",
+  instagram = "",
+  facebook = "",
+  tiktok = "",
   productos = [],
 }) {
+    function crearEnlaceRedSocial(red, valor) {
+    const texto = String(valor || "").trim();
+
+    if (!texto) return "";
+
+    // Si el cliente pegó el enlace completo
+    if (
+      texto.startsWith("http://") ||
+      texto.startsWith("https://")
+    ) {
+      return texto;
+    }
+
+    const usuario = texto
+      .replace(/^@/, "")
+      .trim();
+
+    if (red === "instagram") {
+      return `https://www.instagram.com/${usuario}`;
+    }
+
+    if (red === "tiktok") {
+      return `https://www.tiktok.com/@${usuario}`;
+    }
+
+    if (red === "facebook") {
+      return `https://www.facebook.com/${usuario.replace(
+        /\s+/g,
+        ""
+      )}`;
+    }
+
+    return "";
+  }
+
+  const enlaceInstagram =
+    crearEnlaceRedSocial("instagram", instagram);
+
+  const enlaceFacebook =
+    crearEnlaceRedSocial("facebook", facebook);
+
+  const enlaceTiktok =
+    crearEnlaceRedSocial("tiktok", tiktok);
+
+  const tieneRedesSociales =
+    enlaceInstagram ||
+    enlaceFacebook ||
+    enlaceTiktok;
   const [categoriaActiva, setCategoriaActiva] = useState("Todos");
   const [lineaActiva, setLineaActiva] = useState("Todos");
   const [busqueda, setBusqueda] = useState("");
@@ -811,6 +862,48 @@ const colorTextoPrincipal =
 {mensajePortada && (
   <div className="mensaje-portada">
     {mensajePortada}
+  </div>
+)}
+{tieneRedesSociales && (
+  <div className="redes-sociales">
+    {enlaceInstagram && (
+      <a
+        href={enlaceInstagram}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="red-social"
+        aria-label="Instagram"
+        title="Instagram"
+      >
+        IG
+      </a>
+    )}
+
+    {enlaceFacebook && (
+      <a
+        href={enlaceFacebook}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="red-social"
+        aria-label="Facebook"
+        title="Facebook"
+      >
+        f
+      </a>
+    )}
+
+    {enlaceTiktok && (
+      <a
+        href={enlaceTiktok}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="red-social"
+        aria-label="TikTok"
+        title="TikTok"
+      >
+        ♪
+      </a>
+    )}
   </div>
 )}
           </div>
@@ -1701,6 +1794,36 @@ body {
   color: var(--texto-fondo);
   opacity: 0.72;
   white-space: normal;
+}
+.redes-sociales {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.red-social {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--texto-fondo);
+  color: var(--texto-fondo);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 800;
+  opacity: 0.75;
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.red-social:hover {
+  transform: translateY(-2px);
+  opacity: 1;
 }
 
         .carrito-header {
