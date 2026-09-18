@@ -1955,8 +1955,8 @@ body {
           padding: 0 25px;
           border: none;
           border-radius: 14px;
-          background: #101010;
-          color: white;
+          background: var(--color-principal);
+color: var(--texto-principal);
           display: flex;
           justify-content: space-between;
           align-items: center;
@@ -2019,8 +2019,9 @@ body {
         }
 
         .menu-activo {
-          font-weight: 700;
-        }
+  font-weight: 700;
+  color: var(--color-principal);
+}
 
         /* MODAL PRODUCTO */
 
@@ -2120,10 +2121,11 @@ body {
         }
 
         .precio-modal {
-          margin-top: 10px;
-          font-size: 23px;
-          font-weight: 700;
-        }
+  margin-top: 10px;
+  font-size: 23px;
+  font-weight: 700;
+  color: var(--color-principal);
+}
 
         .producto-modal-info p {
           color: #555;
