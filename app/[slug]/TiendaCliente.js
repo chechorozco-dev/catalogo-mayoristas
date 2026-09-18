@@ -2376,11 +2376,12 @@ color: var(--texto-principal);
         }
 
         .carrito-variante {
-          margin-bottom: 3px;
-          font-size: 13px;
-          font-weight: 700;
-          text-transform: uppercase;
-        }
+  margin-bottom: 3px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-principal);
+}
 
         .carrito-referencia {
           margin-bottom: 7px;
@@ -2396,11 +2397,13 @@ color: var(--texto-principal);
         }
 
         .cantidad-controles button {
-          width: 35px;
-          height: 34px;
-          border: none;
-          background: white;
-        }
+  width: 35px;
+  height: 34px;
+  border: none;
+  background: var(--color-principal);
+  color: var(--texto-principal);
+  font-weight: 700;
+}
 
         .cantidad-controles span {
           width: 33px;
@@ -2421,21 +2424,25 @@ color: var(--texto-principal);
         }
 
         .total-carrito {
-          display: flex;
-          justify-content: space-between;
-          margin-bottom: 15px;
-          font-size: 18px;
-        }
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+
+.total-carrito strong {
+  color: var(--color-principal);
+}
 
         .whatsapp-btn {
-          width: 100%;
-          height: 55px;
-          border: none;
-          border-radius: 8px;
-          background: #25d366;
-          color: white;
-          font-weight: 700;
-        }
+  width: 100%;
+  height: 55px;
+  border: 3px solid var(--color-principal);
+  border-radius: 8px;
+  background: #25d366;
+  color: white;
+  font-weight: 700;
+}
 /* WHATSAPP FLOTANTE */
 
 .whatsapp-flotante {
