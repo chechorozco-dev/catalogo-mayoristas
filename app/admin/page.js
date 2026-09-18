@@ -1305,20 +1305,33 @@ async function guardarColores() {
       </div>
     </div>
 
-    <input
-      type="color"
-      value={colorFondo}
-      onChange={(e) =>
-        setColorFondo(e.target.value)
-      }
-      style={{
-        width: "60px",
-        height: "48px",
-        border: "none",
-        background: "transparent",
-        cursor: "pointer",
-      }}
-    />
+    <div
+  style={{
+    width: "64px",
+    height: "52px",
+    padding: "3px",
+    border: "2px solid #d5d5d5",
+    borderRadius: "14px",
+    background: "#ffffff",
+    boxSizing: "border-box",
+  }}
+>
+  <input
+    type="color"
+    value={colorFondo}
+    onChange={(e) =>
+      setColorFondo(e.target.value)
+    }
+    style={{
+      width: "100%",
+      height: "100%",
+      border: "none",
+      padding: 0,
+      background: "transparent",
+      cursor: "pointer",
+    }}
+  />
+</div>
   </div>
 
   {/* VISTA PREVIA */}
