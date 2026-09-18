@@ -136,6 +136,8 @@ export default function TiendaCliente({
   nombreTienda,
   logoUrl,
   whatsapp,
+  colorPrincipal = "#000000",
+  colorFondo = "#FFFFFF",
   productos = [],
 }) {
   const [categoriaActiva, setCategoriaActiva] = useState("Todos");
@@ -1420,18 +1422,27 @@ export default function TiendaCliente({
       )}
 
       <style jsx global>{`
+        <style jsx global>{`
+  :root {
+    --color-principal: ${colorPrincipal};
+    --color-fondo: ${colorFondo};
+  }
+
+  * {
+    box-sizing: border-box;
+  }
         * {
           box-sizing: border-box;
         }
 
         html,
-        body {
-          margin: 0;
-          padding: 0;
-          background: #fff;
-          color: #111;
-          font-family: Arial, Helvetica, sans-serif;
-        }
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-fondo);
+  color: #111;
+  font-family: Arial, Helvetica, sans-serif;
+}
 
         button,
         input {
@@ -1448,9 +1459,9 @@ export default function TiendaCliente({
         }
 
         .tienda {
-          min-height: 100vh;
-          background: white;
-        }
+  min-height: 100vh;
+  background: var(--color-fondo);
+}
 
         /* HEADER */
 
