@@ -137,74 +137,14 @@ export default async function TiendaPage({
   }
 
   // =========================================
-  // 2. BUSCAR PRODUCTOS
+  // 2. CONFIGURACIÓN PRIVADA DEL SERVIDOR
   // =========================================
-
-  const {
-    data: productosData,
-    error: productosError,
-  } = await supabase
-    .from("productos")
-    .select(`
-      id,
-      referencia,
-      nombre,
-      categoria,
-      descripcion,
-      foto_url,
-      foto_url_2,
-      precio_detal,
-      costo,
-      activo,
-      created_at,
-      tiene_variantes
-    `)
-    .eq("activo", true)
-    .order("created_at", {
-      ascending: false,
-    });
-
-  if (productosError) {
-    return (
-      <main
-        style={{
-          padding: "40px 20px",
-          maxWidth: "900px",
-          margin: "auto",
-        }}
-      >
-        <h1>
-          {tienda.nombre_tienda}
-        </h1>
-
-        <h2
-          style={{
-            color: "red",
-          }}
-        >
-          Error cargando productos
-        </h2>
-
-        <pre
-          style={{
-            whiteSpace: "pre-wrap",
-            background: "#f5f5f5",
-            padding: "20px",
-            borderRadius: "12px",
-          }}
-        >
-          {JSON.stringify(
-            productosError,
-            null,
-            2
-          )}
-        </pre>
-      </main>
-    );
-  }
-
-  // =========================================
-  // 3. CONFIGURACIÓN SUPABASE SERVIDOR
+  //
+  // IMPORTANTE:
+  // SUPABASE_SECRET_KEY solamente se utiliza
+  // en este archivo del servidor.
+  //
+  // Nunca se envía al navegador.
   // =========================================
 
   const supabaseUrl =
@@ -226,11 +166,115 @@ export default async function TiendaPage({
   }
 
   // =========================================
+  // 3. BUSCAR PRODUCTOS DESDE EL SERVIDOR
+  // =========================================
+  //
+  // Usamos la clave secreta para poder leer
+  // "costo" sin darle permiso público a esa
+  // columna/tabla.
+  //
+  // El costo NO será enviado al navegador.
+  // Solamente calcularemos el precio final.
+  // =========================================
+
+  let productosData = [];
+
+  try {
+    const urlProductos =
+      `${supabaseUrl}` +
+      `/rest/v1/productos` +
+      `?select=` +
+      [
+        "id",
+        "referencia",
+        "nombre",
+        "categoria",
+        "descripcion",
+        "foto_url",
+        "foto_url_2",
+        "precio_detal",
+        "costo",
+        "activo",
+        "created_at",
+        "tiene_variantes",
+      ].join(",") +
+      `&activo=eq.true` +
+      `&order=created_at.desc`;
+
+    const respuestaProductos =
+      await fetch(urlProductos, {
+        method: "GET",
+
+        headers: {
+          apikey: supabaseSecretKey,
+
+          "Content-Type":
+            "application/json",
+        },
+
+        cache: "no-store",
+      });
+
+    const textoProductos =
+      await respuestaProductos.text();
+
+    if (!respuestaProductos.ok) {
+      console.error(
+        "ERROR SUPABASE PRODUCTOS:",
+        respuestaProductos.status,
+        textoProductos
+      );
+
+      throw new Error(
+        `Error cargando productos: ${respuestaProductos.status}`
+      );
+    }
+
+    if (textoProductos) {
+      const datosProductos =
+        JSON.parse(textoProductos);
+
+      if (Array.isArray(datosProductos)) {
+        productosData = datosProductos;
+      }
+    }
+  } catch (error) {
+    console.error(
+      "ERROR CARGANDO PRODUCTOS:",
+      error
+    );
+
+    return (
+      <main
+        style={{
+          padding: "40px 20px",
+          maxWidth: "900px",
+          margin: "auto",
+        }}
+      >
+        <h1>{tienda.nombre_tienda}</h1>
+
+        <h2
+          style={{
+            color: "red",
+          }}
+        >
+          Error cargando productos
+        </h2>
+
+        <p>
+          No fue posible cargar los productos.
+        </p>
+      </main>
+    );
+  }
+
+  // =========================================
   // 4. IDENTIFICAR PRODUCTOS CON VARIANTES
   // =========================================
 
   const productosConVariantes =
-    (productosData || []).filter(
+    productosData.filter(
       (producto) =>
         producto.tiene_variantes === true
     );
@@ -241,7 +285,7 @@ export default async function TiendaPage({
     );
 
   // =========================================
-  // 5. CARGAR VARIANTES
+  // 5. CARGAR VARIANTES DESDE EL SERVIDOR
   // =========================================
 
   let variantesData = [];
@@ -259,7 +303,7 @@ export default async function TiendaPage({
           .join(",");
 
       if (ids) {
-        const url =
+        const urlVariantes =
           `${supabaseUrl}` +
           `/rest/v1/producto_variantes` +
           `?select=` +
@@ -279,13 +323,12 @@ export default async function TiendaPage({
           `&activo=eq.true` +
           `&order=orden.asc`;
 
-        const respuesta =
-          await fetch(url, {
+        const respuestaVariantes =
+          await fetch(urlVariantes, {
             method: "GET",
 
             headers: {
-              apikey:
-                supabaseSecretKey,
+              apikey: supabaseSecretKey,
 
               "Content-Type":
                 "application/json",
@@ -294,30 +337,30 @@ export default async function TiendaPage({
             cache: "no-store",
           });
 
-        const texto =
-          await respuesta.text();
+        const textoVariantes =
+          await respuestaVariantes.text();
 
-        if (!respuesta.ok) {
+        if (!respuestaVariantes.ok) {
           console.error(
             "ERROR SUPABASE VARIANTES:",
-            respuesta.status,
-            texto
+            respuestaVariantes.status,
+            textoVariantes
           );
 
           throw new Error(
-            `Error cargando variantes: ${respuesta.status}`
+            `Error cargando variantes: ${respuestaVariantes.status}`
           );
         }
 
-        if (texto) {
-          const datos =
-            JSON.parse(texto);
+        if (textoVariantes) {
+          const datosVariantes =
+            JSON.parse(textoVariantes);
 
           if (
-            Array.isArray(datos)
+            Array.isArray(datosVariantes)
           ) {
             variantesData =
-              datos;
+              datosVariantes;
           }
         }
       }
@@ -359,8 +402,7 @@ export default async function TiendaPage({
         method: "GET",
 
         headers: {
-          apikey:
-            supabaseSecretKey,
+          apikey: supabaseSecretKey,
 
           "Content-Type":
             "application/json",
@@ -389,9 +431,7 @@ export default async function TiendaPage({
         JSON.parse(textoPrecios);
 
       if (
-        Array.isArray(
-          datosPrecios
-        )
+        Array.isArray(datosPrecios)
       ) {
         preciosPersonalizados =
           datosPrecios;
@@ -407,8 +447,7 @@ export default async function TiendaPage({
   }
 
   // =========================================
-  // 7. FUNCIÓN PARA BUSCAR PRECIO
-  //    PERSONALIZADO
+  // 7. BUSCAR PRECIO PERSONALIZADO
   // =========================================
 
   function obtenerPrecioPersonalizado(
@@ -429,19 +468,19 @@ export default async function TiendaPage({
           }
 
           // PRODUCTO NORMAL
+
           if (
             varianteId === null ||
             varianteId === undefined
           ) {
             return (
-              precio.variante_id ===
-                null ||
-              precio.variante_id ===
-                undefined
+              precio.variante_id === null ||
+              precio.variante_id === undefined
             );
           }
 
           // VARIANTE
+
           return (
             Number(
               precio.variante_id
@@ -468,11 +507,22 @@ export default async function TiendaPage({
   }
 
   // =========================================
-  // 8. PREPARAR PRODUCTOS
+  // 8. IDENTIFICAR SI ES LA TIENDA DE RA
+  // =========================================
+
+  const esTiendaRA =
+    String(
+      tienda.tipo_tienda || ""
+    )
+      .trim()
+      .toUpperCase() === "RA";
+
+  // =========================================
+  // 9. PREPARAR PRODUCTOS
   // =========================================
 
   const productos =
-    (productosData || []).map(
+    productosData.map(
       (producto) => {
 
         // =====================================
@@ -501,7 +551,7 @@ export default async function TiendaPage({
               (variante) => {
 
                 // ===============================
-                // PRECIO PERSONALIZADO VARIANTE
+                // PRECIO PERSONALIZADO
                 // ===============================
 
                 const precioPersonalizado =
@@ -510,16 +560,35 @@ export default async function TiendaPage({
                     variante.id
                   );
 
+                // ===============================
+                // PRECIO FINAL DE LA VARIANTE
+                // ===============================
+                //
+                // MAYORISTAS RA:
+                // usa COSTO.
+                //
+                // TIENDA CLIENTE:
+                // usa precio personalizado.
+                // Si no tiene, precio_detal.
+                // ===============================
+
                 const precioFinal =
-  tienda.tipo_tienda === "RA"
-    ? Number(variante.costo || 0)
-    : precioPersonalizado !== null
-      ? precioPersonalizado
-      : Number(variante.precio_detal || 0);
+                  esTiendaRA
+                    ? Number(
+                        variante.costo || 0
+                      )
+                    : precioPersonalizado !== null
+                      ? precioPersonalizado
+                      : Number(
+                          variante.precio_detal ||
+                            0
+                        );
+
+                // IMPORTANTE:
+                // Aquí NO devolvemos "costo".
 
                 return {
-                  id:
-                    variante.id,
+                  id: variante.id,
 
                   producto_id:
                     variante.producto_id,
@@ -568,7 +637,7 @@ export default async function TiendaPage({
             : null;
 
         // =====================================
-        // PRECIO PRODUCTO NORMAL
+        // PRECIO PERSONALIZADO PRODUCTO NORMAL
         // =====================================
 
         const precioPersonalizadoProducto =
@@ -577,20 +646,46 @@ export default async function TiendaPage({
             null
           );
 
+        // =====================================
+        // PRECIO FINAL PRODUCTO NORMAL
+        // =====================================
+        //
+        // MAYORISTAS RA:
+        // usa COSTO.
+        //
+        // TIENDA CLIENTE:
+        // usa precio personalizado.
+        // Si no tiene, precio_detal.
+        // =====================================
+
         const precioProductoNormal =
-  tienda.tipo_tienda === "RA"
-    ? Number(producto.costo || 0)
-    : precioPersonalizadoProducto !== null
-      ? precioPersonalizadoProducto
-      : Number(producto.precio_detal || 0);
+          esTiendaRA
+            ? Number(
+                producto.costo || 0
+              )
+            : precioPersonalizadoProducto !== null
+              ? precioPersonalizadoProducto
+              : Number(
+                  producto.precio_detal ||
+                    0
+                );
 
         // =====================================
-        // PRODUCTO PARA EL CATÁLOGO
+        // PRODUCTO QUE SE ENVÍA AL NAVEGADOR
+        // =====================================
+        //
+        // IMPORTANTE:
+        // NO enviamos:
+        //
+        // costo
+        // precio_minimo
+        // infoimagen
+        //
+        // Solamente enviamos "precio".
         // =====================================
 
         return {
-          id:
-            producto.id,
+          id: producto.id,
 
           referencia:
             primeraVariante?.referencia ||
@@ -636,7 +731,7 @@ export default async function TiendaPage({
     );
 
   // =========================================
-  // 9. CATÁLOGO
+  // 10. CATÁLOGO
   // =========================================
 
   return (
