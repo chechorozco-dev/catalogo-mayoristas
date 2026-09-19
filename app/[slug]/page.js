@@ -27,14 +27,12 @@ export async function generateMetadata({ params }) {
     if (error || !tienda) {
       return {
         title: "Catálogo digital",
-        description:
-          "Catálogo digital de productos",
+        description: "Catálogo digital de productos",
       };
     }
 
     const nombreTienda =
-      tienda.nombre_tienda ||
-      "Catálogo digital";
+      tienda.nombre_tienda || "Catálogo digital";
 
     const descripcion =
       tienda.mensaje_portada ||
@@ -45,8 +43,7 @@ export async function generateMetadata({ params }) {
         tienda.slug
       )}`;
 
-    const imagen =
-      tienda.logo_url || null;
+    const imagen = tienda.logo_url || null;
 
     return {
       title: nombreTienda,
@@ -59,15 +56,10 @@ export async function generateMetadata({ params }) {
 
       openGraph: {
         title: nombreTienda,
-
         description: descripcion,
-
         url: urlCatalogo,
-
         siteName: nombreTienda,
-
         type: "website",
-
         locale: "es_CO",
 
         ...(imagen
@@ -88,7 +80,6 @@ export async function generateMetadata({ params }) {
           : "summary",
 
         title: nombreTienda,
-
         description: descripcion,
 
         ...(imagen
@@ -111,8 +102,7 @@ export async function generateMetadata({ params }) {
 
     return {
       title: "Catálogo digital",
-      description:
-        "Catálogo digital de productos",
+      description: "Catálogo digital de productos",
     };
   }
 }
@@ -136,7 +126,7 @@ export default async function TiendaPage({
   } = await supabase
     .from("tiendas")
     .select(
-      "id,nombre_tienda,slug,whatsapp,logo_url,color_principal,color_fondo,mensaje_portada,instagram,facebook,tiktok"
+      "id,nombre_tienda,slug,whatsapp,logo_url,color_principal,color_fondo,mensaje_portada,instagram,facebook,tiktok,tipo_tienda"
     )
     .eq("slug", slug)
     .eq("activa", true)
@@ -145,6 +135,13 @@ export default async function TiendaPage({
   if (tiendaError || !tienda) {
     notFound();
   }
+
+  // =========================================
+  // IDENTIFICAR TIENDA OFICIAL RA
+  // =========================================
+
+  const esTiendaRA =
+    tienda.tipo_tienda === "RA";
 
   // =========================================
   // 2. BUSCAR PRODUCTOS
@@ -164,6 +161,7 @@ export default async function TiendaPage({
       foto_url,
       foto_url_2,
       precio_detal,
+      precio_minimo,
       activo,
       created_at,
       tiene_variantes
@@ -182,9 +180,7 @@ export default async function TiendaPage({
           margin: "auto",
         }}
       >
-        <h1>
-          {tienda.nombre_tienda}
-        </h1>
+        <h1>{tienda.nombre_tienda}</h1>
 
         <h2
           style={{
@@ -214,10 +210,6 @@ export default async function TiendaPage({
 
   // =========================================
   // 3. CONFIGURACIÓN SUPABASE SERVIDOR
-  // =========================================
-  //
-  // Esta clave se usa únicamente en el servidor.
-  // Nunca se envía al navegador.
   // =========================================
 
   const supabaseUrl =
@@ -259,9 +251,7 @@ export default async function TiendaPage({
 
   let variantesData = [];
 
-  if (
-    idsProductosConVariantes.length > 0
-  ) {
+  if (idsProductosConVariantes.length > 0) {
     try {
       const ids =
         idsProductosConVariantes
@@ -284,6 +274,7 @@ export default async function TiendaPage({
             "foto_url",
             "foto_url_2",
             "precio_detal",
+            "precio_minimo",
             "activo",
             "orden",
           ].join(",") +
@@ -325,11 +316,8 @@ export default async function TiendaPage({
           const datos =
             JSON.parse(texto);
 
-          if (
-            Array.isArray(datos)
-          ) {
-            variantesData =
-              datos;
+          if (Array.isArray(datos)) {
+            variantesData = datos;
           }
         }
       }
@@ -345,97 +333,75 @@ export default async function TiendaPage({
 
   // =========================================
   // 6. CARGAR PRECIOS PERSONALIZADOS
-  //    DE ESTA TIENDA
-  // =========================================
-  //
-  // Cada tienda puede tener:
-  //
-  // producto_id
-  // variante_id
-  // precio_sugerido
-  //
-  // Si NO existe precio personalizado,
-  // utilizaremos precio_detal de RA.
+  //    SOLO PARA TIENDAS CLIENTE
   // =========================================
 
   let preciosPersonalizados = [];
 
-  try {
-    const urlPrecios =
-      `${supabaseUrl}` +
-      `/rest/v1/precios_tienda` +
-      `?select=` +
-      [
-        "producto_id",
-        "variante_id",
-        "precio_sugerido",
-        "actualizado_en",
-      ].join(",") +
-      `&tienda_id=eq.${encodeURIComponent(
-        tienda.id
-      )}` +
-      `&order=actualizado_en.desc`;
+  if (!esTiendaRA) {
+    try {
+      const urlPrecios =
+        `${supabaseUrl}` +
+        `/rest/v1/precios_tienda` +
+        `?select=` +
+        [
+          "producto_id",
+          "variante_id",
+          "precio_sugerido",
+          "actualizado_en",
+        ].join(",") +
+        `&tienda_id=eq.${encodeURIComponent(
+          tienda.id
+        )}` +
+        `&order=actualizado_en.desc`;
 
-    const respuestaPrecios =
-      await fetch(urlPrecios, {
-        method: "GET",
+      const respuestaPrecios =
+        await fetch(urlPrecios, {
+          method: "GET",
 
-        headers: {
-          apikey:
-            supabaseSecretKey,
+          headers: {
+            apikey:
+              supabaseSecretKey,
 
-          "Content-Type":
-            "application/json",
-        },
+            "Content-Type":
+              "application/json",
+          },
 
-        cache: "no-store",
-      });
+          cache: "no-store",
+        });
 
-    const textoPrecios =
-      await respuestaPrecios.text();
+      const textoPrecios =
+        await respuestaPrecios.text();
 
-    if (!respuestaPrecios.ok) {
-      console.error(
-        "ERROR SUPABASE PRECIOS TIENDA:",
-        respuestaPrecios.status,
-        textoPrecios
-      );
+      if (!respuestaPrecios.ok) {
+        console.error(
+          "ERROR SUPABASE PRECIOS TIENDA:",
+          respuestaPrecios.status,
+          textoPrecios
+        );
 
-      throw new Error(
-        `Error cargando precios personalizados: ${respuestaPrecios.status}`
-      );
-    }
-
-    if (textoPrecios) {
-      const datosPrecios =
-        JSON.parse(textoPrecios);
-
-      if (
-        Array.isArray(
-          datosPrecios
-        )
-      ) {
-        preciosPersonalizados =
-          datosPrecios;
+        throw new Error(
+          `Error cargando precios personalizados: ${respuestaPrecios.status}`
+        );
       }
+
+      if (textoPrecios) {
+        const datosPrecios =
+          JSON.parse(textoPrecios);
+
+        if (Array.isArray(datosPrecios)) {
+          preciosPersonalizados =
+            datosPrecios;
+        }
+      }
+    } catch (error) {
+      console.error(
+        "ERROR CARGANDO PRECIOS PERSONALIZADOS:",
+        error
+      );
+
+      preciosPersonalizados = [];
     }
-  } catch (error) {
-    console.error(
-      "ERROR CARGANDO PRECIOS PERSONALIZADOS:",
-      error
-    );
-
-    /*
-      IMPORTANTE:
-
-      Si por alguna razón falla esta consulta,
-      NO dejamos el catálogo sin productos.
-
-      Simplemente utilizaremos los precios
-      generales de RA.
-    */
-
-    preciosPersonalizados = [];
   }
 
   // =========================================
@@ -453,32 +419,30 @@ export default async function TiendaPage({
           const mismoProducto =
             Number(
               precio.producto_id
-            ) ===
-            Number(productoId);
+            ) === Number(productoId);
 
           if (!mismoProducto) {
             return false;
           }
 
           // PRODUCTO NORMAL
+
           if (
             varianteId === null ||
             varianteId === undefined
           ) {
             return (
-              precio.variante_id ===
-                null ||
-              precio.variante_id ===
-                undefined
+              precio.variante_id === null ||
+              precio.variante_id === undefined
             );
           }
 
           // VARIANTE
+
           return (
             Number(
               precio.variante_id
-            ) ===
-            Number(varianteId)
+            ) === Number(varianteId)
           );
         }
       );
@@ -506,6 +470,7 @@ export default async function TiendaPage({
   const productos =
     (productosData || []).map(
       (producto) => {
+
         // =====================================
         // VARIANTES DEL PRODUCTO
         // =====================================
@@ -528,11 +493,26 @@ export default async function TiendaPage({
                   b.orden || 0
                 )
             )
-            .map(
-              (variante) => {
-                // ===============================
-                // PRECIO PERSONALIZADO VARIANTE
-                // ===============================
+            .map((variante) => {
+
+              // =================================
+              // PRECIO DE LA VARIANTE
+              // =================================
+
+              let precioFinal = 0;
+
+              if (esTiendaRA) {
+                // MAYORISTAS RA:
+                // usar precio_minimo
+
+                precioFinal =
+                  Number(
+                    variante.precio_minimo ||
+                      0
+                  );
+              } else {
+                // TIENDAS CLIENTE:
+                // precio personalizado o detal
 
                 const precioPersonalizado =
                   obtenerPrecioPersonalizado(
@@ -540,59 +520,52 @@ export default async function TiendaPage({
                     variante.id
                   );
 
-                const precioFinal =
-                  precioPersonalizado !==
-                  null
+                precioFinal =
+                  precioPersonalizado !== null
                     ? precioPersonalizado
                     : Number(
                         variante.precio_detal ||
                           0
                       );
-
-                return {
-                  id:
-                    variante.id,
-
-                  producto_id:
-                    variante.producto_id,
-
-                  nombre_variante:
-                    variante.nombre_variante,
-
-                  referencia:
-                    variante.referencia,
-
-                  foto_url:
-                    variante.foto_url,
-
-                  foto_url_2:
-                    variante.foto_url_2,
-
-                  // =============================
-                  // PRECIO QUE VERÁ EL CLIENTE
-                  // =============================
-
-                  precio:
-                    precioFinal,
-
-                  activo:
-                    variante.activo,
-
-                  orden:
-                    variante.orden,
-                };
               }
-            );
+
+              return {
+                id:
+                  variante.id,
+
+                producto_id:
+                  variante.producto_id,
+
+                nombre_variante:
+                  variante.nombre_variante,
+
+                referencia:
+                  variante.referencia,
+
+                foto_url:
+                  variante.foto_url,
+
+                foto_url_2:
+                  variante.foto_url_2,
+
+                precio:
+                  precioFinal,
+
+                activo:
+                  variante.activo,
+
+                orden:
+                  variante.orden,
+              };
+            });
 
         // =====================================
         // ¿REALMENTE TIENE VARIANTES?
         // =====================================
 
         const tieneVariantes =
-          producto.tiene_variantes ===
-            true &&
-          variantesDelProducto.length >
-            0;
+          producto.tiene_variantes === true &&
+          variantesDelProducto.length > 0;
 
         // =====================================
         // PRIMERA VARIANTE
@@ -607,20 +580,33 @@ export default async function TiendaPage({
         // PRECIO PRODUCTO NORMAL
         // =====================================
 
-        const precioPersonalizadoProducto =
-          obtenerPrecioPersonalizado(
-            producto.id,
-            null
-          );
+        let precioProductoNormal = 0;
 
-        const precioProductoNormal =
-          precioPersonalizadoProducto !==
-          null
-            ? precioPersonalizadoProducto
-            : Number(
-                producto.precio_detal ||
-                  0
-              );
+        if (esTiendaRA) {
+          // MAYORISTAS RA
+
+          precioProductoNormal =
+            Number(
+              producto.precio_minimo ||
+                0
+            );
+        } else {
+          // TIENDA CLIENTE
+
+          const precioPersonalizadoProducto =
+            obtenerPrecioPersonalizado(
+              producto.id,
+              null
+            );
+
+          precioProductoNormal =
+            precioPersonalizadoProducto !== null
+              ? precioPersonalizadoProducto
+              : Number(
+                  producto.precio_detal ||
+                    0
+                );
+        }
 
         // =====================================
         // PRODUCTO PARA EL CATÁLOGO
@@ -654,7 +640,7 @@ export default async function TiendaPage({
             "",
 
           // ===================================
-          // PRECIO QUE VERÁ EL CLIENTE FINAL
+          // PRECIO QUE VERÁ EL CLIENTE
           // ===================================
 
           precio:
