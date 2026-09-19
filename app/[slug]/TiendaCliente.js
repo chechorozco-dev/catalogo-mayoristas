@@ -44,11 +44,23 @@ function formatoPrecio(valor) {
 function limpiarWhatsapp(numero = "") {
   return String(numero).replace(/\D/g, "");
 }
-function obtenerColorTexto(hex = "#000000") {
-  const color = String(hex).replace("#", "");
+function obtenerColorTexto(hex = "#FFFFFF") {
+  let color = String(hex || "#FFFFFF")
+    .trim()
+    .replace("#", "");
 
-  if (color.length !== 6) {
-    return "#FFFFFF";
+  // Soportar colores cortos, por ejemplo #FFF
+  if (color.length === 3) {
+    color = color
+      .split("")
+      .map((letra) => letra + letra)
+      .join("");
+  }
+
+  // Si el color recibido no es válido,
+  // usamos texto negro para evitar texto invisible.
+  if (!/^[0-9A-Fa-f]{6}$/.test(color)) {
+    return "#111111";
   }
 
   const r = parseInt(color.substring(0, 2), 16);
@@ -58,7 +70,9 @@ function obtenerColorTexto(hex = "#000000") {
   const luminosidad =
     (r * 299 + g * 587 + b * 114) / 1000;
 
-  return luminosidad > 160
+  // Fondo claro = letras oscuras
+  // Fondo oscuro = letras blancas
+  return luminosidad >= 150
     ? "#111111"
     : "#FFFFFF";
 }
