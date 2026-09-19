@@ -511,13 +511,11 @@ export default async function TiendaPage({
                   );
 
                 const precioFinal =
-                  precioPersonalizado !==
-                  null
-                    ? precioPersonalizado
-                    : Number(
-                        variante.precio_detal ||
-                          0
-                      );
+  tienda.tipo_tienda === "RA"
+    ? Number(variante.costo || 0)
+    : precioPersonalizado !== null
+      ? precioPersonalizado
+      : Number(variante.precio_detal || 0);
 
                 return {
                   id:
@@ -580,13 +578,11 @@ export default async function TiendaPage({
           );
 
         const precioProductoNormal =
-          precioPersonalizadoProducto !==
-          null
-            ? precioPersonalizadoProducto
-            : Number(
-                producto.precio_detal ||
-                  0
-              );
+  tienda.tipo_tienda === "RA"
+    ? Number(producto.costo || 0)
+    : precioPersonalizadoProducto !== null
+      ? precioPersonalizadoProducto
+      : Number(producto.precio_detal || 0);
 
         // =====================================
         // PRODUCTO PARA EL CATÁLOGO
