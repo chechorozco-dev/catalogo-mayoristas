@@ -47,7 +47,6 @@ export async function generateMetadata({ params }) {
 
     return {
       title: nombreTienda,
-
       description: descripcion,
 
       alternates: {
@@ -137,79 +136,16 @@ export default async function TiendaPage({
   }
 
   // =========================================
-  // IDENTIFICAR TIENDA OFICIAL RA
+  // 2. IDENTIFICAR TIENDA RA
   // =========================================
 
   const esTiendaRA =
-    tienda.tipo_tienda === "RA";
+    String(tienda.tipo_tienda || "")
+      .trim()
+      .toUpperCase() === "RA";
 
   // =========================================
-  // 2. BUSCAR PRODUCTOS
-  // =========================================
-
-  const {
-    data: productosData,
-    error: productosError,
-  } = await supabase
-    .from("productos")
-    .select(`
-      id,
-      referencia,
-      nombre,
-      categoria,
-      descripcion,
-      foto_url,
-      foto_url_2,
-      precio_detal,
-      precio_minimo,
-      activo,
-      created_at,
-      tiene_variantes
-    `)
-    .eq("activo", true)
-    .order("created_at", {
-      ascending: false,
-    });
-
-  if (productosError) {
-    return (
-      <main
-        style={{
-          padding: "40px 20px",
-          maxWidth: "900px",
-          margin: "auto",
-        }}
-      >
-        <h1>{tienda.nombre_tienda}</h1>
-
-        <h2
-          style={{
-            color: "red",
-          }}
-        >
-          Error cargando productos
-        </h2>
-
-        <pre
-          style={{
-            whiteSpace: "pre-wrap",
-            background: "#f5f5f5",
-            padding: "20px",
-            borderRadius: "12px",
-          }}
-        >
-          {JSON.stringify(
-            productosError,
-            null,
-            2
-          )}
-        </pre>
-      </main>
-    );
-  }
-
-  // =========================================
-  // 3. CONFIGURACIÓN SUPABASE SERVIDOR
+  // 3. CONFIGURACIÓN PRIVADA DEL SERVIDOR
   // =========================================
 
   const supabaseUrl =
@@ -231,11 +167,114 @@ export default async function TiendaPage({
   }
 
   // =========================================
-  // 4. IDENTIFICAR PRODUCTOS CON VARIANTES
+  // 4. CARGAR PRODUCTOS DESDE EL SERVIDOR
+  // =========================================
+  //
+  // IMPORTANTE:
+  // precio_minimo NO se consulta con anon.
+  // Lo obtenemos usando la clave privada
+  // únicamente dentro del servidor.
+  // =========================================
+
+  let productosData = [];
+
+  try {
+    const urlProductos =
+      `${supabaseUrl}` +
+      `/rest/v1/productos` +
+      `?select=` +
+      [
+        "id",
+        "referencia",
+        "nombre",
+        "categoria",
+        "descripcion",
+        "foto_url",
+        "foto_url_2",
+        "precio_detal",
+        "precio_minimo",
+        "activo",
+        "created_at",
+        "tiene_variantes",
+      ].join(",") +
+      `&activo=eq.true` +
+      `&order=created_at.desc`;
+
+    const respuestaProductos =
+      await fetch(urlProductos, {
+        method: "GET",
+
+        headers: {
+          apikey: supabaseSecretKey,
+
+          "Content-Type":
+            "application/json",
+        },
+
+        cache: "no-store",
+      });
+
+    const textoProductos =
+      await respuestaProductos.text();
+
+    if (!respuestaProductos.ok) {
+      console.error(
+        "ERROR SUPABASE PRODUCTOS:",
+        respuestaProductos.status,
+        textoProductos
+      );
+
+      throw new Error(
+        `Error cargando productos: ${respuestaProductos.status}`
+      );
+    }
+
+    if (textoProductos) {
+      const datosProductos =
+        JSON.parse(textoProductos);
+
+      if (Array.isArray(datosProductos)) {
+        productosData =
+          datosProductos;
+      }
+    }
+  } catch (error) {
+    console.error(
+      "ERROR CARGANDO PRODUCTOS:",
+      error
+    );
+
+    return (
+      <main
+        style={{
+          padding: "40px 20px",
+          maxWidth: "900px",
+          margin: "auto",
+        }}
+      >
+        <h1>{tienda.nombre_tienda}</h1>
+
+        <h2
+          style={{
+            color: "red",
+          }}
+        >
+          Error cargando productos
+        </h2>
+
+        <p>
+          No fue posible cargar el catálogo.
+        </p>
+      </main>
+    );
+  }
+
+  // =========================================
+  // 5. IDENTIFICAR PRODUCTOS CON VARIANTES
   // =========================================
 
   const productosConVariantes =
-    (productosData || []).filter(
+    productosData.filter(
       (producto) =>
         producto.tiene_variantes === true
     );
@@ -246,7 +285,7 @@ export default async function TiendaPage({
     );
 
   // =========================================
-  // 5. CARGAR VARIANTES
+  // 6. CARGAR VARIANTES
   // =========================================
 
   let variantesData = [];
@@ -262,7 +301,7 @@ export default async function TiendaPage({
           .join(",");
 
       if (ids) {
-        const url =
+        const urlVariantes =
           `${supabaseUrl}` +
           `/rest/v1/producto_variantes` +
           `?select=` +
@@ -282,13 +321,12 @@ export default async function TiendaPage({
           `&activo=eq.true` +
           `&order=orden.asc`;
 
-        const respuesta =
-          await fetch(url, {
+        const respuestaVariantes =
+          await fetch(urlVariantes, {
             method: "GET",
 
             headers: {
-              apikey:
-                supabaseSecretKey,
+              apikey: supabaseSecretKey,
 
               "Content-Type":
                 "application/json",
@@ -297,27 +335,28 @@ export default async function TiendaPage({
             cache: "no-store",
           });
 
-        const texto =
-          await respuesta.text();
+        const textoVariantes =
+          await respuestaVariantes.text();
 
-        if (!respuesta.ok) {
+        if (!respuestaVariantes.ok) {
           console.error(
             "ERROR SUPABASE VARIANTES:",
-            respuesta.status,
-            texto
+            respuestaVariantes.status,
+            textoVariantes
           );
 
           throw new Error(
-            `Error cargando variantes: ${respuesta.status}`
+            `Error cargando variantes: ${respuestaVariantes.status}`
           );
         }
 
-        if (texto) {
-          const datos =
-            JSON.parse(texto);
+        if (textoVariantes) {
+          const datosVariantes =
+            JSON.parse(textoVariantes);
 
-          if (Array.isArray(datos)) {
-            variantesData = datos;
+          if (Array.isArray(datosVariantes)) {
+            variantesData =
+              datosVariantes;
           }
         }
       }
@@ -332,8 +371,8 @@ export default async function TiendaPage({
   }
 
   // =========================================
-  // 6. CARGAR PRECIOS PERSONALIZADOS
-  //    SOLO PARA TIENDAS CLIENTE
+  // 7. PRECIOS PERSONALIZADOS
+  //    SOLO TIENDAS CLIENTE
   // =========================================
 
   let preciosPersonalizados = [];
@@ -360,8 +399,7 @@ export default async function TiendaPage({
           method: "GET",
 
           headers: {
-            apikey:
-              supabaseSecretKey,
+            apikey: supabaseSecretKey,
 
             "Content-Type":
               "application/json",
@@ -405,8 +443,7 @@ export default async function TiendaPage({
   }
 
   // =========================================
-  // 7. FUNCIÓN PARA BUSCAR PRECIO
-  //    PERSONALIZADO
+  // 8. BUSCAR PRECIO PERSONALIZADO
   // =========================================
 
   function obtenerPrecioPersonalizado(
@@ -417,15 +454,14 @@ export default async function TiendaPage({
       preciosPersonalizados.find(
         (precio) => {
           const mismoProducto =
-            Number(
-              precio.producto_id
-            ) === Number(productoId);
+            Number(precio.producto_id) ===
+            Number(productoId);
 
           if (!mismoProducto) {
             return false;
           }
 
-          // PRODUCTO NORMAL
+          // PRODUCTO SIN VARIANTE
 
           if (
             varianteId === null ||
@@ -437,12 +473,11 @@ export default async function TiendaPage({
             );
           }
 
-          // VARIANTE
+          // PRODUCTO CON VARIANTE
 
           return (
-            Number(
-              precio.variante_id
-            ) === Number(varianteId)
+            Number(precio.variante_id) ===
+            Number(varianteId)
           );
         }
       );
@@ -464,207 +499,195 @@ export default async function TiendaPage({
   }
 
   // =========================================
-  // 8. PREPARAR PRODUCTOS
+  // 9. PREPARAR PRODUCTOS
   // =========================================
 
   const productos =
-    (productosData || []).map(
-      (producto) => {
+    productosData.map((producto) => {
 
-        // =====================================
-        // VARIANTES DEL PRODUCTO
-        // =====================================
+      // =====================================
+      // VARIANTES
+      // =====================================
 
-        const variantesDelProducto =
-          variantesData
-            .filter(
-              (variante) =>
-                String(
-                  variante.producto_id
-                ) ===
-                String(producto.id)
-            )
-            .sort(
-              (a, b) =>
+      const variantesDelProducto =
+        variantesData
+          .filter(
+            (variante) =>
+              String(variante.producto_id) ===
+              String(producto.id)
+          )
+          .sort(
+            (a, b) =>
+              Number(a.orden || 0) -
+              Number(b.orden || 0)
+          )
+          .map((variante) => {
+
+            let precioFinal = 0;
+
+            // =================================
+            // MAYORISTAS RA
+            // =================================
+
+            if (esTiendaRA) {
+              precioFinal =
                 Number(
-                  a.orden || 0
-                ) -
-                Number(
-                  b.orden || 0
-                )
-            )
-            .map((variante) => {
-
-              // =================================
-              // PRECIO DE LA VARIANTE
-              // =================================
-
-              let precioFinal = 0;
-
-              if (esTiendaRA) {
-                // MAYORISTAS RA:
-                // usar precio_minimo
-
-                precioFinal =
-                  Number(
-                    variante.precio_minimo ||
-                      0
-                  );
-              } else {
-                // TIENDAS CLIENTE:
-                // precio personalizado o detal
-
-                const precioPersonalizado =
-                  obtenerPrecioPersonalizado(
-                    producto.id,
-                    variante.id
-                  );
-
-                precioFinal =
-                  precioPersonalizado !== null
-                    ? precioPersonalizado
-                    : Number(
-                        variante.precio_detal ||
-                          0
-                      );
-              }
-
-              return {
-                id:
-                  variante.id,
-
-                producto_id:
-                  variante.producto_id,
-
-                nombre_variante:
-                  variante.nombre_variante,
-
-                referencia:
-                  variante.referencia,
-
-                foto_url:
-                  variante.foto_url,
-
-                foto_url_2:
-                  variante.foto_url_2,
-
-                precio:
-                  precioFinal,
-
-                activo:
-                  variante.activo,
-
-                orden:
-                  variante.orden,
-              };
-            });
-
-        // =====================================
-        // ¿REALMENTE TIENE VARIANTES?
-        // =====================================
-
-        const tieneVariantes =
-          producto.tiene_variantes === true &&
-          variantesDelProducto.length > 0;
-
-        // =====================================
-        // PRIMERA VARIANTE
-        // =====================================
-
-        const primeraVariante =
-          tieneVariantes
-            ? variantesDelProducto[0]
-            : null;
-
-        // =====================================
-        // PRECIO PRODUCTO NORMAL
-        // =====================================
-
-        let precioProductoNormal = 0;
-
-        if (esTiendaRA) {
-          // MAYORISTAS RA
-
-          precioProductoNormal =
-            Number(
-              producto.precio_minimo ||
-                0
-            );
-        } else {
-          // TIENDA CLIENTE
-
-          const precioPersonalizadoProducto =
-            obtenerPrecioPersonalizado(
-              producto.id,
-              null
-            );
-
-          precioProductoNormal =
-            precioPersonalizadoProducto !== null
-              ? precioPersonalizadoProducto
-              : Number(
-                  producto.precio_detal ||
+                  variante.precio_minimo ||
                     0
                 );
-        }
+            }
 
-        // =====================================
-        // PRODUCTO PARA EL CATÁLOGO
-        // =====================================
+            // =================================
+            // TIENDA CLIENTE
+            // =================================
 
-        return {
-          id:
-            producto.id,
+            else {
+              const precioPersonalizado =
+                obtenerPrecioPersonalizado(
+                  producto.id,
+                  variante.id
+                );
 
-          referencia:
-            primeraVariante?.referencia ||
-            producto.referencia,
+              precioFinal =
+                precioPersonalizado !== null
+                  ? precioPersonalizado
+                  : Number(
+                      variante.precio_detal ||
+                        0
+                    );
+            }
 
-          nombre:
-            producto.nombre,
+            return {
+              id: variante.id,
 
-          categoria:
-            producto.categoria || "",
+              producto_id:
+                variante.producto_id,
 
-          descripcion:
-            producto.descripcion || "",
+              nombre_variante:
+                variante.nombre_variante,
 
-          foto_url:
-            primeraVariante?.foto_url ||
-            producto.foto_url ||
-            "",
+              referencia:
+                variante.referencia,
 
-          foto_url_2:
-            primeraVariante?.foto_url_2 ||
-            producto.foto_url_2 ||
-            "",
+              foto_url:
+                variante.foto_url,
 
-          // ===================================
-          // PRECIO QUE VERÁ EL CLIENTE
-          // ===================================
+              foto_url_2:
+                variante.foto_url_2,
 
-          precio:
-            primeraVariante
-              ? Number(
-                  primeraVariante.precio ||
-                    0
-                )
-              : precioProductoNormal,
+              precio:
+                precioFinal,
 
-          created_at:
-            producto.created_at,
+              activo:
+                variante.activo,
 
-          tiene_variantes:
-            tieneVariantes,
+              orden:
+                variante.orden,
+            };
+          });
 
-          variantes:
-            variantesDelProducto,
-        };
+      // =====================================
+      // ¿TIENE VARIANTES?
+      // =====================================
+
+      const tieneVariantes =
+        producto.tiene_variantes === true &&
+        variantesDelProducto.length > 0;
+
+      const primeraVariante =
+        tieneVariantes
+          ? variantesDelProducto[0]
+          : null;
+
+      // =====================================
+      // PRECIO DEL PRODUCTO NORMAL
+      // =====================================
+
+      let precioProductoNormal = 0;
+
+      // MAYORISTAS RA
+
+      if (esTiendaRA) {
+        precioProductoNormal =
+          Number(
+            producto.precio_minimo ||
+              0
+          );
       }
-    );
+
+      // TIENDA CLIENTE
+
+      else {
+        const precioPersonalizadoProducto =
+          obtenerPrecioPersonalizado(
+            producto.id,
+            null
+          );
+
+        precioProductoNormal =
+          precioPersonalizadoProducto !== null
+            ? precioPersonalizadoProducto
+            : Number(
+                producto.precio_detal ||
+                  0
+              );
+      }
+
+      // =====================================
+      // PRODUCTO FINAL PARA EL NAVEGADOR
+      // =====================================
+      //
+      // Aquí NO enviamos precio_minimo.
+      // Solo enviamos "precio".
+      // =====================================
+
+      return {
+        id: producto.id,
+
+        referencia:
+          primeraVariante?.referencia ||
+          producto.referencia,
+
+        nombre:
+          producto.nombre,
+
+        categoria:
+          producto.categoria || "",
+
+        descripcion:
+          producto.descripcion || "",
+
+        foto_url:
+          primeraVariante?.foto_url ||
+          producto.foto_url ||
+          "",
+
+        foto_url_2:
+          primeraVariante?.foto_url_2 ||
+          producto.foto_url_2 ||
+          "",
+
+        precio:
+          primeraVariante
+            ? Number(
+                primeraVariante.precio ||
+                  0
+              )
+            : precioProductoNormal,
+
+        created_at:
+          producto.created_at,
+
+        tiene_variantes:
+          tieneVariantes,
+
+        variantes:
+          variantesDelProducto,
+      };
+    });
 
   // =========================================
-  // 9. CATÁLOGO
+  // 10. MOSTRAR CATÁLOGO
   // =========================================
 
   return (
