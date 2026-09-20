@@ -2171,6 +2171,54 @@ setCarrito([]);
           </div>
 
                    <div className="resumen-compra">
+                    <div className="checkout-productos">
+  <div className="checkout-productos-titulo">
+    <strong>Tu pedido</strong>
+    <span>{cantidadTotal} productos</span>
+  </div>
+
+  {carrito.map((item) => (
+    <div
+      className="checkout-producto"
+      key={item.clave_carrito || item.id}
+    >
+      {item.foto_url ? (
+        <img
+          src={item.foto_url}
+          alt={item.nombre}
+        />
+      ) : (
+        <div className="checkout-producto-sin-foto">
+          Sin imagen
+        </div>
+      )}
+
+      <div className="checkout-producto-info">
+        <strong>{item.nombre}</strong>
+
+        {item.variante_nombre && (
+          <span>{item.variante_nombre}</span>
+        )}
+
+        {item.referencia && (
+          <span>Ref. {item.referencia}</span>
+        )}
+
+        <span>
+          Cantidad: {item.cantidad} ×{" "}
+          {formatoPrecio(item.precio)}
+        </span>
+      </div>
+
+      <strong className="checkout-producto-subtotal">
+        {formatoPrecio(
+          Number(item.precio || 0) *
+            Number(item.cantidad || 0)
+        )}
+      </strong>
+    </div>
+  ))}
+</div>
             <div>
               <span>Productos</span>
 
@@ -3604,6 +3652,89 @@ color: var(--texto-principal);
 .total-final-pedido strong {
   color: var(--color-principal);
   font-size: 20px;
+}
+/* PRODUCTOS EN CHECKOUT */
+
+.checkout-productos {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #eeeeee;
+}
+
+.checkout-productos-titulo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.checkout-productos-titulo strong {
+  font-size: 16px;
+}
+
+.checkout-productos-titulo span {
+  color: #777777;
+  font-size: 13px;
+}
+
+.checkout-producto {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f1f1f1;
+}
+
+.checkout-producto:last-child {
+  border-bottom: none;
+}
+
+.checkout-producto img,
+.checkout-producto-sin-foto {
+  width: 58px;
+  height: 58px;
+  border-radius: 7px;
+}
+
+.checkout-producto img {
+  object-fit: cover;
+  background: #f5f5f5;
+}
+
+.checkout-producto-sin-foto {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  color: #999999;
+  font-size: 9px;
+  text-align: center;
+}
+
+.checkout-producto-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.checkout-producto-info strong {
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+}
+
+.checkout-producto-info span {
+  color: #777777;
+  font-size: 11px;
+}
+
+.checkout-producto-subtotal {
+  white-space: nowrap;
+  font-size: 13px;
+  text-align: right;
 }
 .resumen-compra {
   margin-top: 22px;
