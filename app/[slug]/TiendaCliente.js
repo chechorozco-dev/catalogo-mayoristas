@@ -3796,19 +3796,32 @@ color: var(--texto-principal);
 }
 
 .confirmar-pedido-btn {
+  position: sticky;
+  bottom: 12px;
+  z-index: 100;
+
   width: 100%;
-  height: 55px;
-  margin-top: 18px;
+  height: 58px;
+
+  margin-top: 20px;
+
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
+
   background: var(--color-principal);
   color: var(--texto-principal);
-  font-weight: 700;
+
   font-size: 16px;
+  font-weight: 700;
+
+  box-shadow:
+    0 8px 25px rgba(0, 0, 0, 0.20);
+
+  cursor: pointer;
 }
 
 .confirmar-pedido-btn:disabled {
-  opacity: 0.4;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
