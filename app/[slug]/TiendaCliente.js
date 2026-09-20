@@ -263,7 +263,11 @@ tipoTienda = "CLIENTE",
 
 const [formularioCompraAbierto, setFormularioCompraAbierto] =
   useState(false);
+const [enviandoPedido, setEnviandoPedido] =
+  useState(false);
 
+const [pedidoEnviado, setPedidoEnviado] =
+  useState(false);
 const [nombreCliente, setNombreCliente] = useState("");
 const [cedulaCliente, setCedulaCliente] = useState("");
 const [telefonoCliente, setTelefonoCliente] = useState("");
@@ -897,7 +901,163 @@ function fotosProducto(producto) {
   function vaciarCarrito() {
     setCarrito([]);
   }
+async function confirmarPedido() {
+  if (enviandoPedido) return;
 
+  const telefonoNormalizado =
+    normalizarTelefonoColombia(telefonoCliente);
+
+  if (!nombreCliente.trim()) {
+    alert("Por favor ingresa tu nombre.");
+    return;
+  }
+
+  if (!/^573\d{9}$/.test(telefonoNormalizado)) {
+    alert(
+      "Ingresa un número de WhatsApp colombiano válido."
+    );
+    return;
+  }
+
+  if (!direccionCliente.trim()) {
+    alert("Por favor ingresa tu dirección.");
+    return;
+  }
+
+  if (!ciudadSeleccionada?.ciudad_id) {
+    alert("Selecciona tu ciudad.");
+    return;
+  }
+
+  if (!formaPago) {
+    alert("Selecciona una forma de pago.");
+    return;
+  }
+
+  if (!carrito.length) {
+    alert("Tu carrito está vacío.");
+    return;
+  }
+
+  const pedido = {
+    cliente: {
+      nombre: nombreCliente.trim(),
+
+      cedula: cedulaCliente.trim(),
+
+      whatsapp: telefonoNormalizado,
+
+      correo: correoCliente.trim(),
+
+      direccion: direccionCliente.trim(),
+
+      // MUY IMPORTANTE:
+      // este es el ID EXACTO que viene de Supabase/AppSheet
+      ciudad_id: ciudadSeleccionada.ciudad_id,
+
+      ciudad_departamento:
+        ciudadSeleccionada.ciudad_departamento || "",
+
+      tiempo_estimado:
+        ciudadSeleccionada.tiempo_estimado || "",
+    },
+
+    pago: {
+      forma_pago: formaPago,
+    },
+
+    valores: {
+      subtotal_productos: Number(totalCarrito),
+
+      porcentaje_descuento:
+        formaPago === "TRANSFERENCIA" ? 6 : 0,
+
+      descuento: Number(
+        descuentoTransferencia
+      ),
+
+      costo_envio_original:
+        costoEnvioNormal === null
+          ? 0
+          : Number(costoEnvioNormal),
+
+      envio_gratis: Boolean(tieneEnvioGratis),
+
+      costo_envio_final:
+        costoEnvioFinal === null
+          ? 0
+          : Number(costoEnvioFinal),
+
+      total_pedido: Number(totalPedido),
+    },
+
+    productos: carrito.map((item) => ({
+      producto_id:
+        item.id_producto || item.id || null,
+
+      variante_id:
+        item.variante_id || null,
+
+      nombre: item.nombre || "",
+
+      referencia: item.referencia || "",
+
+      variante: item.variante_nombre || "",
+
+      cantidad: Number(item.cantidad || 0),
+
+      precio_unitario: Number(
+        item.precio || 0
+      ),
+
+      subtotal:
+        Number(item.precio || 0) *
+        Number(item.cantidad || 0),
+    })),
+  };
+
+  try {
+    setEnviandoPedido(true);
+
+    const respuesta = await fetch(
+      "/api/confirmar-pedido",
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify(pedido),
+      }
+    );
+
+    const datos = await respuesta.json();
+
+    if (!respuesta.ok || !datos.ok) {
+      throw new Error(
+        datos?.error ||
+          "No se pudo confirmar el pedido."
+      );
+    }
+
+    setPedidoEnviado(true);
+
+    alert("¡Pedido confirmado correctamente!");
+
+  } catch (error) {
+    console.error(
+      "Error confirmando pedido:",
+      error
+    );
+
+    alert(
+      "No pudimos confirmar el pedido. Intenta nuevamente."
+    );
+  } finally {
+    setEnviandoPedido(false);
+  }
+}
   // ========================================
   // WHATSAPP
   // ========================================
@@ -2029,23 +2189,22 @@ function fotosProducto(producto) {
           </div>
 
           <button
-            type="button"
-            className="confirmar-pedido-btn"
-            disabled={
-  !nombreCliente.trim() ||
-  !telefonoCliente.trim() ||
-  !direccionCliente.trim() ||
-  !ciudadSeleccionada ||
-  !formaPago
-}
-            onClick={() => {
-              alert(
-                "Perfecto. El formulario ya está funcionando. En el siguiente paso conectaremos el pedido."
-              );
-            }}
-          >
-            Confirmar pedido
-          </button>
+  type="button"
+  className="confirmar-pedido-btn"
+  disabled={
+    enviandoPedido ||
+    !nombreCliente.trim() ||
+    !telefonoCliente.trim() ||
+    !direccionCliente.trim() ||
+    !ciudadSeleccionada ||
+    !formaPago
+  }
+  onClick={confirmarPedido}
+>
+  {enviandoPedido
+    ? "Enviando pedido..."
+    : "Confirmar pedido"}
+</button>
 
         </div>
       </div>
