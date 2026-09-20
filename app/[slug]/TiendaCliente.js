@@ -3474,7 +3474,7 @@ color: var(--texto-principal);
 }
 
 .compra-contenido {
-  padding: 20px;
+  padding: 20px 20px 8px;
 }
 
 .compra-campo {
@@ -3795,7 +3795,59 @@ color: var(--texto-principal);
   display: block;
 }
 
+/* FILAS DEL RESUMEN: PRODUCTOS, DESCUENTO Y ENVÍO */
+
+.resumen-compra > div:not(.checkout-productos) {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 7px 0;
+}
+
+.resumen-compra > div:not(.checkout-productos) > span {
+  flex: 1;
+}
+
+.resumen-compra > div:not(.checkout-productos) > strong {
+  flex-shrink: 0;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* BOTÓN CONFIRMAR PEDIDO FLOTANTE */
+
 .confirmar-pedido-btn {
+  position: sticky;
+  bottom: 0;
+  z-index: 200;
+
+  width: 100%;
+  height: 58px;
+
+  margin-top: 20px;
+
+  border: none;
+  border-radius: 10px;
+
+  background: var(--color-principal);
+  color: var(--texto-principal);
+
+  font-size: 16px;
+  font-weight: 700;
+
+  box-shadow:
+    0 -8px 22px rgba(255, 255, 255, 0.95),
+    0 8px 25px rgba(0, 0, 0, 0.20);
+
+  cursor: pointer;
+}
+
+.confirmar-pedido-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
   position: sticky;
   bottom: 12px;
   z-index: 100;
