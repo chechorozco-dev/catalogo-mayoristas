@@ -266,7 +266,6 @@ export async function POST(request) {
 
     const tiposPermitidos = [
       "AVISO",
-      "PROMOCION",
       "NOVEDAD",
       "URGENTE",
     ];
@@ -444,6 +443,178 @@ export async function POST(request) {
         ok: false,
         mensaje:
           "No se pudo crear el anuncio.",
+      },
+      {
+        status: 500,
+      }
+    );
+  }
+}
+// ========================================
+// PATCH - ACTIVAR / PAUSAR ANUNCIO
+// ========================================
+
+export async function PATCH(request) {
+  try {
+    const tiendaId =
+      await obtenerTiendaSesion();
+
+    if (!tiendaId) {
+      return Response.json(
+        {
+          ok: false,
+          mensaje: "Sesión no válida.",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
+
+    const datos =
+      await request.json();
+
+    const anuncioId =
+      Number(datos?.id);
+
+    if (
+      !Number.isInteger(anuncioId) ||
+      anuncioId <= 0
+    ) {
+      return Response.json(
+        {
+          ok: false,
+          mensaje:
+            "El anuncio no es válido.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (
+      typeof datos?.activo !== "boolean"
+    ) {
+      return Response.json(
+        {
+          ok: false,
+          mensaje:
+            "El estado del anuncio no es válido.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const {
+      supabaseUrl,
+      supabaseSecretKey,
+    } = configuracionSupabase();
+
+    /*
+      IMPORTANTE:
+      Filtramos simultáneamente por:
+      - id del anuncio
+      - tienda del usuario
+
+      Así un cliente no puede modificar
+      anuncios pertenecientes a otra tienda.
+    */
+
+    const url =
+      `${supabaseUrl}` +
+      `/rest/v1/anuncios_tienda` +
+      `?id=eq.${encodeURIComponent(
+        anuncioId
+      )}` +
+      `&tienda_id=eq.${encodeURIComponent(
+        tiendaId
+      )}`;
+
+    const respuesta =
+      await fetch(url, {
+        method: "PATCH",
+
+        headers: {
+          apikey:
+            supabaseSecretKey,
+
+          "Content-Type":
+            "application/json",
+
+          Prefer:
+            "return=representation",
+        },
+
+        body: JSON.stringify({
+          activo: datos.activo,
+        }),
+
+        cache: "no-store",
+      });
+
+    const texto =
+      await respuesta.text();
+
+    if (!respuesta.ok) {
+      console.error(
+        "ERROR CAMBIANDO ESTADO DEL ANUNCIO:",
+        respuesta.status,
+        texto
+      );
+
+      throw new Error(
+        "No se pudo cambiar el estado del anuncio."
+      );
+    }
+
+    const actualizados =
+      texto ? JSON.parse(texto) : [];
+
+    const anuncio =
+      Array.isArray(actualizados)
+        ? actualizados[0] || null
+        : null;
+
+    /*
+      Si no devolvió ningún registro,
+      significa que ese anuncio no existe
+      o no pertenece a esta tienda.
+    */
+
+    if (!anuncio) {
+      return Response.json(
+        {
+          ok: false,
+          mensaje:
+            "No encontramos ese anuncio.",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
+    return Response.json({
+      ok: true,
+      anuncio,
+      mensaje: datos.activo
+        ? "Anuncio publicado."
+        : "Anuncio pausado.",
+    });
+  } catch (error) {
+    console.error(
+      "ERROR PATCH ANUNCIOS:",
+      error
+    );
+
+    return Response.json(
+      {
+        ok: false,
+        mensaje:
+          "No se pudo cambiar el estado del anuncio.",
       },
       {
         status: 500,
