@@ -226,8 +226,7 @@ export default function TiendaCliente({
     enlaceInstagram ||
     enlaceFacebook ||
     enlaceTiktok;
-    const [ciudadesEnvio, setCiudadesEnvio] = useState([]);
-const [cargandoCiudades, setCargandoCiudades] = useState(true);
+    
 
   const [categoriaActiva, setCategoriaActiva] = useState("Todos");
   const [lineaActiva, setLineaActiva] = useState("Todos");
