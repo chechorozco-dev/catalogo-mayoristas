@@ -37,9 +37,9 @@ async function obtenerSesion() {
     partes;
 
   const firmaEsperada = crypto
-    .createHmac("sha256", secreto)
-    .update(contenidoBase64)
-    .digest("hex");
+  .createHmac("sha256", secreto)
+  .update(contenidoBase64)
+  .digest("base64url");
 
   try {
     const firmaValida =
