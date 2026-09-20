@@ -1042,8 +1042,7 @@ async function confirmarPedido() {
     }
 
     setPedidoEnviado(true);
-
-    alert("¡Pedido confirmado correctamente!");
+setCarrito([]);
 
   } catch (error) {
     console.error(
@@ -1898,6 +1897,46 @@ async function confirmarPedido() {
         </div>
 
         <div className="compra-contenido">
+          {pedidoEnviado ? (
+  <div className="pedido-exitoso">
+    <div className="pedido-exitoso-icono">
+      ✓
+    </div>
+
+    <h2>¡Pedido recibido!</h2>
+
+    <p>
+      Gracias por tu compra. Hemos recibido tu pedido
+      correctamente.
+    </p>
+
+    <p>
+      En breve nos comunicaremos contigo por WhatsApp
+      para continuar con el proceso.
+    </p>
+
+    <button
+      type="button"
+      className="pedido-exitoso-btn"
+      onClick={() => {
+        setFormularioCompraAbierto(false);
+        setPedidoEnviado(false);
+
+        setNombreCliente("");
+        setCedulaCliente("");
+        setTelefonoCliente("");
+        setCorreoCliente("");
+        setDireccionCliente("");
+        setCiudadSeleccionada(null);
+        setBusquedaCiudad("");
+        setFormaPago("");
+      }}
+    >
+      Volver a la tienda
+    </button>
+  </div>
+) : (
+  <>
 
           <label className="compra-campo">
             <span>Nombre completo</span>
@@ -2205,11 +2244,64 @@ async function confirmarPedido() {
     ? "Enviando pedido..."
     : "Confirmar pedido"}
 </button>
-
+</>
+)}
         </div>
       </div>
     </div>
   )}
+  /* PEDIDO CONFIRMADO */
+
+.pedido-exitoso {
+  padding: 35px 10px 25px;
+  text-align: center;
+}
+
+.pedido-exitoso-icono {
+  width: 74px;
+  height: 74px;
+  margin: 0 auto 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #eaf7ed;
+  color: #2f8f46;
+
+  font-size: 38px;
+  font-weight: 700;
+}
+
+.pedido-exitoso h2 {
+  margin: 0 0 14px;
+  font-size: 25px;
+}
+
+.pedido-exitoso p {
+  max-width: 390px;
+  margin: 8px auto;
+  color: #666666;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.pedido-exitoso-btn {
+  width: 100%;
+  height: 55px;
+  margin-top: 28px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: var(--color-principal);
+  color: var(--texto-principal);
+
+  font-size: 16px;
+  font-weight: 700;
+}
       {/* CARRITO */}
 
       {carritoAbierto && (
