@@ -231,6 +231,25 @@ export default function TiendaCliente({
   const [busqueda, setBusqueda] = useState("");
   const [mostrarBusqueda, setMostrarBusqueda] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
+  // ========================================
+// FINALIZAR COMPRA
+// ========================================
+
+const [formularioCompraAbierto, setFormularioCompraAbierto] =
+  useState(false);
+
+const [nombreCliente, setNombreCliente] = useState("");
+const [cedulaCliente, setCedulaCliente] = useState("");
+const [telefonoCliente, setTelefonoCliente] = useState("");
+const [direccionCliente, setDireccionCliente] = useState("");
+
+const [ciudadesEnvio, setCiudadesEnvio] = useState([]);
+const [ciudadSeleccionada, setCiudadSeleccionada] =
+  useState(null);
+
+const [busquedaCiudad, setBusquedaCiudad] = useState("");
+const [cargandoCiudades, setCargandoCiudades] =
+  useState(false);
 
   const [carrito, setCarrito] = useState([]);
   const [carritoCargado, setCarritoCargado] = useState(false);
