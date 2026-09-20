@@ -737,6 +737,9 @@ export default async function TiendaPage({
   return (
     <main>
       <TiendaCliente
+      tipoTienda={
+  tienda.tipo_tienda || "CLIENTE"
+}
         nombreTienda={
           tienda.nombre_tienda
         }
