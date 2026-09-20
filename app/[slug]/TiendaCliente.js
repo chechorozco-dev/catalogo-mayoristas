@@ -1686,7 +1686,7 @@ useEffect(() => {
           </label>
 
           <label className="compra-campo">
-            <span>Cédula</span>
+        
 
             <input
               type="text"
@@ -1702,7 +1702,7 @@ useEffect(() => {
           </label>
 
           <label className="compra-campo">
-            <span>Teléfono</span>
+            <span>WhatsApp</span>
 
             <input
               type="tel"
@@ -1848,12 +1848,11 @@ useEffect(() => {
             type="button"
             className="confirmar-pedido-btn"
             disabled={
-              !nombreCliente.trim() ||
-              !cedulaCliente.trim() ||
-              !telefonoCliente.trim() ||
-              !direccionCliente.trim() ||
-              !ciudadSeleccionada
-            }
+  !nombreCliente.trim() ||
+  !telefonoCliente.trim() ||
+  !direccionCliente.trim() ||
+  !ciudadSeleccionada
+}
             onClick={() => {
               alert(
                 "Perfecto. El formulario ya está funcionando. En el siguiente paso conectaremos el pedido."
