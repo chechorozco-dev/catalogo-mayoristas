@@ -1942,13 +1942,16 @@ setCarrito([]);
             <span>Nombre completo</span>
 
             <input
-              type="text"
-              value={nombreCliente}
-              onChange={(e) =>
-                setNombreCliente(e.target.value)
-              }
-              placeholder="Ej. María Rodríguez"
-            />
+  type="text"
+  name="nombre_cliente"
+  autoComplete="name"
+  enterKeyHint="next"
+  value={nombreCliente}
+  onChange={(e) =>
+    setNombreCliente(e.target.value)
+  }
+  placeholder="Ej. María Rodríguez"
+/>
           </label>
 
           <label className="compra-campo">
@@ -1957,7 +1960,7 @@ setCarrito([]);
   <input
     type="text"
     inputMode="numeric"
-    autoComplete="new-password"
+    autoComplete="off"
     name="documento_identificacion_cliente"
     id="documento_identificacion_cliente"
     value={cedulaCliente}
