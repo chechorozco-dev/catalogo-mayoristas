@@ -269,6 +269,10 @@ const [cedulaCliente, setCedulaCliente] = useState("");
 const [telefonoCliente, setTelefonoCliente] = useState("");
 const [direccionCliente, setDireccionCliente] = useState("");
 
+// FORMA DE PAGO
+// "CONTRA_ENTREGA" o "TRANSFERENCIA"
+const [formaPago, setFormaPago] = useState("");
+
 const [ciudadesEnvio, setCiudadesEnvio] = useState([]);
 const [ciudadSeleccionada, setCiudadSeleccionada] =
   useState(null);
@@ -548,13 +552,52 @@ useEffect(() => {
   );
 
   const totalCarrito = carrito.reduce(
-    (total, item) =>
-      total +
-      Number(item.precio || 0) * Number(item.cantidad || 0),
-    0
-  );
+  (total, item) =>
+    total +
+    Number(item.precio || 0) * Number(item.cantidad || 0),
+  0
+);
 
-  function fotosProducto(producto) {
+// ========================================
+// TOTALES DEL CHECKOUT RA
+// ========================================
+
+// El 6% solamente aplica a los productos
+const descuentoTransferencia =
+  formaPago === "TRANSFERENCIA"
+    ? Math.round(totalCarrito * 0.06)
+    : 0;
+
+// Valor normal del envío según la ciudad
+const costoEnvioNormal =
+  ciudadSeleccionada?.costo_envio !== null &&
+  ciudadSeleccionada?.costo_envio !== undefined
+    ? Number(ciudadSeleccionada.costo_envio)
+    : null;
+
+// Envío gratis:
+// productos SUPERIORES a $400.000
+// y envío normal MENOR a $18.000
+const tieneEnvioGratis =
+  totalCarrito > 400000 &&
+  costoEnvioNormal !== null &&
+  costoEnvioNormal < 18000;
+
+// Valor que realmente pagará por el envío
+const costoEnvioFinal =
+  costoEnvioNormal === null
+    ? null
+    : tieneEnvioGratis
+      ? 0
+      : costoEnvioNormal;
+
+// Total final
+const totalPedido =
+  totalCarrito -
+  descuentoTransferencia +
+  (costoEnvioFinal || 0);
+
+function fotosProducto(producto) {
     if (!producto) return [];
 
     return [producto.foto_url, producto.foto_url_2].filter(Boolean);
@@ -1842,7 +1885,72 @@ useEffect(() => {
             )}
           </div>
 
-          <div className="resumen-compra">
+          {/* FORMA DE PAGO */}
+
+          <div className="forma-pago">
+            <span className="forma-pago-titulo">
+              Forma de pago
+            </span>
+
+            <button
+              type="button"
+              className={`forma-pago-opcion ${
+                formaPago === "CONTRA_ENTREGA"
+                  ? "seleccionada"
+                  : ""
+              }`}
+              onClick={() =>
+                setFormaPago("CONTRA_ENTREGA")
+              }
+            >
+              <span className="forma-pago-radio">
+                {formaPago === "CONTRA_ENTREGA"
+                  ? "●"
+                  : "○"}
+              </span>
+
+              <div>
+                <strong>Pago contra entrega</strong>
+                <small>
+                  Paga cuando recibas tu pedido
+                </small>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              className={`forma-pago-opcion ${
+                formaPago === "TRANSFERENCIA"
+                  ? "seleccionada"
+                  : ""
+              }`}
+              onClick={() =>
+                setFormaPago("TRANSFERENCIA")
+              }
+            >
+              <span className="forma-pago-radio">
+                {formaPago === "TRANSFERENCIA"
+                  ? "●"
+                  : "○"}
+              </span>
+
+              <div>
+                <strong>
+                  Transferencia bancaria
+                </strong>
+
+                <small>
+                  Obtienes 6% de descuento en los productos
+                </small>
+              </div>
+
+              <span className="descuento-badge">
+                -6%
+              </span>
+            </button>
+          </div>
+
+                   <div className="resumen-compra">
             <div>
               <span>Productos</span>
 
@@ -1851,17 +1959,49 @@ useEffect(() => {
               </strong>
             </div>
 
+            {formaPago === "TRANSFERENCIA" && (
+              <div className="resumen-descuento">
+                <span>
+                  Descuento por transferencia (6%)
+                </span>
+
+                <strong>
+                  -{formatoPrecio(
+                    descuentoTransferencia
+                  )}
+                </strong>
+              </div>
+            )}
+
             <div>
               <span>Envío</span>
 
               <strong>
-                {ciudadSeleccionada?.costo_envio !==
-                  null &&
-                ciudadSeleccionada?.costo_envio !==
-                  undefined
-                  ? formatoPrecio(
-                      ciudadSeleccionada.costo_envio
-                    )
+                {costoEnvioFinal === null
+                  ? "Por calcular"
+                  : tieneEnvioGratis
+                    ? "GRATIS"
+                    : formatoPrecio(
+                        costoEnvioFinal
+                      )}
+              </strong>
+            </div>
+
+            {tieneEnvioGratis && (
+              <div className="envio-gratis-mensaje">
+                <span>
+                  🎁 Envío gratis por compra superior a
+                  $400.000
+                </span>
+              </div>
+            )}
+
+            <div className="total-final-pedido">
+              <span>Total a pagar</span>
+
+              <strong>
+                {ciudadSeleccionada
+                  ? formatoPrecio(totalPedido)
                   : "Por calcular"}
               </strong>
             </div>
@@ -1874,7 +2014,8 @@ useEffect(() => {
   !nombreCliente.trim() ||
   !telefonoCliente.trim() ||
   !direccionCliente.trim() ||
-  !ciudadSeleccionada
+  !ciudadSeleccionada ||
+  !formaPago
 }
             onClick={() => {
               alert(
@@ -3108,7 +3249,96 @@ color: var(--texto-principal);
   text-align: right;
   font-size: 13px;
 }
+/* FORMA DE PAGO */
 
+.forma-pago {
+  margin-top: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.forma-pago-titulo {
+  margin-bottom: 2px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.forma-pago-opcion {
+  position: relative;
+  width: 100%;
+  min-height: 68px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #dddddd;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #111111;
+  text-align: left;
+}
+
+.forma-pago-opcion.seleccionada {
+  border: 2px solid var(--color-principal);
+  padding: 11px 13px;
+  background: #fafafa;
+}
+
+.forma-pago-radio {
+  flex: 0 0 auto;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--color-principal);
+}
+
+.forma-pago-opcion > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.forma-pago-opcion strong {
+  font-size: 14px;
+}
+
+.forma-pago-opcion small {
+  color: #777777;
+  font-size: 12px;
+}
+
+.descuento-badge {
+  margin-left: auto;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #eaf8ee;
+  color: #16823b;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.resumen-descuento {
+  color: #16823b;
+}
+
+.envio-gratis-mensaje {
+  color: #16823b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.total-final-pedido {
+  margin-top: 8px;
+  padding-top: 12px !important;
+  border-top: 1px solid #eeeeee;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.total-final-pedido strong {
+  color: var(--color-principal);
+  font-size: 20px;
+}
 .resumen-compra {
   margin-top: 22px;
   padding: 16px 0;
