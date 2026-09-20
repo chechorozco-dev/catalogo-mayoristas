@@ -2177,14 +2177,14 @@ function fotosProducto(producto) {
   .trim()
   .toUpperCase() === "RA" ? (
   <button
-    className="whatsapp-btn"
-    onClick={() => {
-      setCarritoAbierto(false);
-      setFormularioCompraAbierto(true);
-    }}
-  >
-    Confirmar compra
-  </button>
+  className="confirmar-compra-btn"
+  onClick={() => {
+    setCarritoAbierto(false);
+    setFormularioCompraAbierto(true);
+  }}
+>
+  Confirmar compra
+</button>
 ) : (
   <button
     className="whatsapp-btn"
@@ -3536,6 +3536,16 @@ color: var(--texto-principal);
   background: #25d366;
   color: white;
   font-weight: 700;
+}
+.confirmar-compra-btn {
+  width: 100%;
+  height: 55px;
+  border: none;
+  border-radius: 8px;
+  background: var(--color-principal);
+  color: var(--texto-principal);
+  font-weight: 700;
+  font-size: 16px;
 }
 /* WHATSAPP FLOTANTE */
 
