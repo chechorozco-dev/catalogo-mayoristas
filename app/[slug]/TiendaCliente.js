@@ -163,6 +163,7 @@ function obtenerTipoProducto(producto) {
 }
 
 export default function TiendaCliente({
+tipoTienda = "CLIENTE",
   nombreTienda,
   logoUrl,
   whatsapp,
@@ -1774,12 +1775,26 @@ useEffect(() => {
                   </strong>
                 </div>
 
-                <button
-                  className="whatsapp-btn"
-                  onClick={enviarPedidoWhatsapp}
-                >
-                  Enviar pedido por WhatsApp
-                </button>
+                {String(tipoTienda || "")
+  .trim()
+  .toUpperCase() === "RA" ? (
+  <button
+    className="whatsapp-btn"
+    onClick={() => {
+      setCarritoAbierto(false);
+      setFormularioCompraAbierto(true);
+    }}
+  >
+    Confirmar compra
+  </button>
+) : (
+  <button
+    className="whatsapp-btn"
+    onClick={enviarPedidoWhatsapp}
+  >
+    Enviar pedido por WhatsApp
+  </button>
+)}
               </div>
             )}
           </aside>
