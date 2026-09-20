@@ -2456,9 +2456,7 @@ setTiktok(
           📢 Aviso
         </option>
 
-        <option value="PROMOCION">
-          🔥 Promoción
-        </option>
+      
 
         <option value="NOVEDAD">
           ✨ Novedad
@@ -2490,7 +2488,13 @@ setTiktok(
           )
         }
         maxLength={60}
-        placeholder="Ej: CIERRE DE PEDIDOS"
+        placeholder={
+  tipoAnuncio === "NOVEDAD"
+    ? "Ej: NUEVOS PRODUCTOS"
+    : tipoAnuncio === "URGENTE"
+      ? "Ej: INFORMACIÓN IMPORTANTE"
+      : "Ej: CIERRE DE PEDIDOS"
+}
         style={estiloInput}
       />
 
@@ -2515,7 +2519,13 @@ setTiktok(
         }
         maxLength={180}
         rows={3}
-        placeholder="Ej: Recibimos pedidos hasta el viernes a las 4:00 p. m."
+        placeholder={
+  tipoAnuncio === "NOVEDAD"
+    ? "Ej: Ya tenemos nuevas referencias disponibles en nuestro catálogo."
+    : tipoAnuncio === "URGENTE"
+      ? "Ej: Hoy tendremos cambios en nuestro horario de atención."
+      : "Ej: Recibimos pedidos hasta el viernes a las 4:00 p. m."
+}
         style={{
           ...estiloInput,
           minHeight: "90px",
