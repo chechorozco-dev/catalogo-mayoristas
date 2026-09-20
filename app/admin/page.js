@@ -259,6 +259,84 @@ async function cargarAnuncios() {
     setCargandoAnuncios(false);
   }
 }
+/* =========================================
+   CREAR ANUNCIO
+========================================= */
+
+async function crearAnuncio() {
+  if (guardandoAnuncio) return;
+
+  if (!tituloAnuncio.trim()) {
+    setMensaje(
+      "Escribe un título para el anuncio."
+    );
+    return;
+  }
+
+  setGuardandoAnuncio(true);
+  setMensaje("");
+
+  try {
+    const response = await fetch(
+      "/api/anuncios",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tipo: tipoAnuncio,
+          titulo: tituloAnuncio.trim(),
+          mensaje: mensajeAnuncio.trim(),
+          texto_boton:
+            textoBotonAnuncio.trim(),
+          enlace_boton:
+            enlaceBotonAnuncio.trim(),
+          color_fondo:
+            colorFondoAnuncio,
+          color_texto:
+            colorTextoAnuncio,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      setMensaje(
+        data.mensaje ||
+          "No pudimos crear el anuncio."
+      );
+      return;
+    }
+
+    await cargarAnuncios();
+
+    setTituloAnuncio("");
+    setMensajeAnuncio("");
+    setTipoAnuncio("AVISO");
+    setColorFondoAnuncio("#FFF4D6");
+    setColorTextoAnuncio("#111111");
+    setTextoBotonAnuncio("");
+    setEnlaceBotonAnuncio("");
+    setFormularioAnuncioAbierto(false);
+
+    setMensaje(
+      "✅ Anuncio creado correctamente."
+    );
+  } catch (error) {
+    console.error(
+      "Error creando anuncio:",
+      error
+    );
+
+    setMensaje(
+      "No pudimos crear el anuncio."
+    );
+  } finally {
+    setGuardandoAnuncio(false);
+  }
+}
   /* =========================================
      CERRAR SESIÓN
   ========================================= */
@@ -2141,7 +2219,521 @@ setTiktok(
                   </form>
                 </div>
               )}
+{/* =========================================
+    AVISOS Y PROMOCIONES
+========================================= */}
 
+<div
+  style={{
+    marginTop: "18px",
+    padding: "20px",
+    background: "#ffffff",
+    border: "1px solid #e9e9e9",
+    borderRadius: "18px",
+    boxShadow:
+      "0 4px 16px rgba(0,0,0,0.04)",
+  }}
+>
+  <div
+    style={{
+      display: "flex",
+      alignItems: "flex-start",
+      gap: "14px",
+    }}
+  >
+    <div
+      style={{
+        width: "48px",
+        height: "48px",
+        flexShrink: 0,
+        borderRadius: "14px",
+        background: "#fff4d6",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "23px",
+      }}
+    >
+      📢
+    </div>
+
+    <div
+      style={{
+        flex: 1,
+        minWidth: 0,
+      }}
+    >
+      <h2
+        style={{
+          margin: 0,
+          fontSize: "20px",
+          color: "#222",
+        }}
+      >
+        Avisos y promociones
+      </h2>
+
+      <p
+        style={{
+          margin: "6px 0 0",
+          color: "#777",
+          fontSize: "14px",
+          lineHeight: "1.45",
+        }}
+      >
+        Publica novedades, promociones o fechas
+        importantes en tu catálogo.
+      </p>
+    </div>
+  </div>
+
+  {/* ANUNCIOS EXISTENTES */}
+
+  <div
+    style={{
+      marginTop: "17px",
+    }}
+  >
+    {cargandoAnuncios ? (
+      <div
+        style={{
+          padding: "15px",
+          background: "#f7f7f7",
+          borderRadius: "12px",
+          color: "#777",
+          fontSize: "14px",
+        }}
+      >
+        Cargando anuncios...
+      </div>
+    ) : anuncios.length === 0 ? (
+      <div
+        style={{
+          padding: "16px",
+          background: "#f8f8f8",
+          borderRadius: "12px",
+          textAlign: "center",
+          color: "#888",
+          fontSize: "13px",
+          lineHeight: "1.5",
+        }}
+      >
+        Todavía no tienes anuncios publicados.
+      </div>
+    ) : (
+      <div
+        style={{
+          display: "grid",
+          gap: "10px",
+        }}
+      >
+        {anuncios.map((anuncio) => (
+          <div
+            key={anuncio.id}
+            style={{
+              padding: "14px",
+              borderRadius: "13px",
+              background:
+                anuncio.color_fondo ||
+                "#FFF4D6",
+              color:
+                anuncio.color_texto ||
+                "#111111",
+              border:
+                "1px solid rgba(0,0,0,0.07)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "7px",
+                marginBottom: "5px",
+              }}
+            >
+              <span>
+                {anuncio.tipo === "PROMOCION"
+                  ? "🔥"
+                  : anuncio.tipo === "NOVEDAD"
+                    ? "✨"
+                    : anuncio.tipo === "URGENTE"
+                      ? "⚠️"
+                      : "📢"}
+              </span>
+
+              <strong
+                style={{
+                  fontSize: "14px",
+                }}
+              >
+                {anuncio.titulo}
+              </strong>
+            </div>
+
+            {anuncio.mensaje && (
+              <div
+                style={{
+                  fontSize: "13px",
+                  lineHeight: "1.4",
+                  opacity: 0.8,
+                }}
+              >
+                {anuncio.mensaje}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+
+  {/* BOTÓN NUEVO ANUNCIO */}
+
+  {!formularioAnuncioAbierto && (
+    <button
+      type="button"
+      onClick={() =>
+        setFormularioAnuncioAbierto(true)
+      }
+      style={{
+        width: "100%",
+        marginTop: "15px",
+        border: "none",
+        padding: "14px",
+        borderRadius: "11px",
+        background: "#d97883",
+        color: "#ffffff",
+        fontSize: "15px",
+        fontWeight: "700",
+        cursor: "pointer",
+      }}
+    >
+      ＋ Crear nuevo anuncio
+    </button>
+  )}
+
+  {/* FORMULARIO */}
+
+  {formularioAnuncioAbierto && (
+    <div
+      style={{
+        marginTop: "16px",
+        padding: "17px",
+        background: "#f8f8f8",
+        borderRadius: "14px",
+      }}
+    >
+      <div
+        style={{
+          fontWeight: "800",
+          fontSize: "17px",
+          marginBottom: "16px",
+        }}
+      >
+        Nuevo anuncio
+      </div>
+
+      {/* TIPO */}
+
+      <label
+        style={{
+          display: "block",
+          fontWeight: "700",
+          fontSize: "13px",
+        }}
+      >
+        Tipo
+      </label>
+
+      <select
+        value={tipoAnuncio}
+        onChange={(e) =>
+          setTipoAnuncio(e.target.value)
+        }
+        style={estiloInput}
+      >
+        <option value="AVISO">
+          📢 Aviso
+        </option>
+
+        <option value="PROMOCION">
+          🔥 Promoción
+        </option>
+
+        <option value="NOVEDAD">
+          ✨ Novedad
+        </option>
+
+        <option value="URGENTE">
+          ⚠️ Urgente
+        </option>
+      </select>
+
+      {/* TÍTULO */}
+
+      <label
+        style={{
+          display: "block",
+          fontWeight: "700",
+          fontSize: "13px",
+        }}
+      >
+        Título
+      </label>
+
+      <input
+        type="text"
+        value={tituloAnuncio}
+        onChange={(e) =>
+          setTituloAnuncio(
+            e.target.value.slice(0, 60)
+          )
+        }
+        maxLength={60}
+        placeholder="Ej: CIERRE DE PEDIDOS"
+        style={estiloInput}
+      />
+
+      {/* MENSAJE */}
+
+      <label
+        style={{
+          display: "block",
+          fontWeight: "700",
+          fontSize: "13px",
+        }}
+      >
+        Mensaje
+      </label>
+
+      <textarea
+        value={mensajeAnuncio}
+        onChange={(e) =>
+          setMensajeAnuncio(
+            e.target.value.slice(0, 180)
+          )
+        }
+        maxLength={180}
+        rows={3}
+        placeholder="Ej: Recibimos pedidos hasta el viernes a las 4:00 p. m."
+        style={{
+          ...estiloInput,
+          minHeight: "90px",
+          resize: "vertical",
+          fontFamily: "inherit",
+        }}
+      />
+
+      {/* COLORES */}
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "12px",
+          marginBottom: "18px",
+        }}
+      >
+        <div>
+          <div
+            style={{
+              fontWeight: "700",
+              fontSize: "13px",
+              marginBottom: "7px",
+            }}
+          >
+            Fondo
+          </div>
+
+          <input
+            type="color"
+            value={colorFondoAnuncio}
+            onChange={(e) =>
+              setColorFondoAnuncio(
+                e.target.value
+              )
+            }
+            style={{
+              width: "100%",
+              height: "48px",
+              border:
+                "1px solid #ddd",
+              borderRadius: "10px",
+              background: "#fff",
+              padding: "4px",
+            }}
+          />
+        </div>
+
+        <div>
+          <div
+            style={{
+              fontWeight: "700",
+              fontSize: "13px",
+              marginBottom: "7px",
+            }}
+          >
+            Texto
+          </div>
+
+          <input
+            type="color"
+            value={colorTextoAnuncio}
+            onChange={(e) =>
+              setColorTextoAnuncio(
+                e.target.value
+              )
+            }
+            style={{
+              width: "100%",
+              height: "48px",
+              border:
+                "1px solid #ddd",
+              borderRadius: "10px",
+              background: "#fff",
+              padding: "4px",
+            }}
+          />
+        </div>
+      </div>
+
+      {/* VISTA PREVIA */}
+
+      {tituloAnuncio && (
+        <div
+          style={{
+            marginBottom: "18px",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "12px",
+              fontWeight: "700",
+              color: "#777",
+              marginBottom: "7px",
+            }}
+          >
+            Vista previa
+          </div>
+
+          <div
+            style={{
+              padding: "15px",
+              borderRadius: "13px",
+              background:
+                colorFondoAnuncio,
+              color:
+                colorTextoAnuncio,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                gap: "9px",
+                alignItems: "flex-start",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: "20px",
+                }}
+              >
+                {tipoAnuncio === "PROMOCION"
+                  ? "🔥"
+                  : tipoAnuncio === "NOVEDAD"
+                    ? "✨"
+                    : tipoAnuncio === "URGENTE"
+                      ? "⚠️"
+                      : "📢"}
+              </span>
+
+              <div>
+                <div
+                  style={{
+                    fontWeight: "800",
+                    fontSize: "14px",
+                  }}
+                >
+                  {tituloAnuncio}
+                </div>
+
+                {mensajeAnuncio && (
+                  <div
+                    style={{
+                      marginTop: "3px",
+                      fontSize: "13px",
+                      lineHeight: "1.4",
+                      opacity: 0.8,
+                    }}
+                  >
+                    {mensajeAnuncio}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BOTONES */}
+
+      <button
+        type="button"
+        onClick={crearAnuncio}
+        disabled={
+          guardandoAnuncio ||
+          !tituloAnuncio.trim()
+        }
+        style={{
+          width: "100%",
+          border: "none",
+          padding: "14px",
+          borderRadius: "10px",
+          background: "#d97883",
+          color: "#ffffff",
+          fontWeight: "700",
+          fontSize: "15px",
+          cursor:
+            guardandoAnuncio
+              ? "not-allowed"
+              : "pointer",
+          opacity:
+            guardandoAnuncio ||
+            !tituloAnuncio.trim()
+              ? 0.6
+              : 1,
+        }}
+      >
+        {guardandoAnuncio
+          ? "Publicando..."
+          : "📢 Publicar anuncio"}
+      </button>
+
+      <button
+        type="button"
+        onClick={() => {
+          setFormularioAnuncioAbierto(false);
+          setMensaje("");
+        }}
+        disabled={guardandoAnuncio}
+        style={{
+          width: "100%",
+          marginTop: "9px",
+          border: "1px solid #ddd",
+          padding: "13px",
+          borderRadius: "10px",
+          background: "#ffffff",
+          color: "#666",
+          fontWeight: "600",
+          fontSize: "14px",
+          cursor: "pointer",
+        }}
+      >
+        Cancelar
+      </button>
+    </div>
+  )}
+</div>
               {/* ACCESOS PRINCIPALES */}
 
 <div
