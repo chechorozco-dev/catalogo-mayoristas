@@ -337,6 +337,73 @@ async function crearAnuncio() {
     setGuardandoAnuncio(false);
   }
 }
+/* =========================================
+   PAUSAR / PUBLICAR ANUNCIO
+========================================= */
+
+async function cambiarEstadoAnuncio(
+  anuncioId,
+  nuevoEstado
+) {
+  setMensaje("");
+
+  try {
+    const response = await fetch(
+      "/api/anuncios",
+      {
+        method: "PATCH",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+
+        body: JSON.stringify({
+          id: anuncioId,
+          activo: nuevoEstado,
+        }),
+      }
+    );
+
+    const data =
+      await response.json();
+
+    if (!response.ok || !data.ok) {
+      setMensaje(
+        data.mensaje ||
+          "No pudimos actualizar el anuncio."
+      );
+
+      return;
+    }
+
+    setAnuncios((actuales) =>
+      actuales.map((anuncio) =>
+        anuncio.id === anuncioId
+          ? {
+              ...anuncio,
+              activo: nuevoEstado,
+            }
+          : anuncio
+      )
+    );
+
+    setMensaje(
+      nuevoEstado
+        ? "✅ Anuncio publicado correctamente."
+        : "✅ Anuncio pausado correctamente."
+    );
+  } catch (error) {
+    console.error(
+      "Error actualizando anuncio:",
+      error
+    );
+
+    setMensaje(
+      "No pudimos actualizar el anuncio."
+    );
+  }
+}
   /* =========================================
      CERRAR SESIÓN
   ========================================= */
@@ -2381,6 +2448,76 @@ setTiktok(
                 {anuncio.mensaje}
               </div>
             )}
+            {/* ESTADO Y CONTROL DEL ANUNCIO */}
+
+<div
+  style={{
+    marginTop: "12px",
+    paddingTop: "11px",
+    borderTop:
+      "1px solid rgba(0,0,0,0.10)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "10px",
+  }}
+>
+  {/* ESTADO */}
+
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: "6px",
+      fontSize: "12px",
+      fontWeight: "700",
+    }}
+  >
+    <span>
+      {anuncio.activo
+        ? "🟢"
+        : "⚪"}
+    </span>
+
+    <span>
+      {anuncio.activo
+        ? "Publicado"
+        : "Pausado"}
+    </span>
+  </div>
+
+  {/* BOTÓN */}
+
+  <button
+    type="button"
+    onClick={() =>
+      cambiarEstadoAnuncio(
+        anuncio.id,
+        !anuncio.activo
+      )
+    }
+    style={{
+      border:
+        "1px solid rgba(0,0,0,0.15)",
+      background: anuncio.activo
+        ? "rgba(255,255,255,0.65)"
+        : "#222222",
+      color: anuncio.activo
+        ? "#333333"
+        : "#ffffff",
+      padding: "8px 12px",
+      borderRadius: "9px",
+      fontSize: "12px",
+      fontWeight: "700",
+      cursor: "pointer",
+      whiteSpace: "nowrap",
+    }}
+  >
+    {anuncio.activo
+      ? "⏸ Pausar"
+      : "▶️ Publicar"}
+  </button>
+</div>
           </div>
         ))}
       </div>
