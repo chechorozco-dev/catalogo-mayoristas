@@ -729,9 +729,101 @@ export default async function TiendaPage({
         };
       }
     );
+  // =========================================
+  // 10. CARGAR ANUNCIOS DE ESTA TIENDA
+  // =========================================
+
+  let anuncios = [];
+
+  try {
+    const ahora = new Date().toISOString();
+
+    const urlAnuncios =
+      `${supabaseUrl}` +
+      `/rest/v1/anuncios_tienda` +
+      `?select=` +
+      [
+        "id",
+        "tipo",
+        "titulo",
+        "mensaje",
+        "texto_boton",
+        "enlace_boton",
+        "color_fondo",
+        "color_texto",
+        "imagen_url",
+        "fecha_inicio",
+        "fecha_fin",
+        "orden",
+      ].join(",") +
+      `&tienda_id=eq.${encodeURIComponent(
+        tienda.id
+      )}` +
+      `&activo=eq.true` +
+      `&order=orden.asc`;
+
+    const respuestaAnuncios =
+      await fetch(urlAnuncios, {
+        method: "GET",
+
+        headers: {
+          apikey: supabaseSecretKey,
+
+          "Content-Type":
+            "application/json",
+        },
+
+        cache: "no-store",
+      });
+
+    const textoAnuncios =
+      await respuestaAnuncios.text();
+
+    if (!respuestaAnuncios.ok) {
+      console.error(
+        "ERROR SUPABASE ANUNCIOS:",
+        respuestaAnuncios.status,
+        textoAnuncios
+      );
+
+      throw new Error(
+        `Error cargando anuncios: ${respuestaAnuncios.status}`
+      );
+    }
+
+    if (textoAnuncios) {
+      const datosAnuncios =
+        JSON.parse(textoAnuncios);
+
+      if (Array.isArray(datosAnuncios)) {
+        anuncios = datosAnuncios.filter(
+          (anuncio) => {
+            const inicioValido =
+              !anuncio.fecha_inicio ||
+              anuncio.fecha_inicio <= ahora;
+
+            const finValido =
+              !anuncio.fecha_fin ||
+              anuncio.fecha_fin >= ahora;
+
+            return (
+              inicioValido && finValido
+            );
+          }
+        );
+      }
+    }
+  } catch (error) {
+    console.error(
+      "ERROR CARGANDO ANUNCIOS:",
+      error
+    );
+
+    anuncios = [];
+  }
 
   // =========================================
-  // 10. CATÁLOGO
+  // 11. CATÁLOGO
   // =========================================
 
   return (
@@ -779,8 +871,12 @@ export default async function TiendaPage({
           tienda.tiktok || ""
         }
 
-        productos={
+                productos={
           productos
+        }
+
+        anuncios={
+          anuncios
         }
       />
     </main>
