@@ -226,6 +226,9 @@ export default function TiendaCliente({
     enlaceInstagram ||
     enlaceFacebook ||
     enlaceTiktok;
+    const [ciudadesEnvio, setCiudadesEnvio] = useState([]);
+const [cargandoCiudades, setCargandoCiudades] = useState(true);
+
   const [categoriaActiva, setCategoriaActiva] = useState("Todos");
   const [lineaActiva, setLineaActiva] = useState("Todos");
   const [busqueda, setBusqueda] = useState("");
@@ -268,6 +271,51 @@ const colorTextoPrincipal =
   obtenerColorTexto(colorPrincipal);
   const colorTextoFondo =
   obtenerColorTexto(colorFondo);
+  // ========================================
+// CARGAR CIUDADES DE ENVÍO
+// ========================================
+
+useEffect(() => {
+  async function cargarCiudadesEnvio() {
+    try {
+      setCargandoCiudades(true);
+
+      const respuesta = await fetch(
+        "/api/ciudades-envio",
+        {
+          cache: "no-store",
+        }
+      );
+
+      const datos = await respuesta.json();
+
+      if (!respuesta.ok) {
+        throw new Error(
+          datos?.error ||
+            "No se pudieron cargar las ciudades."
+        );
+      }
+
+      setCiudadesEnvio(
+        Array.isArray(datos?.ciudades)
+          ? datos.ciudades
+          : []
+      );
+    } catch (error) {
+      console.error(
+        "Error cargando ciudades:",
+        error
+      );
+
+      setCiudadesEnvio([]);
+    } finally {
+      setCargandoCiudades(false);
+    }
+  }
+
+  cargarCiudadesEnvio();
+}, []);
+
   // ========================================
   // CARGAR CARRITO
   // ========================================
