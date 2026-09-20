@@ -1752,22 +1752,23 @@ function fotosProducto(producto) {
           </label>
 
           <label className="compra-campo">
-        
+  <span>Cédula (opcional)</span>
 
-           <input
-  type="text"
-  inputMode="numeric"
-  autoComplete="off"
-  name="cedula"
-  value={cedulaCliente}
-  onChange={(e) =>
-    setCedulaCliente(
-      e.target.value.replace(/\D/g, "")
-    )
-  }
-  placeholder="Número de cédula"
-/>
-          </label>
+  <input
+    type="text"
+    inputMode="numeric"
+    autoComplete="new-password"
+    name="documento_identificacion_cliente"
+    id="documento_identificacion_cliente"
+    value={cedulaCliente}
+    onChange={(e) =>
+      setCedulaCliente(
+        e.target.value.replace(/\D/g, "")
+      )
+    }
+    placeholder="Número de cédula"
+  />
+</label>
 
           <label className="compra-campo">
             <span>WhatsApp</span>
