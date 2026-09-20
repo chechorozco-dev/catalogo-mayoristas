@@ -451,7 +451,7 @@ export async function POST(request) {
   }
 }
 // ========================================
-// PATCH - ACTIVAR / PAUSAR ANUNCIO
+// PATCH - PUBLICAR / PAUSAR ANUNCIO
 // ========================================
 
 export async function PATCH(request) {
@@ -493,98 +493,69 @@ export async function PATCH(request) {
       );
     }
 
-    if (
-      typeof datos?.activo !== "boolean"
-    ) {
-      return Response.json(
-        {
-          ok: false,
-          mensaje:
-            "El estado del anuncio no es válido.",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
+    const activo =
+      datos?.activo === true;
 
     const {
       supabaseUrl,
       supabaseSecretKey,
     } = configuracionSupabase();
 
-    /*
-      IMPORTANTE:
-      Filtramos simultáneamente por:
-      - id del anuncio
-      - tienda del usuario
-
-      Así un cliente no puede modificar
-      anuncios pertenecientes a otra tienda.
-    */
-
-    const url =
-      `${supabaseUrl}` +
-      `/rest/v1/anuncios_tienda` +
-      `?id=eq.${encodeURIComponent(
-        anuncioId
-      )}` +
-      `&tienda_id=eq.${encodeURIComponent(
-        tiendaId
-      )}`;
-
     const respuesta =
-      await fetch(url, {
-        method: "PATCH",
+      await fetch(
+        `${supabaseUrl}/rest/v1/anuncios_tienda` +
+          `?id=eq.${encodeURIComponent(
+            anuncioId
+          )}` +
+          `&tienda_id=eq.${encodeURIComponent(
+            tiendaId
+          )}`,
+        {
+          method: "PATCH",
 
-        headers: {
-          apikey:
-            supabaseSecretKey,
+          headers: {
+            apikey:
+              supabaseSecretKey,
 
-          "Content-Type":
-            "application/json",
+            "Content-Type":
+              "application/json",
 
-          Prefer:
-            "return=representation",
-        },
+            Prefer:
+              "return=representation",
+          },
 
-        body: JSON.stringify({
-          activo: datos.activo,
-        }),
+          body: JSON.stringify({
+            activo,
+          }),
 
-        cache: "no-store",
-      });
+          cache: "no-store",
+        }
+      );
 
     const texto =
       await respuesta.text();
 
     if (!respuesta.ok) {
       console.error(
-        "ERROR CAMBIANDO ESTADO DEL ANUNCIO:",
+        "ERROR ACTUALIZANDO ANUNCIO:",
         respuesta.status,
         texto
       );
 
       throw new Error(
-        "No se pudo cambiar el estado del anuncio."
+        "No se pudo actualizar el anuncio."
       );
     }
 
     const actualizados =
-      texto ? JSON.parse(texto) : [];
+      texto
+        ? JSON.parse(texto)
+        : [];
 
-    const anuncio =
-      Array.isArray(actualizados)
-        ? actualizados[0] || null
-        : null;
-
-    /*
-      Si no devolvió ningún registro,
-      significa que ese anuncio no existe
-      o no pertenece a esta tienda.
-    */
-
-    if (!anuncio) {
+    if (
+      !Array.isArray(actualizados) ||
+      actualizados.length === 0
+    ) {
       return Response.json(
         {
           ok: false,
@@ -599,10 +570,7 @@ export async function PATCH(request) {
 
     return Response.json({
       ok: true,
-      anuncio,
-      mensaje: datos.activo
-        ? "Anuncio publicado."
-        : "Anuncio pausado.",
+      anuncio: actualizados[0],
     });
   } catch (error) {
     console.error(
@@ -614,7 +582,7 @@ export async function PATCH(request) {
       {
         ok: false,
         mensaje:
-          "No se pudo cambiar el estado del anuncio.",
+          "No se pudo actualizar el anuncio.",
       },
       {
         status: 500,
