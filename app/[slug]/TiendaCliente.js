@@ -2251,7 +2251,6 @@ setCarrito([]);
     </div>
   )}
   
-}
       {/* CARRITO */}
 
       {carritoAbierto && (
