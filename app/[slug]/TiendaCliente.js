@@ -267,6 +267,7 @@ const [formularioCompraAbierto, setFormularioCompraAbierto] =
 const [nombreCliente, setNombreCliente] = useState("");
 const [cedulaCliente, setCedulaCliente] = useState("");
 const [telefonoCliente, setTelefonoCliente] = useState("");
+const [correoCliente, setCorreoCliente] = useState("");
 const [direccionCliente, setDireccionCliente] = useState("");
 
 // FORMA DE PAGO
@@ -1787,6 +1788,21 @@ function fotosProducto(producto) {
   placeholder="Ej. 3101234567"
 />
           </label>
+          <label className="compra-campo">
+  <span>Correo electrónico (opcional)</span>
+
+  <input
+    type="email"
+    inputMode="email"
+    autoComplete="email"
+    name="email"
+    value={correoCliente}
+    onChange={(e) =>
+      setCorreoCliente(e.target.value)
+    }
+    placeholder="Ej. cliente@gmail.com"
+  />
+</label>
 
           <label className="compra-campo">
             <span>Dirección</span>
