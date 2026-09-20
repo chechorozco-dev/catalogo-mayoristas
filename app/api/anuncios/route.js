@@ -711,3 +711,137 @@ if (Object.keys(cambios).length === 0) {
     );
   }
 }
+// ========================================
+// DELETE - ELIMINAR ANUNCIO
+// ========================================
+
+export async function DELETE(request) {
+  try {
+    const tiendaId =
+      await obtenerTiendaSesion();
+
+    if (!tiendaId) {
+      return Response.json(
+        {
+          ok: false,
+          mensaje: "Sesión no válida.",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
+
+    const datos =
+      await request.json();
+
+    const anuncioId =
+      Number(datos?.id);
+
+    if (
+      !Number.isInteger(anuncioId) ||
+      anuncioId <= 0
+    ) {
+      return Response.json(
+        {
+          ok: false,
+          mensaje:
+            "El anuncio no es válido.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    const {
+      supabaseUrl,
+      supabaseSecretKey,
+    } = configuracionSupabase();
+
+    const respuesta =
+      await fetch(
+        `${supabaseUrl}/rest/v1/anuncios_tienda` +
+          `?id=eq.${encodeURIComponent(
+            anuncioId
+          )}` +
+          `&tienda_id=eq.${encodeURIComponent(
+            tiendaId
+          )}`,
+        {
+          method: "DELETE",
+
+          headers: {
+            apikey:
+              supabaseSecretKey,
+
+            "Content-Type":
+              "application/json",
+
+            Prefer:
+              "return=representation",
+          },
+
+          cache: "no-store",
+        }
+      );
+
+    const texto =
+      await respuesta.text();
+
+    if (!respuesta.ok) {
+      console.error(
+        "ERROR ELIMINANDO ANUNCIO:",
+        respuesta.status,
+        texto
+      );
+
+      throw new Error(
+        "No se pudo eliminar el anuncio."
+      );
+    }
+
+    const eliminados =
+      texto
+        ? JSON.parse(texto)
+        : [];
+
+    if (
+      !Array.isArray(eliminados) ||
+      eliminados.length === 0
+    ) {
+      return Response.json(
+        {
+          ok: false,
+          mensaje:
+            "No encontramos ese anuncio.",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
+    return Response.json({
+      ok: true,
+      mensaje:
+        "Anuncio eliminado correctamente.",
+    });
+  } catch (error) {
+    console.error(
+      "ERROR DELETE ANUNCIOS:",
+      error
+    );
+
+    return Response.json(
+      {
+        ok: false,
+        mensaje:
+          "No se pudo eliminar el anuncio.",
+      },
+      {
+        status: 500,
+      }
+    );
+  }
+}
