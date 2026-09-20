@@ -1636,7 +1636,237 @@ useEffect(() => {
           </div>
         </div>
       )}
+{/* FORMULARIO FINALIZAR COMPRA - SOLO TIENDA RA */}
 
+{String(tipoTienda || "")
+  .trim()
+  .toUpperCase() === "RA" &&
+  formularioCompraAbierto && (
+    <div
+      className="overlay compra-overlay"
+      onClick={() =>
+        setFormularioCompraAbierto(false)
+      }
+    >
+      <div
+        className="compra-panel"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="compra-cabecera">
+          <div>
+            <strong>Finalizar compra</strong>
+            <span>
+              Completa los datos para tu pedido
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() =>
+              setFormularioCompraAbierto(false)
+            }
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="compra-contenido">
+
+          <label className="compra-campo">
+            <span>Nombre completo</span>
+
+            <input
+              type="text"
+              value={nombreCliente}
+              onChange={(e) =>
+                setNombreCliente(e.target.value)
+              }
+              placeholder="Ej. María Rodríguez"
+            />
+          </label>
+
+          <label className="compra-campo">
+            <span>Cédula</span>
+
+            <input
+              type="text"
+              inputMode="numeric"
+              value={cedulaCliente}
+              onChange={(e) =>
+                setCedulaCliente(
+                  e.target.value.replace(/\D/g, "")
+                )
+              }
+              placeholder="Número de cédula"
+            />
+          </label>
+
+          <label className="compra-campo">
+            <span>Teléfono</span>
+
+            <input
+              type="tel"
+              inputMode="numeric"
+              value={telefonoCliente}
+              onChange={(e) =>
+                setTelefonoCliente(
+                  e.target.value.replace(/\D/g, "")
+                )
+              }
+              placeholder="Ej. 3101234567"
+            />
+          </label>
+
+          <label className="compra-campo">
+            <span>Dirección</span>
+
+            <input
+              type="text"
+              value={direccionCliente}
+              onChange={(e) =>
+                setDireccionCliente(e.target.value)
+              }
+              placeholder="Ej. Calle 15 # 20-30"
+            />
+          </label>
+
+          <div className="compra-campo">
+            <span>Ciudad y departamento</span>
+
+            <input
+              type="text"
+              value={busquedaCiudad}
+              onChange={(e) => {
+                setBusquedaCiudad(e.target.value);
+                setCiudadSeleccionada(null);
+              }}
+              placeholder="Buscar ciudad o departamento..."
+              autoComplete="off"
+            />
+
+            {busquedaCiudad.trim() &&
+              !ciudadSeleccionada && (
+                <div className="ciudades-resultados">
+                  {cargandoCiudades ? (
+                    <div className="ciudad-mensaje">
+                      Cargando ciudades...
+                    </div>
+                  ) : (
+                    ciudadesEnvio
+                      .filter((ciudad) =>
+                        limpiarTexto(
+                          ciudad.ciudad_departamento
+                        ).includes(
+                          limpiarTexto(busquedaCiudad)
+                        )
+                      )
+                      .slice(0, 20)
+                      .map((ciudad) => (
+                        <button
+                          type="button"
+                          className="ciudad-opcion"
+                          key={ciudad.ciudad_id}
+                          onClick={() => {
+                            setCiudadSeleccionada(
+                              ciudad
+                            );
+
+                            setBusquedaCiudad(
+                              ciudad.ciudad_departamento
+                            );
+                          }}
+                        >
+                          {ciudad.ciudad_departamento}
+                        </button>
+                      ))
+                  )}
+                </div>
+              )}
+
+            {ciudadSeleccionada && (
+              <div className="ciudad-seleccionada">
+
+                {ciudadSeleccionada.tiempo_estimado && (
+                  <div>
+                    <span>
+                      Tiempo estimado de entrega
+                    </span>
+
+                    <strong>
+                      {
+                        ciudadSeleccionada.tiempo_estimado
+                      }
+                    </strong>
+                  </div>
+                )}
+
+                <div>
+                  <span>Valor del envío</span>
+
+                  <strong>
+                    {ciudadSeleccionada.costo_envio !==
+                      null &&
+                    ciudadSeleccionada.costo_envio !==
+                      undefined
+                      ? formatoPrecio(
+                          ciudadSeleccionada.costo_envio
+                        )
+                      : "Por calcular"}
+                  </strong>
+                </div>
+
+              </div>
+            )}
+          </div>
+
+          <div className="resumen-compra">
+            <div>
+              <span>Productos</span>
+
+              <strong>
+                {formatoPrecio(totalCarrito)}
+              </strong>
+            </div>
+
+            <div>
+              <span>Envío</span>
+
+              <strong>
+                {ciudadSeleccionada?.costo_envio !==
+                  null &&
+                ciudadSeleccionada?.costo_envio !==
+                  undefined
+                  ? formatoPrecio(
+                      ciudadSeleccionada.costo_envio
+                    )
+                  : "Por calcular"}
+              </strong>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="confirmar-pedido-btn"
+            disabled={
+              !nombreCliente.trim() ||
+              !cedulaCliente.trim() ||
+              !telefonoCliente.trim() ||
+              !direccionCliente.trim() ||
+              !ciudadSeleccionada
+            }
+            onClick={() => {
+              alert(
+                "Perfecto. El formulario ya está funcionando. En el siguiente paso conectaremos el pedido."
+              );
+            }}
+          >
+            Confirmar pedido
+          </button>
+
+        </div>
+      </div>
+    </div>
+  )}
       {/* CARRITO */}
 
       {carritoAbierto && (
@@ -2715,7 +2945,190 @@ color: var(--texto-principal);
         .recomendado-info strong {
           font-size: 14px;
         }
+/* FINALIZAR COMPRA */
 
+.compra-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+}
+
+.compra-panel {
+  width: min(100%, 520px);
+  max-height: 94vh;
+  overflow-y: auto;
+  background: #ffffff;
+  color: #111111;
+  border-radius: 16px;
+}
+
+.compra-cabecera {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  background: #ffffff;
+  border-bottom: 1px solid #eeeeee;
+}
+
+.compra-cabecera > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.compra-cabecera strong {
+  font-size: 21px;
+}
+
+.compra-cabecera span {
+  color: #777777;
+  font-size: 13px;
+}
+
+.compra-cabecera button {
+  border: none;
+  background: transparent;
+  font-size: 31px;
+}
+
+.compra-contenido {
+  padding: 20px;
+}
+
+.compra-campo {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 17px;
+}
+
+.compra-campo > span {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.compra-campo input {
+  width: 100%;
+  height: 50px;
+  padding: 0 14px;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #111111;
+  outline: none;
+  font-size: 16px;
+}
+
+.compra-campo input:focus {
+  border-color: var(--color-principal);
+}
+
+.ciudades-resultados {
+  position: absolute;
+  z-index: 50;
+  top: 78px;
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  background: #ffffff;
+  border: 1px solid #dddddd;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px
+    rgba(0, 0, 0, 0.15);
+}
+
+.ciudad-opcion {
+  width: 100%;
+  padding: 13px 14px;
+  border: none;
+  border-bottom: 1px solid #eeeeee;
+  background: #ffffff;
+  color: #111111;
+  text-align: left;
+}
+
+.ciudad-opcion:hover {
+  background: #f6f6f6;
+}
+
+.ciudad-mensaje {
+  padding: 15px;
+  color: #777777;
+}
+
+.ciudad-seleccionada {
+  margin-top: 5px;
+  padding: 14px;
+  border-radius: 8px;
+  background: #f7f7f7;
+}
+
+.ciudad-seleccionada > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 5px 0;
+}
+
+.ciudad-seleccionada span {
+  color: #666666;
+  font-size: 13px;
+}
+
+.ciudad-seleccionada strong {
+  text-align: right;
+  font-size: 13px;
+}
+
+.resumen-compra {
+  margin-top: 22px;
+  padding: 16px 0;
+  border-top: 1px solid #eeeeee;
+  border-bottom: 1px solid #eeeeee;
+}
+
+.resumen-compra > div {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+}
+
+.confirmar-pedido-btn {
+  width: 100%;
+  height: 55px;
+  margin-top: 18px;
+  border: none;
+  border-radius: 8px;
+  background: var(--color-principal);
+  color: var(--texto-principal);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.confirmar-pedido-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+@media (max-width: 650px) {
+  .compra-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .compra-panel {
+    width: 100%;
+    max-height: 94vh;
+    border-radius: 16px 16px 0 0;
+  }
+}
         /* CARRITO */
 
         .carrito-overlay {
