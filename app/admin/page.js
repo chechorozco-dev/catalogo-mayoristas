@@ -74,6 +74,31 @@ export default function AdminPage() {
   const [instagram, setInstagram] = useState("");
 const [facebook, setFacebook] = useState("");
 const [tiktok, setTiktok] = useState("");
+const [anuncios, setAnuncios] = useState([]);
+const [cargandoAnuncios, setCargandoAnuncios] =
+  useState(false);
+
+const [formularioAnuncioAbierto, setFormularioAnuncioAbierto] =
+  useState(false);
+
+const [tituloAnuncio, setTituloAnuncio] = useState("");
+const [mensajeAnuncio, setMensajeAnuncio] = useState("");
+const [tipoAnuncio, setTipoAnuncio] = useState("AVISO");
+
+const [colorFondoAnuncio, setColorFondoAnuncio] =
+  useState("#FFF4D6");
+
+const [colorTextoAnuncio, setColorTextoAnuncio] =
+  useState("#111111");
+
+const [textoBotonAnuncio, setTextoBotonAnuncio] =
+  useState("");
+
+const [enlaceBotonAnuncio, setEnlaceBotonAnuncio] =
+  useState("");
+
+const [guardandoAnuncio, setGuardandoAnuncio] =
+  useState(false);
 
 const [colorPrincipal, setColorPrincipal] = useState("#000000");
 const [colorFondo, setColorFondo] = useState("#FFFFFF");
@@ -176,8 +201,10 @@ setColorFondo(
       setMensajePortada(
   tiendaData.tienda.mensaje_portada || ""
 );
-    
-      setCargando(false);
+
+await cargarAnuncios();
+
+setCargando(false);
     } catch (error) {
       console.error(
         "Error cargando administrador:",
@@ -191,7 +218,47 @@ setColorFondo(
       setCargando(false);
     }
   }
+/* =========================================
+   CARGAR ANUNCIOS
+========================================= */
 
+async function cargarAnuncios() {
+  setCargandoAnuncios(true);
+
+  try {
+    const response = await fetch(
+      "/api/anuncios",
+      {
+        method: "GET",
+        cache: "no-store",
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      console.error(
+        "No se pudieron cargar los anuncios:",
+        data
+      );
+
+      return;
+    }
+
+    setAnuncios(
+      Array.isArray(data.anuncios)
+        ? data.anuncios
+        : []
+    );
+  } catch (error) {
+    console.error(
+      "Error cargando anuncios:",
+      error
+    );
+  } finally {
+    setCargandoAnuncios(false);
+  }
+}
   /* =========================================
      CERRAR SESIÓN
   ========================================= */
