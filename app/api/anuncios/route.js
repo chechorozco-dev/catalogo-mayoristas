@@ -493,8 +493,131 @@ export async function PATCH(request) {
       );
     }
 
-    const activo =
-      datos?.activo === true;
+    const cambios = {};
+
+// ACTIVO / PAUSADO
+if (typeof datos?.activo === "boolean") {
+  cambios.activo = datos.activo;
+}
+
+// TIPO
+if (datos?.tipo !== undefined) {
+  const tiposPermitidos = [
+    "AVISO",
+    "NOVEDAD",
+    "URGENTE",
+  ];
+
+  const tipo = String(datos.tipo)
+    .trim()
+    .toUpperCase();
+
+  if (!tiposPermitidos.includes(tipo)) {
+    return Response.json(
+      {
+        ok: false,
+        mensaje:
+          "El tipo de anuncio no es válido.",
+      },
+      {
+        status: 400,
+      }
+    );
+  }
+
+  cambios.tipo = tipo;
+}
+
+// TÍTULO
+if (datos?.titulo !== undefined) {
+  const titulo = String(datos.titulo)
+    .trim()
+    .slice(0, 100);
+
+  if (!titulo) {
+    return Response.json(
+      {
+        ok: false,
+        mensaje:
+          "Escribe un título para el anuncio.",
+      },
+      {
+        status: 400,
+      }
+    );
+  }
+
+  cambios.titulo = titulo;
+}
+
+// MENSAJE
+if (datos?.mensaje !== undefined) {
+  cambios.mensaje =
+    String(datos.mensaje)
+      .trim()
+      .slice(0, 300) || null;
+}
+
+// COLORES
+const colorHex =
+  /^#[0-9A-Fa-f]{6}$/;
+
+if (datos?.color_fondo !== undefined) {
+  if (
+    !colorHex.test(
+      String(datos.color_fondo)
+    )
+  ) {
+    return Response.json(
+      {
+        ok: false,
+        mensaje:
+          "El color de fondo no es válido.",
+      },
+      {
+        status: 400,
+      }
+    );
+  }
+
+  cambios.color_fondo =
+    datos.color_fondo;
+}
+
+if (datos?.color_texto !== undefined) {
+  if (
+    !colorHex.test(
+      String(datos.color_texto)
+    )
+  ) {
+    return Response.json(
+      {
+        ok: false,
+        mensaje:
+          "El color del texto no es válido.",
+      },
+      {
+        status: 400,
+      }
+    );
+  }
+
+  cambios.color_texto =
+    datos.color_texto;
+}
+
+if (Object.keys(cambios).length === 0) {
+  return Response.json(
+    {
+      ok: false,
+      mensaje:
+        "No hay cambios para guardar.",
+    },
+    {
+      status: 400,
+    }
+  );
+}
 
     const {
       supabaseUrl,
@@ -524,9 +647,7 @@ export async function PATCH(request) {
               "return=representation",
           },
 
-          body: JSON.stringify({
-            activo,
-          }),
+          body: JSON.stringify(cambios),
 
           cache: "no-store",
         }
