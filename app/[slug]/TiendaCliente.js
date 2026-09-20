@@ -44,6 +44,29 @@ function formatoPrecio(valor) {
 function limpiarWhatsapp(numero = "") {
   return String(numero).replace(/\D/g, "");
 }
+function normalizarTelefonoColombia(numero = "") {
+  let limpio = String(numero).replace(/\D/g, "");
+
+  // Si viene como 0057...
+  if (limpio.startsWith("0057")) {
+    limpio = limpio.substring(2);
+  }
+
+  // Si ingresaron solamente los 10 dígitos colombianos
+  if (limpio.length === 10 && limpio.startsWith("3")) {
+    return `57${limpio}`;
+  }
+
+  // Si ya viene correctamente con 57
+  if (
+    limpio.length === 12 &&
+    limpio.startsWith("573")
+  ) {
+    return limpio;
+  }
+
+  return limpio;
+}
 function obtenerColorTexto(hex = "#FFFFFF") {
   let color = String(hex || "#FFFFFF")
     .trim()
