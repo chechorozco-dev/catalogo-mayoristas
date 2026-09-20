@@ -99,6 +99,11 @@ const [enlaceBotonAnuncio, setEnlaceBotonAnuncio] =
 
 const [guardandoAnuncio, setGuardandoAnuncio] =
   useState(false);
+  const [anuncioEditando, setAnuncioEditando] =
+  useState(null);
+
+const [guardandoEdicionAnuncio, setGuardandoEdicionAnuncio] =
+  useState(false);
 
 const [colorPrincipal, setColorPrincipal] = useState("#000000");
 const [colorFondo, setColorFondo] = useState("#FFFFFF");
@@ -402,6 +407,113 @@ async function cambiarEstadoAnuncio(
     setMensaje(
       "No pudimos actualizar el anuncio."
     );
+  }
+}
+/* =========================================
+   EDITAR ANUNCIO
+========================================= */
+
+function empezarEditarAnuncio(anuncio) {
+  setAnuncioEditando({
+    id: anuncio.id,
+    tipo: anuncio.tipo || "AVISO",
+    titulo: anuncio.titulo || "",
+    mensaje: anuncio.mensaje || "",
+    color_fondo:
+      anuncio.color_fondo || "#FFF4D6",
+    color_texto:
+      anuncio.color_texto || "#111111",
+  });
+
+  setMensaje("");
+}
+
+function cancelarEditarAnuncio() {
+  setAnuncioEditando(null);
+  setMensaje("");
+}
+
+async function guardarEdicionAnuncio() {
+  if (
+    !anuncioEditando ||
+    guardandoEdicionAnuncio
+  ) {
+    return;
+  }
+
+  if (!anuncioEditando.titulo.trim()) {
+    setMensaje(
+      "Escribe un título para el anuncio."
+    );
+    return;
+  }
+
+  setGuardandoEdicionAnuncio(true);
+  setMensaje("");
+
+  try {
+    const response = await fetch(
+      "/api/anuncios",
+      {
+        method: "PATCH",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+
+        body: JSON.stringify({
+          id: anuncioEditando.id,
+          tipo: anuncioEditando.tipo,
+          titulo:
+            anuncioEditando.titulo.trim(),
+          mensaje:
+            anuncioEditando.mensaje.trim(),
+          color_fondo:
+            anuncioEditando.color_fondo,
+          color_texto:
+            anuncioEditando.color_texto,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      setMensaje(
+        data.mensaje ||
+          "No pudimos guardar los cambios."
+      );
+      return;
+    }
+
+    setAnuncios((actuales) =>
+      actuales.map((anuncio) =>
+        anuncio.id === anuncioEditando.id
+          ? {
+              ...anuncio,
+              ...data.anuncio,
+            }
+          : anuncio
+      )
+    );
+
+    setAnuncioEditando(null);
+
+    setMensaje(
+      "✅ Anuncio actualizado correctamente."
+    );
+  } catch (error) {
+    console.error(
+      "Error editando anuncio:",
+      error
+    );
+
+    setMensaje(
+      "No pudimos guardar los cambios."
+    );
+  } finally {
+    setGuardandoEdicionAnuncio(false);
   }
 }
   /* =========================================
@@ -2513,11 +2625,247 @@ setTiktok(
       whiteSpace: "nowrap",
     }}
   >
+  <button
+  type="button"
+  onClick={() =>
+    empezarEditarAnuncio(anuncio)
+  }
+  style={{
+    border:
+      "1px solid rgba(0,0,0,0.15)",
+    background:
+      "rgba(255,255,255,0.65)",
+    color: "#333333",
+    padding: "8px 12px",
+    borderRadius: "9px",
+    fontSize: "12px",
+    fontWeight: "700",
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+  }}
+>
+  ✏️ Editar
+</button>
     {anuncio.activo
       ? "⏸ Pausar"
       : "▶️ Publicar"}
   </button>
 </div>
+{anuncioEditando?.id === anuncio.id && (
+  <div
+    style={{
+      marginTop: "14px",
+      padding: "14px",
+      background: "#ffffff",
+      color: "#222222",
+      borderRadius: "12px",
+      border:
+        "1px solid rgba(0,0,0,0.10)",
+    }}
+  >
+    <div
+      style={{
+        fontWeight: "800",
+        marginBottom: "12px",
+      }}
+    >
+      ✏️ Editar anuncio
+    </div>
+
+    <label
+      style={{
+        fontSize: "12px",
+        fontWeight: "700",
+      }}
+    >
+      Tipo
+    </label>
+
+    <select
+      value={anuncioEditando.tipo}
+      onChange={(e) =>
+        setAnuncioEditando({
+          ...anuncioEditando,
+          tipo: e.target.value,
+        })
+      }
+      style={estiloInput}
+    >
+      <option value="AVISO">
+        📢 Aviso
+      </option>
+
+      <option value="NOVEDAD">
+        ✨ Novedad
+      </option>
+
+      <option value="URGENTE">
+        ⚠️ Urgente
+      </option>
+    </select>
+
+    <label
+      style={{
+        fontSize: "12px",
+        fontWeight: "700",
+      }}
+    >
+      Título
+    </label>
+
+    <input
+      type="text"
+      value={anuncioEditando.titulo}
+      maxLength={60}
+      onChange={(e) =>
+        setAnuncioEditando({
+          ...anuncioEditando,
+          titulo: e.target.value,
+        })
+      }
+      style={estiloInput}
+    />
+
+    <label
+      style={{
+        fontSize: "12px",
+        fontWeight: "700",
+      }}
+    >
+      Mensaje
+    </label>
+
+    <textarea
+      value={anuncioEditando.mensaje}
+      maxLength={180}
+      rows={3}
+      onChange={(e) =>
+        setAnuncioEditando({
+          ...anuncioEditando,
+          mensaje: e.target.value,
+        })
+      }
+      style={{
+        ...estiloInput,
+        minHeight: "90px",
+        resize: "vertical",
+        fontFamily: "inherit",
+      }}
+    />
+
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: "12px",
+        marginBottom: "16px",
+      }}
+    >
+      <div>
+        <div
+          style={{
+            fontSize: "12px",
+            fontWeight: "700",
+            marginBottom: "6px",
+          }}
+        >
+          Fondo
+        </div>
+
+        <input
+          type="color"
+          value={
+            anuncioEditando.color_fondo
+          }
+          onChange={(e) =>
+            setAnuncioEditando({
+              ...anuncioEditando,
+              color_fondo:
+                e.target.value,
+            })
+          }
+          style={{
+            width: "100%",
+            height: "45px",
+          }}
+        />
+      </div>
+
+      <div>
+        <div
+          style={{
+            fontSize: "12px",
+            fontWeight: "700",
+            marginBottom: "6px",
+          }}
+        >
+          Texto
+        </div>
+
+        <input
+          type="color"
+          value={
+            anuncioEditando.color_texto
+          }
+          onChange={(e) =>
+            setAnuncioEditando({
+              ...anuncioEditando,
+              color_texto:
+                e.target.value,
+            })
+          }
+          style={{
+            width: "100%",
+            height: "45px",
+          }}
+        />
+      </div>
+    </div>
+
+    <button
+      type="button"
+      onClick={guardarEdicionAnuncio}
+      disabled={guardandoEdicionAnuncio}
+      style={{
+        width: "100%",
+        border: "none",
+        padding: "12px",
+        borderRadius: "9px",
+        background: "#222222",
+        color: "#ffffff",
+        fontWeight: "700",
+        cursor: "pointer",
+        opacity:
+          guardandoEdicionAnuncio
+            ? 0.6
+            : 1,
+      }}
+    >
+      {guardandoEdicionAnuncio
+        ? "Guardando..."
+        : "💾 Guardar cambios"}
+    </button>
+
+    <button
+      type="button"
+      onClick={cancelarEditarAnuncio}
+      disabled={guardandoEdicionAnuncio}
+      style={{
+        width: "100%",
+        marginTop: "8px",
+        border: "1px solid #dddddd",
+        padding: "11px",
+        borderRadius: "9px",
+        background: "#ffffff",
+        color: "#666666",
+        fontWeight: "600",
+        cursor: "pointer",
+      }}
+    >
+      Cancelar
+    </button>
+  </div>
+)}
           </div>
         ))}
       </div>
