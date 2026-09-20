@@ -1754,33 +1754,37 @@ function fotosProducto(producto) {
           <label className="compra-campo">
         
 
-            <input
-              type="text"
-              inputMode="numeric"
-              value={cedulaCliente}
-              onChange={(e) =>
-                setCedulaCliente(
-                  e.target.value.replace(/\D/g, "")
-                )
-              }
-              placeholder="Número de cédula"
-            />
+           <input
+  type="text"
+  inputMode="numeric"
+  autoComplete="off"
+  name="cedula"
+  value={cedulaCliente}
+  onChange={(e) =>
+    setCedulaCliente(
+      e.target.value.replace(/\D/g, "")
+    )
+  }
+  placeholder="Número de cédula"
+/>
           </label>
 
           <label className="compra-campo">
             <span>WhatsApp</span>
 
-            <input
-              type="tel"
-              inputMode="numeric"
-              value={telefonoCliente}
-              onChange={(e) =>
-                setTelefonoCliente(
-                  e.target.value.replace(/\D/g, "")
-                )
-              }
-              placeholder="Ej. 3101234567"
-            />
+           <input
+  type="tel"
+  inputMode="tel"
+  autoComplete="tel"
+  name="tel"
+  value={telefonoCliente}
+  onChange={(e) =>
+    setTelefonoCliente(
+      e.target.value.replace(/\D/g, "")
+    )
+  }
+  placeholder="Ej. 3101234567"
+/>
           </label>
 
           <label className="compra-campo">
