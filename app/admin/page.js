@@ -2468,7 +2468,7 @@ setTiktok(
                 </div>
               )}
 {/* =========================================
-    AVISOS Y PROMOCIONES
+    Avisos y novedades
 ========================================= */}
 
 <div
@@ -2518,7 +2518,7 @@ setTiktok(
           color: "#222",
         }}
       >
-        Avisos y promociones
+        Avisos y novedades
       </h2>
 
       <p
@@ -2529,8 +2529,8 @@ setTiktok(
           lineHeight: "1.45",
         }}
       >
-        Publica novedades, promociones o fechas
-        importantes en tu catálogo.
+        Publica novedades, fechas de cierre o mensajes
+importantes en tu catálogo.
       </p>
     </div>
   </div>
@@ -2634,13 +2634,9 @@ setTiktok(
 <div
   style={{
     marginTop: "12px",
-    paddingTop: "11px",
+    paddingTop: "12px",
     borderTop:
       "1px solid rgba(0,0,0,0.10)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "10px",
   }}
 >
   {/* ESTADO */}
@@ -2652,6 +2648,7 @@ setTiktok(
       gap: "6px",
       fontSize: "12px",
       fontWeight: "700",
+      marginBottom: "10px",
     }}
   >
     <span>
@@ -2667,79 +2664,92 @@ setTiktok(
     </span>
   </div>
 
-  {/* BOTÓN */}
+  {/* BOTONES PRINCIPALES */}
+
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns:
+        "1fr 1fr",
+      gap: "8px",
+    }}
+  >
+    <button
+      type="button"
+      onClick={() =>
+        empezarEditarAnuncio(anuncio)
+      }
+      style={{
+        width: "100%",
+        border:
+          "1px solid rgba(0,0,0,0.15)",
+        background:
+          "rgba(255,255,255,0.70)",
+        color: "#333333",
+        padding: "10px 8px",
+        borderRadius: "9px",
+        fontSize: "12px",
+        fontWeight: "700",
+        cursor: "pointer",
+      }}
+    >
+      ✏️ Editar
+    </button>
+
+    <button
+      type="button"
+      onClick={() =>
+        cambiarEstadoAnuncio(
+          anuncio.id,
+          !anuncio.activo
+        )
+      }
+      style={{
+        width: "100%",
+        border:
+          "1px solid rgba(0,0,0,0.15)",
+        background:
+          anuncio.activo
+            ? "rgba(255,255,255,0.70)"
+            : "#222222",
+        color:
+          anuncio.activo
+            ? "#333333"
+            : "#ffffff",
+        padding: "10px 8px",
+        borderRadius: "9px",
+        fontSize: "12px",
+        fontWeight: "700",
+        cursor: "pointer",
+      }}
+    >
+      {anuncio.activo
+        ? "⏸ Pausar"
+        : "▶️ Publicar"}
+    </button>
+  </div>
+
+  {/* ELIMINAR */}
 
   <button
     type="button"
     onClick={() =>
-      cambiarEstadoAnuncio(
-        anuncio.id,
-        !anuncio.activo
-      )
+      eliminarAnuncio(anuncio)
     }
     style={{
-      border:
-        "1px solid rgba(0,0,0,0.15)",
-      background: anuncio.activo
-        ? "rgba(255,255,255,0.65)"
-        : "#222222",
-      color: anuncio.activo
-        ? "#333333"
-        : "#ffffff",
-      padding: "8px 12px",
-      borderRadius: "9px",
-      fontSize: "12px",
-      fontWeight: "700",
+      marginTop: "8px",
+      border: "none",
+      background: "transparent",
+      color: "#a94a4a",
+      padding: "7px 4px",
+      fontSize: "11px",
+      fontWeight: "600",
       cursor: "pointer",
-      whiteSpace: "nowrap",
     }}
   >
-  <button
-  type="button"
-  onClick={() =>
-    empezarEditarAnuncio(anuncio)
-  }
-  style={{
-    border:
-      "1px solid rgba(0,0,0,0.15)",
-    background:
-      "rgba(255,255,255,0.65)",
-    color: "#333333",
-    padding: "8px 12px",
-    borderRadius: "9px",
-    fontSize: "12px",
-    fontWeight: "700",
-    cursor: "pointer",
-    whiteSpace: "nowrap",
-  }}
->
-  ✏️ Editar
-</button>
-    {anuncio.activo
-      ? "⏸ Pausar"
-      : "▶️ Publicar"}
+    🗑️ Eliminar anuncio
   </button>
 </div>
-<button
-  type="button"
-  onClick={() =>
-    eliminarAnuncio(anuncio)
-  }
-  style={{
-    border:
-      "1px solid #e5b6b6",
-    background: "#fff5f5",
-    color: "#b63b3b",
-    padding: "8px 12px",
-    borderRadius: "9px",
-    fontSize: "12px",
-    fontWeight: "700",
-    cursor: "pointer",
-    whiteSpace: "nowrap",
-  }}
->
-  🗑️ Eliminar
-</button>
 {anuncioEditando?.id === anuncio.id && (
   <div
     style={{
@@ -3463,9 +3473,8 @@ setTiktok(
             lineHeight: "1.45",
           }}
         >
-          Publica promociones, fechas de cierre,
-          novedades y mensajes importantes para tus
-          clientes.
+          Publica fechas de cierre, novedades y mensajes
+importantes para tus clientes.
         </p>
       </div>
     </div>
