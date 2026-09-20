@@ -186,7 +186,7 @@ function obtenerTipoProducto(producto) {
 }
 
 export default function TiendaCliente({
-tipoTienda = "CLIENTE",
+  tipoTienda = "CLIENTE",
   nombreTienda,
   logoUrl,
   whatsapp,
@@ -197,6 +197,7 @@ tipoTienda = "CLIENTE",
   facebook = "",
   tiktok = "",
   productos = [],
+  anuncios = [],
 }) {
     function crearEnlaceRedSocial(red, valor) {
     const texto = String(valor || "").trim();
@@ -257,6 +258,55 @@ tipoTienda = "CLIENTE",
   const [busqueda, setBusqueda] = useState("");
   const [mostrarBusqueda, setMostrarBusqueda] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
+  // ========================================
+// ANUNCIOS DE LA TIENDA
+// ========================================
+
+const [indiceAnuncio, setIndiceAnuncio] =
+  useState(0);
+
+useEffect(() => {
+  if (!Array.isArray(anuncios) || anuncios.length <= 1) {
+    return;
+  }
+
+  const intervalo = setInterval(() => {
+    setIndiceAnuncio((actual) =>
+      actual >= anuncios.length - 1
+        ? 0
+        : actual + 1
+    );
+  }, 6000);
+
+  return () => clearInterval(intervalo);
+}, [anuncios]);
+
+useEffect(() => {
+  if (
+    Array.isArray(anuncios) &&
+    anuncios.length > 0 &&
+    indiceAnuncio >= anuncios.length
+  ) {
+    setIndiceAnuncio(0);
+  }
+}, [anuncios, indiceAnuncio]);
+
+const anuncioActual =
+  Array.isArray(anuncios) && anuncios.length > 0
+    ? anuncios[indiceAnuncio] || anuncios[0]
+    : null;
+
+function iconoAnuncio(tipo = "") {
+  const tipoLimpio = String(tipo)
+    .trim()
+    .toUpperCase();
+
+  if (tipoLimpio === "PROMOCION") return "🎁";
+  if (tipoLimpio === "NOVEDAD") return "✨";
+  if (tipoLimpio === "URGENTE") return "⏰";
+
+  return "📢";
+}
   // ========================================
 // FINALIZAR COMPRA
 // ========================================
@@ -1371,9 +1421,86 @@ setCarrito([]);
     Accesorios en Acero
   </button>
 </nav>
-        {/* TÍTULO */}
+{/* ANUNCIOS DE LA TIENDA */}
 
-        <div className="titulo-catalogo">
+{anuncioActual && (
+  <section className="anuncio-contenedor">
+    <div
+      className="anuncio-tienda"
+      key={anuncioActual.id}
+      style={{
+        background:
+          anuncioActual.color_fondo || "#FFF4D6",
+        color:
+          anuncioActual.color_texto || "#111111",
+      }}
+    >
+      {anuncioActual.imagen_url && (
+        <div className="anuncio-imagen">
+          <img
+            src={anuncioActual.imagen_url}
+            alt=""
+          />
+        </div>
+      )}
+
+      <div className="anuncio-icono">
+        {iconoAnuncio(anuncioActual.tipo)}
+      </div>
+
+      <div className="anuncio-informacion">
+        <strong>
+          {anuncioActual.titulo}
+        </strong>
+
+        {anuncioActual.mensaje && (
+          <span>
+            {anuncioActual.mensaje}
+          </span>
+        )}
+      </div>
+
+      {anuncioActual.texto_boton &&
+        anuncioActual.enlace_boton && (
+          <a
+            className="anuncio-boton"
+            href={anuncioActual.enlace_boton}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {anuncioActual.texto_boton}
+            <span>→</span>
+          </a>
+        )}
+
+      {anuncios.length > 1 && (
+        <div className="anuncio-puntos">
+          {anuncios.map((anuncio, index) => (
+            <button
+              key={anuncio.id}
+              type="button"
+              aria-label={`Ver anuncio ${index + 1}`}
+              className={
+                index === indiceAnuncio
+                  ? "activo"
+                  : ""
+              }
+              onClick={() =>
+                setIndiceAnuncio(index)
+              }
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  </section>
+)}
+
+{/* TÍTULO */}
+
+<div className="titulo-catalogo">
+  
+      
           <h1>
             {categoriaActiva === "Todos"
               ? "Todos los productos"
@@ -2772,6 +2899,228 @@ body {
   border-color: var(--color-principal);
   color: var(--texto-principal);
   font-weight: 700;
+}
+/* ========================================
+   ANUNCIOS DE LA TIENDA
+======================================== */
+
+.anuncio-contenedor {
+  width: 100%;
+  max-width: 1440px;
+  margin: 14px auto 2px;
+  padding: 0 14px;
+}
+
+.anuncio-tienda {
+  position: relative;
+
+  min-height: 82px;
+
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  padding: 15px 18px;
+
+  border-radius: 14px;
+
+  overflow: hidden;
+
+  box-shadow:
+    0 5px 18px rgba(0, 0, 0, 0.07);
+
+  animation: aparecerAnuncio 0.35s ease;
+}
+
+@keyframes aparecerAnuncio {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.anuncio-icono {
+  flex: 0 0 auto;
+
+  width: 46px;
+  height: 46px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, 0.55);
+
+  font-size: 23px;
+}
+
+.anuncio-informacion {
+  min-width: 0;
+  flex: 1;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+.anuncio-informacion strong {
+  font-size: 14px;
+  font-weight: 800;
+
+  letter-spacing: 0.3px;
+
+  text-transform: uppercase;
+}
+
+.anuncio-informacion span {
+  font-size: 13px;
+  line-height: 1.4;
+
+  opacity: 0.82;
+}
+
+.anuncio-boton {
+  flex: 0 0 auto;
+
+  min-height: 40px;
+
+  padding: 0 15px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  border-radius: 999px;
+
+  background: rgba(255, 255, 255, 0.75);
+
+  color: inherit;
+
+  text-decoration: none;
+
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.anuncio-boton span {
+  font-size: 17px;
+}
+
+.anuncio-imagen {
+  width: 64px;
+  height: 54px;
+
+  flex: 0 0 64px;
+
+  overflow: hidden;
+
+  border-radius: 9px;
+}
+
+.anuncio-imagen img {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  object-fit: cover;
+}
+
+.anuncio-puntos {
+  position: absolute;
+
+  right: 14px;
+  bottom: 7px;
+
+  display: flex;
+  gap: 5px;
+}
+
+.anuncio-puntos button {
+  width: 6px;
+  height: 6px;
+
+  padding: 0;
+
+  border: none;
+  border-radius: 50%;
+
+  background: currentColor;
+
+  opacity: 0.25;
+}
+
+.anuncio-puntos button.activo {
+  width: 16px;
+
+  border-radius: 999px;
+
+  opacity: 0.8;
+}
+
+/* CELULAR */
+
+@media (max-width: 650px) {
+  .anuncio-contenedor {
+    margin-top: 10px;
+    padding: 0 8px;
+  }
+
+  .anuncio-tienda {
+    min-height: 72px;
+
+    gap: 10px;
+
+    padding: 12px 13px;
+
+    border-radius: 12px;
+  }
+
+  .anuncio-icono {
+    width: 39px;
+    height: 39px;
+
+    font-size: 20px;
+  }
+
+  .anuncio-informacion strong {
+    font-size: 12px;
+  }
+
+  .anuncio-informacion span {
+    font-size: 12px;
+    line-height: 1.3;
+  }
+
+  .anuncio-boton {
+    min-height: 34px;
+
+    padding: 0 10px;
+
+    font-size: 11px;
+  }
+
+  .anuncio-imagen {
+    width: 48px;
+    height: 48px;
+
+    flex-basis: 48px;
+  }
+
+  .anuncio-puntos {
+    right: 10px;
+    bottom: 5px;
+  }
 }
         .titulo-catalogo {
           max-width: 1440px;
