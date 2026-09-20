@@ -515,6 +515,75 @@ async function guardarEdicionAnuncio() {
   } finally {
     setGuardandoEdicionAnuncio(false);
   }
+}/* =========================================
+   ELIMINAR ANUNCIO
+========================================= */
+
+async function eliminarAnuncio(anuncio) {
+  const confirmar = window.confirm(
+    `¿Seguro que quieres eliminar "${anuncio.titulo}"?\n\nEsta acción no se puede deshacer.`
+  );
+
+  if (!confirmar) {
+    return;
+  }
+
+  setMensaje("");
+
+  try {
+    const response = await fetch(
+      "/api/anuncios",
+      {
+        method: "DELETE",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+
+        body: JSON.stringify({
+          id: anuncio.id,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      setMensaje(
+        data.mensaje ||
+          "No pudimos eliminar el anuncio."
+      );
+
+      return;
+    }
+
+    setAnuncios((actuales) =>
+      actuales.filter(
+        (item) =>
+          item.id !== anuncio.id
+      )
+    );
+
+    if (
+      anuncioEditando?.id === anuncio.id
+    ) {
+      setAnuncioEditando(null);
+    }
+
+    setMensaje(
+      "✅ Anuncio eliminado correctamente."
+    );
+  } catch (error) {
+    console.error(
+      "Error eliminando anuncio:",
+      error
+    );
+
+    setMensaje(
+      "No pudimos eliminar el anuncio."
+    );
+  }
 }
   /* =========================================
      CERRAR SESIÓN
@@ -2651,6 +2720,26 @@ setTiktok(
       : "▶️ Publicar"}
   </button>
 </div>
+<button
+  type="button"
+  onClick={() =>
+    eliminarAnuncio(anuncio)
+  }
+  style={{
+    border:
+      "1px solid #e5b6b6",
+    background: "#fff5f5",
+    color: "#b63b3b",
+    padding: "8px 12px",
+    borderRadius: "9px",
+    fontSize: "12px",
+    fontWeight: "700",
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+  }}
+>
+  🗑️ Eliminar
+</button>
 {anuncioEditando?.id === anuncio.id && (
   <div
     style={{
