@@ -2904,6 +2904,8 @@ body {
           background: transparent;
           color: var(--texto-fondo);
           font-size: 17px;
+          flex-shrink: 0;
+white-space: nowrap;
         }
 
         .categoria-superior.activa {
@@ -4408,7 +4410,9 @@ color: var(--texto-principal);
           }
 
           .categorias-superiores {
-            gap: 35px;
+            gap: 24px;
+padding-left: 16px;
+padding-right: 16px;
           }
 
           .titulo-catalogo {
