@@ -368,7 +368,32 @@ export async function GET(request) {
       Array.isArray(productosData)
         ? productosData
         : [];
+// =====================================
+// VISIBILIDAD DE PRODUCTOS DE LA TIENDA
+// =====================================
 
+const visibilidadData =
+  await supabaseRequest(
+    `tienda_productos` +
+      `?select=producto_id,visible` +
+      `&tienda_id=eq.${encodeURIComponent(
+        cliente.tienda_id
+      )}`
+  );
+
+const mapaVisibilidad =
+  new Map();
+
+if (Array.isArray(visibilidadData)) {
+  visibilidadData.forEach(
+    (registro) => {
+      mapaVisibilidad.set(
+        String(registro.producto_id),
+        registro.visible !== false
+      );
+    }
+  );
+}
     // =====================================
     // 5. IDs DE PRODUCTOS CON VARIANTES
     // =====================================
@@ -502,6 +527,14 @@ export async function GET(request) {
 
             referencia:
               producto.referencia,
+            visible:
+  mapaVisibilidad.has(
+    String(producto.id)
+  )
+    ? mapaVisibilidad.get(
+        String(producto.id)
+      )
+    : true,
 
             nombre:
               producto.nombre,
