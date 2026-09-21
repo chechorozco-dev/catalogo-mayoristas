@@ -2860,13 +2860,35 @@ temporizadorResumenRef.current =
            FILTROS
         ================================================= */
 
-        .filter-area {
-          display: grid;
-          grid-template-columns:
-            auto minmax(220px, 1fr);
-          gap: 10px;
-          margin-bottom: 18px;
-        }
+       .filter-area {
+  display: grid;
+  grid-template-columns:
+    auto minmax(220px, 1fr);
+  gap: 10px;
+
+  /* Barra fija al hacer scroll */
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+
+  /* Fondo para que no se vean los productos por detrás */
+  background: #fff8f6;
+
+  /* Espacio visual cuando queda fija */
+  padding-top: 12px;
+  padding-bottom: 12px;
+
+  /* La extendemos un poco hacia los lados */
+  padding-left: 8px;
+  padding-right: 8px;
+  margin-left: -8px;
+  margin-right: -8px;
+
+  margin-bottom: 18px;
+
+  /* Separación sutil cuando está sobre los productos */
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+}
 
         .category-button {
           border: none;
@@ -4506,13 +4528,26 @@ temporizadorResumenRef.current =
             font-size: 27px;
           }
 
-          .filter-area {
-            grid-template-columns: 1fr;
-          }
+        .filter-area {
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 7px;
 
-          .category-button {
-            width: 100%;
-          }
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.category-button {
+  width: auto;
+  padding: 11px 12px;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.search {
+  min-width: 0;
+  padding: 11px 12px;
+  font-size: 14px;
+}
 
           .card-info {
             padding: 13px;
