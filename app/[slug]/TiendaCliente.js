@@ -2876,21 +2876,27 @@ body {
 
         /* CATEGORÍAS */
 
-        .navegacion-sticky {
+.navegacion-sticky {
   position: sticky;
   top: 0;
   z-index: 50;
   background: var(--color-fondo);
 }
-          display: flex;
-          gap: 34px;
-          overflow-x: auto;
-          white-space: nowrap;
-          padding: 0 22px;
-          background: var(--color-fondo);
-          border-bottom: 1px solid #ededed;
-          scrollbar-width: none;
-        }
+
+.categorias-superiores {
+  display: flex;
+  gap: 24px;
+  overflow-x: auto;
+  white-space: nowrap;
+  padding: 0 16px;
+  background: var(--color-fondo);
+  border-bottom: 1px solid #ededed;
+  scrollbar-width: none;
+}
+
+.categorias-superiores::-webkit-scrollbar {
+  display: none;
+}
 
         .categorias-superiores::-webkit-scrollbar {
           display: none;
