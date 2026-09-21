@@ -2885,12 +2885,19 @@ body {
 
 .categorias-superiores {
   display: flex;
-  gap: 24px;
+  gap: 28px;
   overflow-x: auto;
   white-space: nowrap;
-  padding: 0 16px;
+
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+
+  padding: 0 14px;
+
   background: var(--color-fondo);
   border-bottom: 1px solid #ededed;
+
   scrollbar-width: none;
 }
 
@@ -2924,6 +2931,10 @@ white-space: nowrap;
   display: flex;
   align-items: center;
   gap: 9px;
+
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
 
   padding: 11px 14px 10px;
 
