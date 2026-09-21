@@ -5109,9 +5109,7 @@ temporizadorResumenRef.current =
                                           0
                                       );
 
-                                    const ganancia =
-                                      precio -
-                                      costo;
+                              
 
                                     const imagenesVariante =
                                       [
@@ -5227,54 +5225,21 @@ temporizadorResumenRef.current =
                                           </div>
                                         </div>
 
-                                        {/* PRECIOS VARIANTE */}
+                                     {/* PRECIOS VARIANTE */}
 
-                                        <div className="variant-prices">
-                                          <div className="variant-price-box">
-                                            <span className="variant-price-label">
-                                              Tu costo
-                                            </span>
-
-                                            <strong className="variant-cost">
-                                              {formatoPrecio(
-                                                costo
-                                              )}
-                                            </strong>
-                                          </div>
-
-                                          <div className="variant-price-box">
-                                            <span className="variant-price-label">
-                                              Precio sugerido
-                                            </span>
-
-                                            <strong className="variant-retail">
-                                              {formatoPrecio(
-                                                precio
-                                              )}
-                                            </strong>
-                                          </div>
-
-                                          <div className="variant-price-box">
-                                            <span className="variant-price-label">
-                                              Ganancia
-                                            </span>
-
-                                            <strong
-                                              className="variant-profit"
-                                              style={{
-                                                color:
-                                                  ganancia >=
-                                                  0
-                                                    ? "#318553"
-                                                    : "#c43b3b",
-                                              }}
-                                            >
-                                              {formatoPrecio(
-                                                ganancia
-                                              )}
-                                            </strong>
-                                          </div>
-                                        </div>
+<BloquePrecios
+  costo={costo}
+  precio={precio}
+  productoId={producto.id}
+  varianteId={variante.id}
+  onPrecioActualizado={(nuevoPrecio) =>
+    actualizarPrecioPersonalizado(
+      producto.id,
+      variante.id,
+      nuevoPrecio
+    )
+  }
+/>
                                       </div>
                                     );
                                   }
