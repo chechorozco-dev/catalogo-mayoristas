@@ -3009,7 +3009,58 @@ temporizadorResumenRef.current =
             0 5px 18px
             rgba(0, 0, 0, 0.05);
         }
+/* =================================================
+   PRODUCTO OCULTO DEL CATÁLOGO
+================================================= */
 
+.card.product-hidden
+  .product-image-container {
+  position: relative;
+}
+
+.card.product-hidden
+  .product-image {
+  filter: brightness(0.32) grayscale(0.25);
+  transition: filter 0.25s ease;
+}
+
+.card.product-hidden
+  .product-image-container::after {
+  content: "🙈 OCULTO\A EN MI CATÁLOGO";
+  white-space: pre-line;
+
+  position: absolute;
+  inset: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background: rgba(0, 0, 0, 0.25);
+
+  color: white;
+  font-size: 17px;
+  line-height: 1.25;
+  font-weight: 900;
+  text-align: center;
+
+  letter-spacing: 0.4px;
+
+  z-index: 6;
+
+  pointer-events: none;
+}
+
+.card.product-hidden
+  .gallery-arrow,
+.card.product-hidden
+  .photo-count,
+.card.product-hidden
+  .image-cart-button {
+  opacity: 0.25;
+}
         /* =================================================
            FOTO DEL PRODUCTO
         ================================================= */
@@ -4905,10 +4956,14 @@ temporizadorResumenRef.current =
                     );
 
                   return (
-                    <article
-                      key={producto.id}
-                      className="card"
-                    >
+                   <article
+  key={producto.id}
+  className={
+    producto.visible === false
+      ? "card product-hidden"
+      : "card"
+  }
+>
                       {/* FOTO PRINCIPAL */}
 
                       <GaleriaProducto
