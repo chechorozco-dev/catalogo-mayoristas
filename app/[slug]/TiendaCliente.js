@@ -258,6 +258,12 @@ export default function TiendaCliente({
   const [busqueda, setBusqueda] = useState("");
   const [mostrarBusqueda, setMostrarBusqueda] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const PRODUCTOS_POR_CARGA = 24;
+
+const [cantidadVisible, setCantidadVisible] =
+  useState(PRODUCTOS_POR_CARGA);
+
+const cargadorRef = useRef(null);
   // ========================================
 // ANUNCIOS DE LA TIENDA
 // ========================================
@@ -518,7 +524,50 @@ useEffect(() => {
   lineaActiva,
   busqueda,
 ]);
-    
+ const productosVisibles = useMemo(() => {
+  return productosFiltrados.slice(0, cantidadVisible);
+}, [productosFiltrados, cantidadVisible]);   
+  // ========================================
+// CARGA PROGRESIVA DE PRODUCTOS
+// ========================================
+
+useEffect(() => {
+  const elemento = cargadorRef.current;
+
+  if (!elemento) return;
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      const entrada = entries[0];
+
+      if (
+        entrada.isIntersecting &&
+        cantidadVisible < productosFiltrados.length
+      ) {
+        setCantidadVisible((actual) =>
+          Math.min(
+            actual + PRODUCTOS_POR_CARGA,
+            productosFiltrados.length
+          )
+        );
+      }
+    },
+    {
+      root: null,
+      rootMargin: "600px 0px",
+      threshold: 0,
+    }
+  );
+
+  observer.observe(elemento);
+
+  return () => {
+    observer.disconnect();
+  };
+}, [cantidadVisible, productosFiltrados.length]);
+  useEffect(() => {
+  setCantidadVisible(PRODUCTOS_POR_CARGA);
+}, [categoriaActiva, lineaActiva, busqueda]);
 
   // ========================================
   // PRODUCTOS RECOMENDADOS
@@ -1519,7 +1568,7 @@ setCarrito([]);
 
         {productosFiltrados.length > 0 ? (
           <div className="productos-grid">
-            {productosFiltrados.map((producto) => {
+           {productosVisibles.map((producto) => {
               const fotos = fotosProducto(producto);
 
               const indiceActual =
@@ -1682,8 +1731,16 @@ setCarrito([]);
                     </div>
                   </div>
                 </article>
-              );
+                           );
             })}
+
+            {cantidadVisible < productosFiltrados.length && (
+              <div
+                ref={cargadorRef}
+                className="cargador-productos"
+                aria-hidden="true"
+              />
+            )}
           </div>
         ) : (
           <div className="sin-resultados">
