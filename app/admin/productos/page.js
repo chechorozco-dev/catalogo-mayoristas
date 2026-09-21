@@ -2922,7 +2922,84 @@ temporizadorResumenRef.current =
           gap: 20px;
           align-items: start;
         }
+/* =================================================
+   VISIBILIDAD DEL PRODUCTO
+================================================= */
 
+.visibility-control {
+  width: 100%;
+  margin: 0 0 12px;
+  padding: 9px 10px;
+  border-radius: 11px;
+  border: 1px solid #e8e8e8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: 0.2s ease;
+}
+
+.visibility-on {
+  background: #f2faf5;
+  border-color: #d4ebdc;
+}
+
+.visibility-off {
+  background: #f5f5f5;
+  border-color: #dddddd;
+}
+
+.visibility-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.visibility-text strong {
+  color: #222;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.visibility-text small {
+  margin-top: 2px;
+  color: #777;
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.visibility-switch {
+  position: relative;
+  width: 40px;
+  height: 23px;
+  flex: 0 0 40px;
+  border-radius: 999px;
+  background: #c8c8c8;
+  transition: 0.2s ease;
+}
+
+.visibility-switch.switch-on {
+  background: #43a96b;
+}
+
+.visibility-switch-dot {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.22);
+  transition: 0.2s ease;
+}
+
+.visibility-switch.switch-on
+  .visibility-switch-dot {
+  transform: translateX(17px);
+}
         .card {
           background: white;
           border-radius: 16px;
@@ -4858,17 +4935,58 @@ temporizadorResumenRef.current =
                           )
                         }
                       />
-
-                      <div className="card-info">
+<div className="card-info">
                         
-                        <h2 className="name">
-                          {producto.nombre}
-                        </h2>
+  <h2 className="name">
+    {producto.nombre}
+  </h2>
 
-                        {/* ================================
-                            PRODUCTO NORMAL
-                        ================================ */}
+  {/* ================================
+      VISIBILIDAD EN MI CATÁLOGO
+  ================================ */}
 
+  <button
+    type="button"
+    className={
+      producto.visible !== false
+        ? "visibility-control visibility-on"
+        : "visibility-control visibility-off"
+    }
+    onClick={() =>
+      cambiarVisibilidadProducto(
+        producto.id,
+        producto.visible
+      )
+    }
+  >
+    <span className="visibility-text">
+      <strong>
+        {producto.visible !== false
+          ? "👁️ Visible"
+          : "🙈 Oculto"}
+      </strong>
+
+      <small>
+        {producto.visible !== false
+          ? "En mi catálogo"
+          : "No aparece en mi catálogo"}
+      </small>
+    </span>
+
+    <span
+      className={
+        producto.visible !== false
+          ? "visibility-switch switch-on"
+          : "visibility-switch"
+      }
+    >
+      <span className="visibility-switch-dot" />
+    </span>
+  </button>
+
+  {/* ================================
+      PRODUCTO NORMAL
+  ================================ */}
                         {!tieneVariantes && (
                           <BloquePrecios
   costo={costoPrincipal}
