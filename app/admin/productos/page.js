@@ -2384,6 +2384,98 @@ temporizadorResumenRef.current =
       })
     );
   }
+   async function cambiarVisibilidadProducto(
+  productoId,
+  visibleActual
+) {
+  const nuevaVisibilidad =
+    visibleActual === false;
+
+  // Cambio inmediato en pantalla
+  setProductos((actuales) =>
+    actuales.map((producto) =>
+      Number(producto.id) ===
+      Number(productoId)
+        ? {
+            ...producto,
+            visible: nuevaVisibilidad,
+          }
+        : producto
+    )
+  );
+
+  try {
+    const response = await fetch(
+      "/api/visibilidad-producto",
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+
+        body: JSON.stringify({
+          producto_id:
+            Number(productoId),
+
+          visible:
+            nuevaVisibilidad,
+        }),
+      }
+    );
+
+    const data =
+      await response.json();
+
+    if (!response.ok || !data.ok) {
+      throw new Error(
+        data.mensaje ||
+          "No pudimos cambiar la visibilidad."
+      );
+    }
+
+    // Confirmamos el valor devuelto
+    // por el servidor.
+    setProductos((actuales) =>
+      actuales.map((producto) =>
+        Number(producto.id) ===
+        Number(productoId)
+          ? {
+              ...producto,
+              visible:
+                data.visible !== false,
+            }
+          : producto
+      )
+    );
+  } catch (error) {
+    console.error(
+      "Error cambiando visibilidad:",
+      error
+    );
+
+    // Si falló el guardado,
+    // regresamos al estado anterior.
+    setProductos((actuales) =>
+      actuales.map((producto) =>
+        Number(producto.id) ===
+        Number(productoId)
+          ? {
+              ...producto,
+              visible:
+                visibleActual !== false,
+            }
+          : producto
+      )
+    );
+
+    window.alert(
+      error.message ||
+        "No pudimos cambiar la visibilidad del producto."
+    );
+  }
+}
   /* =======================================================
      VARIANTES
   ======================================================= */
