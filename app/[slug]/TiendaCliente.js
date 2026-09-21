@@ -1401,7 +1401,8 @@ setCarrito([]);
             )}
           </div>
         )}
-
+<div className="navegacion-sticky">
+  
         {/* CATEGORÍAS */}
 
         <nav className="categorias-superiores">
@@ -1544,7 +1545,7 @@ setCarrito([]);
     </div>
   </section>
 )}
-
+</div>
 {/* TÍTULO */}
 
 <div className="titulo-catalogo">
@@ -2875,10 +2876,12 @@ body {
 
         /* CATEGORÍAS */
 
-        .categorias-superiores {
-          position: sticky;
-          top: 0;
-          z-index: 100;
+        .navegacion-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--color-fondo);
+}
           display: flex;
           gap: 34px;
           overflow-x: auto;
