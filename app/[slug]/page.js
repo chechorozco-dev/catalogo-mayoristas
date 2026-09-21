@@ -268,6 +268,101 @@ export default async function TiendaPage({
       </main>
     );
   }
+  // =========================================
+  // VISIBILIDAD DE PRODUCTOS DE ESTA TIENDA
+  // =========================================
+  //
+  // Si un producto está marcado como
+  // visible = false en tienda_productos,
+  // NO se envía al catálogo público.
+  //
+  // Si no existe registro para el producto,
+  // se considera visible por defecto.
+  // =========================================
+
+  try {
+    const urlProductosOcultos =
+      `${supabaseUrl}` +
+      `/rest/v1/tienda_productos` +
+      `?select=producto_id` +
+      `&tienda_id=eq.${encodeURIComponent(
+        tienda.id
+      )}` +
+      `&visible=eq.false`;
+
+    const respuestaProductosOcultos =
+      await fetch(urlProductosOcultos, {
+        method: "GET",
+
+        headers: {
+          apikey: supabaseSecretKey,
+
+          "Content-Type":
+            "application/json",
+        },
+
+        cache: "no-store",
+      });
+
+    const textoProductosOcultos =
+      await respuestaProductosOcultos.text();
+
+    if (!respuestaProductosOcultos.ok) {
+      console.error(
+        "ERROR CARGANDO PRODUCTOS OCULTOS:",
+        respuestaProductosOcultos.status,
+        textoProductosOcultos
+      );
+
+      throw new Error(
+        "No se pudo cargar la visibilidad de los productos."
+      );
+    }
+
+    let productosOcultos = [];
+
+    if (textoProductosOcultos) {
+      const datosProductosOcultos =
+        JSON.parse(textoProductosOcultos);
+
+      if (
+        Array.isArray(
+          datosProductosOcultos
+        )
+      ) {
+        productosOcultos =
+          datosProductosOcultos;
+      }
+    }
+
+    const idsProductosOcultos =
+      new Set(
+        productosOcultos.map(
+          (registro) =>
+            String(
+              registro.producto_id
+            )
+        )
+      );
+
+    productosData =
+      productosData.filter(
+        (producto) =>
+          !idsProductosOcultos.has(
+            String(producto.id)
+          )
+      );
+  } catch (error) {
+    console.error(
+      "ERROR APLICANDO VISIBILIDAD DE PRODUCTOS:",
+      error
+    );
+
+    // IMPORTANTE:
+    // Si falla la consulta de visibilidad,
+    // no mostramos productos por seguridad.
+    productosData = [];
+  }
 
   // =========================================
   // 4. IDENTIFICAR PRODUCTOS CON VARIANTES
