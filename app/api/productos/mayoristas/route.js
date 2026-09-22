@@ -375,24 +375,30 @@ export async function GET(request) {
 const visibilidadData =
   await supabaseRequest(
     `tienda_productos` +
-      `?select=producto_id,visible` +
+      `?select=producto_id,visible,publicar_anticipadamente` +
       `&tienda_id=eq.${encodeURIComponent(
         cliente.tienda_id
       )}`
   );
-
 const mapaVisibilidad =
   new Map();
-
+const mapaPublicacionAnticipada =
+  new Map();
+    
 if (Array.isArray(visibilidadData)) {
-  visibilidadData.forEach(
-    (registro) => {
-      mapaVisibilidad.set(
-        String(registro.producto_id),
-        registro.visible !== false
-      );
-    }
-  );
+ visibilidadData.forEach(
+  (registro) => {
+    mapaVisibilidad.set(
+      String(registro.producto_id),
+      registro.visible !== false
+    );
+
+    mapaPublicacionAnticipada.set(
+      String(registro.producto_id),
+      registro.publicar_anticipadamente === true
+    );
+  }
+);
 }
     // =====================================
     // 5. IDs DE PRODUCTOS CON VARIANTES
