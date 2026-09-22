@@ -408,26 +408,62 @@ try {
           return true;
         }
 
-        // -------------------------------------
-        // 3. PUBLICACIÓN ANTICIPADA
-        // -------------------------------------
+       // -------------------------------------
+// 3. PUBLICACIÓN ANTICIPADA
+// -------------------------------------
 
-        if (
-          configuracion
-            ?.publicar_anticipadamente ===
-          true
-        ) {
-          return true;
-        }
+if (
+  configuracion
+    ?.publicar_anticipadamente ===
+  true
+) {
+  return true;
+}
 
-        // -------------------------------------
-        // 4. PRODUCTOS SIN FECHA
-        //    SE CONSIDERAN ANTIGUOS
-        // -------------------------------------
+// -------------------------------------
+// 4. PRODUCTOS QUE YA EXISTÍAN
+//    CUANDO SE CREÓ LA TIENDA
+// -------------------------------------
+//
+// Si el producto fue creado antes
+// o al mismo tiempo que la tienda,
+// queda publicado inmediatamente.
+//
+// Así una tienda nueva recibe todo
+// el catálogo existente desde el inicio.
+// -------------------------------------
 
-        if (!producto.created_at) {
-          return true;
-        }
+if (
+  producto.created_at &&
+  tienda.creado_en
+) {
+  const fechaProducto =
+    new Date(
+      producto.created_at
+    ).getTime();
+
+  const fechaTienda =
+    new Date(
+      tienda.creado_en
+    ).getTime();
+
+  if (
+    Number.isFinite(fechaProducto) &&
+    Number.isFinite(fechaTienda) &&
+    fechaProducto <= fechaTienda
+  ) {
+    return true;
+  }
+}
+
+// -------------------------------------
+// 5. PRODUCTOS SIN FECHA
+//    SE CONSIDERAN ANTIGUOS
+// -------------------------------------
+
+if (!producto.created_at) {
+  return true;
+}
 
         const fechaCreacionMs =
           new Date(
