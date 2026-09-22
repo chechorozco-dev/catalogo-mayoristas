@@ -22,6 +22,7 @@ function normalizar(texto) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 function estadoPublicacionProducto(producto) {
+   
   if (!producto?.created_at) {
     return {
       enEspera: false,
