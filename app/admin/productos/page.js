@@ -5698,7 +5698,70 @@ async function publicarProductoAhora(productoId) {
   <h2 className="name">
     {producto.nombre}
   </h2>
+{estadoPublicacionProducto(producto).enEspera && (
+  <div
+    style={{
+      marginBottom: "12px",
+      padding: "12px",
+      borderRadius: "12px",
+      background: "#fff8e8",
+      border: "1px solid #f0dfae",
+    }}
+  >
+    <strong
+      style={{
+        display: "block",
+        color: "#6f5310",
+        fontSize: "13px",
+        marginBottom: "4px",
+      }}
+    >
+      🆕 Producto nuevo
+    </strong>
 
+    <span
+      style={{
+        display: "block",
+        color: "#766535",
+        fontSize: "11px",
+        lineHeight: "1.4",
+      }}
+    >
+      Aún no aparece en tu tienda.
+      Se publicará automáticamente en{" "}
+      <strong>
+        {estadoPublicacionProducto(producto)
+          .horasRestantes}{" "}
+        {estadoPublicacionProducto(producto)
+          .horasRestantes === 1
+          ? "hora"
+          : "horas"}
+      </strong>
+      .
+    </span>
+
+    <button
+      type="button"
+      onClick={() =>
+        publicarProductoAhora(producto.id)
+      }
+      style={{
+        width: "100%",
+        marginTop: "10px",
+        padding: "9px 12px",
+        border: "none",
+        borderRadius: "9px",
+        background: "#6f45a0",
+        color: "#ffffff",
+        fontSize: "12px",
+        fontWeight: "800",
+        cursor: "pointer",
+      }}
+    >
+      🚀 Publicar ahora
+    </button>
+  </div>
+)}
   {/* ================================
       VISIBILIDAD EN MI CATÁLOGO
   ================================ */}
