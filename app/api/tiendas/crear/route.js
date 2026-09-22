@@ -598,7 +598,7 @@ const colorFondo =
 
               body: JSON.stringify({
                 template_name:
-                  "tienda_creada_p",
+                  "tienda_cliente_nueva",
 
                 broadcast_name:
                   "creacion_de_tienda",
