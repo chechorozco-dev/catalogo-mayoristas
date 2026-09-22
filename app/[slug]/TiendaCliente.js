@@ -4892,8 +4892,10 @@ color: var(--texto-principal);
           }
 
           .producto-nombre {
-            font-size: 16px;
-          }
+  font-size: 14px;
+  line-height: 1.18;
+  min-height: 34px;
+}
 
           .producto-precio {
             font-size: 17px;
