@@ -5054,17 +5054,64 @@ temporizadorResumenRef.current =
         </p>
       </div>
 
-      <button
-        type="button"
-        className="pdf-generate-button"
-        onClick={() => {
-          window.alert(
-            "En el siguiente paso conectaremos aquí la generación real del PDF."
-          );
-        }}
-      >
-        📄 Generar catálogo PDF
-      </button>
+     <button
+  type="button"
+  className="pdf-generate-button"
+  onClick={async () => {
+    try {
+      const response = await fetch(
+        "/api/catalogo-pdf",
+        {
+          method: "POST",
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response
+          .json()
+          .catch(() => ({}));
+
+        throw new Error(
+          data.mensaje ||
+            "No pudimos generar el catálogo PDF."
+        );
+      }
+
+      const blob = await response.blob();
+
+      const url =
+        window.URL.createObjectURL(blob);
+
+      const enlace =
+        document.createElement("a");
+
+      enlace.href = url;
+      enlace.download =
+        "catalogo-productos.pdf";
+
+      document.body.appendChild(enlace);
+
+      enlace.click();
+      enlace.remove();
+
+      window.setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 1000);
+    } catch (error) {
+      console.error(
+        "Error generando PDF:",
+        error
+      );
+
+      window.alert(
+        error.message ||
+          "No pudimos generar el catálogo PDF."
+      );
+    }
+  }}
+>
+  📄 Generar catálogo PDF
+</button>
     </div>
   </div>
 )}
