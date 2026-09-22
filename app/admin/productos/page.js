@@ -1604,6 +1604,10 @@ export default function ProductosMayoristaPage() {
 
   const [menuAbierto, setMenuAbierto] =
     useState(false);
+    const [
+  configuradorPdfAbierto,
+  setConfiguradorPdfAbierto,
+] = useState(false);
 
   const [visor, setVisor] =
     useState(null);
@@ -2450,32 +2454,51 @@ temporizadorResumenRef.current =
       )
     );
   } catch (error) {
+
     console.error(
+
       "Error cambiando visibilidad:",
+
       error
+
     );
 
-    // Si falló el guardado,
-    // regresamos al estado anterior.
     setProductos((actuales) =>
+
       actuales.map((producto) =>
+
         Number(producto.id) ===
+
         Number(productoId)
+
           ? {
+
               ...producto,
+
               visible:
+
                 visibleActual !== false,
+
             }
+
           : producto
+
       )
+
     );
 
     window.alert(
+
       error.message ||
+
         "No pudimos cambiar la visibilidad del producto."
+
     );
+
   }
+
 }
+
   /* =======================================================
      VARIANTES
   ======================================================= */
@@ -2748,6 +2771,7 @@ temporizadorResumenRef.current =
           cursor: pointer;
           font-size: 15px;
           font-weight: 600;
+          }
           .back-button {
   height: 46px;
   padding: 0 18px;
@@ -2814,6 +2838,160 @@ temporizadorResumenRef.current =
 .pdf-catalog-icon {
   font-size: 18px;
   line-height: 1;
+}/* =================================================
+   CONFIGURADOR CATÁLOGO PDF
+================================================= */
+
+.pdf-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30000;
+
+  background: rgba(0, 0, 0, 0.5);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 18px;
+}
+
+.pdf-modal {
+  width: 100%;
+  max-width: 520px;
+
+  background: white;
+  border-radius: 20px;
+
+  padding: 22px;
+
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.25);
+}
+
+.pdf-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 15px;
+
+  margin-bottom: 20px;
+}
+
+.pdf-modal-header h2 {
+  margin: 0;
+  font-size: 23px;
+}
+
+.pdf-modal-header p {
+  margin: 6px 0 0;
+  color: #777;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.pdf-modal-close {
+  width: 38px;
+  height: 38px;
+
+  flex: 0 0 38px;
+
+  border: none;
+  border-radius: 50%;
+
+  background: #f3f3f3;
+
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.pdf-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+
+  padding: 15px;
+
+  margin-bottom: 10px;
+
+  border: 1px solid #e8e8e8;
+  border-radius: 13px;
+
+  background: #fafafa;
+}
+
+.pdf-option strong {
+  display: block;
+  color: #222;
+  font-size: 14px;
+}
+
+.pdf-option p {
+  margin: 5px 0 0;
+
+  color: #777;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.pdf-check {
+  width: 28px;
+  height: 28px;
+
+  flex: 0 0 28px;
+
+  border-radius: 50%;
+
+  background: #318553;
+  color: white;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.pdf-preview-info {
+  margin-top: 17px;
+
+  padding: 15px;
+
+  background: #f6effb;
+  border-radius: 13px;
+
+  color: #5f4277;
+}
+
+.pdf-preview-info strong {
+  font-size: 14px;
+}
+
+.pdf-preview-info p {
+  margin: 5px 0 0;
+
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.pdf-generate-button {
+  width: 100%;
+
+  margin-top: 18px;
+  padding: 15px;
+
+  border: none;
+  border-radius: 12px;
+
+  background: #222;
+  color: white;
+
+  cursor: pointer;
+
+  font-size: 15px;
+  font-weight: 800;
 }
         /* =================================================
            BOTÓN CARRITO SUPERIOR
@@ -4809,6 +4987,87 @@ temporizadorResumenRef.current =
       </strong>
     </button>
   )}
+  {/* ===================================================
+    CONFIGURADOR DEL CATÁLOGO PDF
+=================================================== */}
+
+{configuradorPdfAbierto && (
+  <div
+    className="pdf-modal-overlay"
+    onClick={() =>
+      setConfiguradorPdfAbierto(false)
+    }
+  >
+    <div
+      className="pdf-modal"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="pdf-modal-header">
+        <div>
+          <h2>Crear catálogo PDF</h2>
+
+          <p>
+            Configura cómo quieres presentar tus productos.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          className="pdf-modal-close"
+          onClick={() =>
+            setConfiguradorPdfAbierto(false)
+          }
+        >
+          ✕
+        </button>
+      </div>
+
+      <div className="pdf-option">
+        <div>
+          <strong>👁️ Productos de mi catálogo</strong>
+
+          <p>
+            Solo incluiremos los productos que tienes visibles para tus clientes.
+          </p>
+        </div>
+
+        <span className="pdf-check">✓</span>
+      </div>
+
+      <div className="pdf-option">
+        <div>
+          <strong>📸 Dos fotografías por producto</strong>
+
+          <p>
+            Foto del producto y foto en modelo cuando estén disponibles.
+          </p>
+        </div>
+
+        <span className="pdf-check">✓</span>
+      </div>
+
+      <div className="pdf-preview-info">
+        <strong>Diseño del catálogo</strong>
+
+        <p>
+          Usaremos 2 columnas, fotografías grandes y el precio de venta que hayas configurado.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        className="pdf-generate-button"
+        onClick={() => {
+          window.alert(
+            "En el siguiente paso conectaremos aquí la generación real del PDF."
+          );
+        }}
+      >
+        📄 Generar catálogo PDF
+      </button>
+    </div>
+  </div>
+)}
       {/* ===================================================
           PÁGINA
       =================================================== */}
@@ -4829,22 +5088,26 @@ temporizadorResumenRef.current =
               </p>
             </div>
 
-            <div className="top-buttons">
-              <div className="top-buttons">
+            <<div className="top-buttons">
 
+  {/* CREAR CATÁLOGO PDF */}
   <button
     type="button"
     className="pdf-catalog-button"
-    onClick={() => {
-      window.alert(
-        "Aquí vamos a configurar y generar tu catálogo PDF."
-      );
-    }}
+    onClick={() =>
+      setConfiguradorPdfAbierto(true)
+    }
   >
-    <span className="pdf-catalog-icon">📄</span>
-    <span>Crear catálogo PDF</span>
+    <span className="pdf-catalog-icon">
+      📄
+    </span>
+
+    <span>
+      Crear catálogo PDF
+    </span>
   </button>
 
+  {/* MI PEDIDO */}
   <button
     ref={cartButtonRef}
     type="button"
@@ -4853,43 +5116,41 @@ temporizadorResumenRef.current =
         ? "cart-top-button cart-bounce"
         : "cart-top-button"
     }
-              <button
-                ref={cartButtonRef}
-                type="button"
-                className={
-                  carritoAnimando
-                    ? "cart-top-button cart-bounce"
-                    : "cart-top-button"
-                }
-                onClick={() =>
-                  setCarritoAbierto(true)
-                }
-              >
-                <span className="cart-top-icon">
-                  🛒
-                </span>
+    onClick={() =>
+      setCarritoAbierto(true)
+    }
+  >
+    <span className="cart-top-icon">
+      🛒
+    </span>
 
-                <span>Mi pedido</span>
+    <span>
+      Mi pedido
+    </span>
 
-                <span className="cart-badge">
-                  {totalUnidades}
-                </span>
-              </button>
+    <span className="cart-badge">
+      {totalUnidades}
+    </span>
+  </button>
 
-              <button
-  type="button"
-  className="back-button"
-  onClick={() =>
-    router.push("/admin")
-  }
->
-  <span className="back-button-arrow">
-    ←
-  </span>
+  {/* REGRESAR */}
+  <button
+    type="button"
+    className="back-button"
+    onClick={() =>
+      router.push("/admin")
+    }
+  >
+    <span className="back-button-arrow">
+      ←
+    </span>
 
-  <span>REGRESAR</span>
-</button>
-            </div>
+    <span>
+      REGRESAR
+    </span>
+  </button>
+
+</div>
           </div>
 
           {/* BUSCADOR */}
