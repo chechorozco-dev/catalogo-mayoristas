@@ -332,7 +332,37 @@ export async function GET(request) {
         }
       );
     }
+// =====================================
+// FECHA DE CREACIÓN DE LA TIENDA
+// =====================================
 
+const tiendas =
+  await supabaseRequest(
+    `tiendas` +
+      `?select=id,creado_en,tipo_tienda` +
+      `&id=eq.${encodeURIComponent(
+        cliente.tienda_id
+      )}` +
+      `&limit=1`
+  );
+
+const tienda =
+  Array.isArray(tiendas)
+    ? tiendas[0]
+    : null;
+
+if (!tienda) {
+  return NextResponse.json(
+    {
+      ok: false,
+      mensaje:
+        "No pudimos encontrar la tienda.",
+    },
+    {
+      status: 404,
+    }
+  );
+}
     // =====================================
     // 4. PRODUCTOS
     // =====================================
@@ -603,15 +633,23 @@ nombre:
     // 8. RESPUESTA
     // =====================================
 
-    return NextResponse.json(
-      {
-        ok: true,
+  return NextResponse.json(
+  {
+    ok: true,
 
-        productos,
+    productos,
 
-        total:
-          productos.length,
-      },
+    tienda: {
+      creado_en:
+        tienda.creado_en || null,
+
+      tipo_tienda:
+        tienda.tipo_tienda || "CLIENTE",
+    },
+
+    total:
+      productos.length,
+  },
       {
         status: 200,
 
