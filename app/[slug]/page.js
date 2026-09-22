@@ -268,102 +268,217 @@ export default async function TiendaPage({
       </main>
     );
   }
-  // =========================================
-  // VISIBILIDAD DE PRODUCTOS DE ESTA TIENDA
-  // =========================================
-  //
-  // Si un producto está marcado como
-  // visible = false en tienda_productos,
-  // NO se envía al catálogo público.
-  //
-  // Si no existe registro para el producto,
-  // se considera visible por defecto.
-  // =========================================
+// =========================================
+// VISIBILIDAD + PUBLICACIÓN DE PRODUCTOS
+// =========================================
+//
+// REGLAS:
+//
+// 1. visible = false
+//    Siempre oculta el producto.
+//
+// 2. Tienda RA:
+//    Los productos nuevos aparecen inmediatamente.
+//
+// 3. Tienda CLIENTE:
+//    Los productos nuevos esperan 24 horas.
+//
+// 4. Si el cliente pulsa "Publicar ahora":
+//    publicar_anticipadamente = true
+//    y aparece inmediatamente.
+//
+// 5. Después de 24 horas:
+//    aparece automáticamente.
+//
+// 6. Si created_at no existe:
+//    lo tratamos como producto antiguo.
+// =========================================
 
-  try {
-    const urlProductosOcultos =
-      `${supabaseUrl}` +
-      `/rest/v1/tienda_productos` +
-      `?select=producto_id` +
-      `&tienda_id=eq.${encodeURIComponent(
-        tienda.id
-      )}` +
-      `&visible=eq.false`;
+try {
+  const urlConfiguracionProductos =
+    `${supabaseUrl}` +
+    `/rest/v1/tienda_productos` +
+    `?select=producto_id,visible,publicar_anticipadamente` +
+    `&tienda_id=eq.${encodeURIComponent(
+      tienda.id
+    )}`;
 
-    const respuestaProductosOcultos =
-      await fetch(urlProductosOcultos, {
-        method: "GET",
+  const respuestaConfiguracionProductos =
+    await fetch(urlConfiguracionProductos, {
+      method: "GET",
 
-        headers: {
-          apikey: supabaseSecretKey,
+      headers: {
+        apikey: supabaseSecretKey,
 
-          "Content-Type":
-            "application/json",
-        },
+        "Content-Type":
+          "application/json",
+      },
 
-        cache: "no-store",
-      });
+      cache: "no-store",
+    });
 
-    const textoProductosOcultos =
-      await respuestaProductosOcultos.text();
+  const textoConfiguracionProductos =
+    await respuestaConfiguracionProductos.text();
 
-    if (!respuestaProductosOcultos.ok) {
-      console.error(
-        "ERROR CARGANDO PRODUCTOS OCULTOS:",
-        respuestaProductosOcultos.status,
-        textoProductosOcultos
-      );
-
-      throw new Error(
-        "No se pudo cargar la visibilidad de los productos."
-      );
-    }
-
-    let productosOcultos = [];
-
-    if (textoProductosOcultos) {
-      const datosProductosOcultos =
-        JSON.parse(textoProductosOcultos);
-
-      if (
-        Array.isArray(
-          datosProductosOcultos
-        )
-      ) {
-        productosOcultos =
-          datosProductosOcultos;
-      }
-    }
-
-    const idsProductosOcultos =
-      new Set(
-        productosOcultos.map(
-          (registro) =>
-            String(
-              registro.producto_id
-            )
-        )
-      );
-
-    productosData =
-      productosData.filter(
-        (producto) =>
-          !idsProductosOcultos.has(
-            String(producto.id)
-          )
-      );
-  } catch (error) {
+  if (!respuestaConfiguracionProductos.ok) {
     console.error(
-      "ERROR APLICANDO VISIBILIDAD DE PRODUCTOS:",
-      error
+      "ERROR CARGANDO CONFIGURACIÓN DE PRODUCTOS:",
+      respuestaConfiguracionProductos.status,
+      textoConfiguracionProductos
     );
 
-    // IMPORTANTE:
-    // Si falla la consulta de visibilidad,
-    // no mostramos productos por seguridad.
-    productosData = [];
+    throw new Error(
+      "No se pudo cargar la configuración de los productos."
+    );
   }
 
+  let configuracionProductos = [];
+
+  if (textoConfiguracionProductos) {
+    const datosConfiguracion =
+      JSON.parse(
+        textoConfiguracionProductos
+      );
+
+    if (Array.isArray(datosConfiguracion)) {
+      configuracionProductos =
+        datosConfiguracion;
+    }
+  }
+
+  // -----------------------------------------
+  // MAPA DE CONFIGURACIÓN POR PRODUCTO
+  // -----------------------------------------
+
+  const mapaConfiguracion =
+    new Map();
+
+  configuracionProductos.forEach(
+    (registro) => {
+      mapaConfiguracion.set(
+        String(registro.producto_id),
+        registro
+      );
+    }
+  );
+
+  // -----------------------------------------
+  // ¿ES LA TIENDA PRINCIPAL DE RA?
+  // -----------------------------------------
+
+  const esTiendaRAParaPublicacion =
+    String(
+      tienda.tipo_tienda || ""
+    )
+      .trim()
+      .toUpperCase() === "RA";
+
+  const ahoraMs = Date.now();
+
+  const VEINTICUATRO_HORAS_MS =
+    24 * 60 * 60 * 1000;
+
+  // -----------------------------------------
+  // FILTRAR PRODUCTOS
+  // -----------------------------------------
+
+  productosData =
+    productosData.filter(
+      (producto) => {
+        const configuracion =
+          mapaConfiguracion.get(
+            String(producto.id)
+          );
+
+        // -------------------------------------
+        // 1. OCULTO MANUALMENTE
+        // -------------------------------------
+
+        if (
+          configuracion?.visible === false
+        ) {
+          return false;
+        }
+
+        // -------------------------------------
+        // 2. RA PUBLICA INMEDIATAMENTE
+        // -------------------------------------
+
+        if (esTiendaRAParaPublicacion) {
+          return true;
+        }
+
+        // -------------------------------------
+        // 3. PUBLICACIÓN ANTICIPADA
+        // -------------------------------------
+
+        if (
+          configuracion
+            ?.publicar_anticipadamente ===
+          true
+        ) {
+          return true;
+        }
+
+        // -------------------------------------
+        // 4. PRODUCTOS SIN FECHA
+        //    SE CONSIDERAN ANTIGUOS
+        // -------------------------------------
+
+        if (!producto.created_at) {
+          return true;
+        }
+
+        const fechaCreacionMs =
+          new Date(
+            producto.created_at
+          ).getTime();
+
+        // Si por alguna razón la fecha
+        // no es válida, no ocultamos un
+        // producto antiguo accidentalmente.
+        if (
+          !Number.isFinite(
+            fechaCreacionMs
+          )
+        ) {
+          return true;
+        }
+
+        // -------------------------------------
+        // 5. CALCULAR EDAD DEL PRODUCTO
+        // -------------------------------------
+
+        const edadProductoMs =
+          ahoraMs - fechaCreacionMs;
+
+        // Si ya cumplió 24 horas,
+        // aparece automáticamente.
+        if (
+          edadProductoMs >=
+          VEINTICUATRO_HORAS_MS
+        ) {
+          return true;
+        }
+
+        // -------------------------------------
+        // MENOS DE 24 HORAS:
+        // TODAVÍA NO SE PUBLICA
+        // -------------------------------------
+
+        return false;
+      }
+    );
+} catch (error) {
+  console.error(
+    "ERROR APLICANDO VISIBILIDAD Y PUBLICACIÓN:",
+    error
+  );
+
+  // Si falla esta comprobación,
+  // no mostramos productos por seguridad.
+  productosData = [];
+}
   // =========================================
   // 4. IDENTIFICAR PRODUCTOS CON VARIANTES
   // =========================================
