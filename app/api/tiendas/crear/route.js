@@ -210,6 +210,15 @@ export async function POST(request) {
       String(
         body.nombre_tienda || ""
       ).trim();
+    const colorPrincipal =
+  String(
+    body.color_principal || "#7C3AED"
+  ).trim();
+
+const colorFondo =
+  String(
+    body.color_fondo || "#FFFFFF"
+  ).trim();
 
     if (
       nombreTienda.length < 2
@@ -401,21 +410,27 @@ export async function POST(request) {
               "return=representation",
           },
 
-          body: JSON.stringify({
-            usuario_id: null,
+       body: JSON.stringify({
+  usuario_id: null,
 
-            nombre_tienda:
-              nombreTienda,
+  nombre_tienda:
+    nombreTienda,
 
-            slug,
+  slug,
 
-            whatsapp:
-              cliente.telefono,
+  whatsapp:
+    cliente.telefono,
 
-            logo_url: null,
+  logo_url: null,
 
-            activa: true,
-          }),
+  color_principal:
+    colorPrincipal,
+
+  color_fondo:
+    colorFondo,
+
+  activa: true,
+}),
         }
       );
 
