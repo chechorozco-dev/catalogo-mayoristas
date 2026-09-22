@@ -1289,23 +1289,20 @@ setCarrito([]);
 
     <div className="header-acciones">
 
-      <button
-        type="button"
-        className="header-btn"
-        onClick={() => {
-          const buscador =
-            document.querySelector(".buscador-input");
+     <button
+  type="button"
+  className="header-btn"
+  onClick={() => {
+    setMostrarBusqueda((actual) => !actual);
 
-          if (buscador) {
-            buscador.focus();
-            buscador.scrollIntoView({
-              behavior: "smooth",
-              block: "center",
-            });
-          }
-        }}
-        aria-label="Buscar"
-      >
+    setTimeout(() => {
+      document
+        .querySelector(".buscador-input")
+        ?.focus();
+    }, 100);
+  }}
+  aria-label="Buscar"
+>
         <svg
           viewBox="0 0 24 24"
           width="25"
@@ -1435,50 +1432,54 @@ setCarrito([]);
   )}
 </header>
 
-        {/* BUSCADOR PRINCIPAL */}
+        {/* BUSCADOR PRINCIPAL - SOLO APARECE AL TOCAR LA LUPA */}
 
-<div className="buscador-contenedor">
-  <div className="buscador-caja">
+{mostrarBusqueda && (
+  <div className="buscador-contenedor">
+    <div className="buscador-caja">
 
-    <svg
-      className="buscador-icono"
-      viewBox="0 0 24 24"
-      width="22"
-      height="22"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="11" cy="11" r="7" />
-      <path d="m20 20-3.5-3.5" />
-    </svg>
+      <svg
+        className="buscador-icono"
+        viewBox="0 0 24 24"
+        width="22"
+        height="22"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <circle cx="11" cy="11" r="7" />
+        <path d="m20 20-3.5-3.5" />
+      </svg>
 
-    <input
-      className="buscador-input"
-      type="search"
-      placeholder="Buscar productos, referencias..."
-      value={busqueda}
-      onChange={(e) =>
-        setBusqueda(e.target.value)
-      }
-    />
+      <input
+        autoFocus
+        className="buscador-input"
+        type="search"
+        placeholder="Buscar productos, referencias..."
+        value={busqueda}
+        onChange={(e) =>
+          setBusqueda(e.target.value)
+        }
+      />
 
-    {busqueda && (
       <button
         type="button"
         className="limpiar-busqueda"
-        onClick={() => setBusqueda("")}
-        aria-label="Limpiar búsqueda"
+        onClick={() => {
+          setBusqueda("");
+          setMostrarBusqueda(false);
+        }}
+        aria-label="Cerrar búsqueda"
       >
         ×
       </button>
-    )}
 
+    </div>
   </div>
-</div>
+)}
 <div className="navegacion-sticky">
   
         {/* CATEGORÍAS */}
