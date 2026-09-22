@@ -21,7 +21,38 @@ function normalizar(texto) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 }
+function estadoPublicacionProducto(producto) {
+  if (!producto?.created_at) {
+    return {
+      enEspera: false,
+      horasRestantes: 0,
+    };
+  }
 
+  const fechaCreacion =
+    new Date(producto.created_at).getTime();
+
+  const ahora = Date.now();
+
+  const horasTranscurridas =
+    (ahora - fechaCreacion) /
+    (1000 * 60 * 60);
+
+  const horasRestantes =
+    Math.max(
+      0,
+      Math.ceil(24 - horasTranscurridas)
+    );
+
+  const enEspera =
+    horasTranscurridas < 24 &&
+    producto.publicar_anticipadamente !== true;
+
+  return {
+    enEspera,
+    horasRestantes,
+  };
+}
 function claveProducto(productoId, varianteId = null) {
   return varianteId
     ? `producto-${productoId}-variante-${varianteId}`
@@ -2506,7 +2537,55 @@ temporizadorResumenRef.current =
   }
 
 }
+async function publicarProductoAhora(productoId) {
+  try {
+    const response = await fetch(
+      "/api/publicar-producto",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          producto_id: productoId,
+        }),
+      }
+    );
 
+    const data = await response.json();
+
+    if (!response.ok || !data?.ok) {
+      throw new Error(
+        data?.mensaje ||
+          "No se pudo publicar el producto."
+      );
+    }
+
+    // Actualizamos solamente ese producto
+    // en pantalla, sin tener que recargar todo.
+    setProductos((actuales) =>
+      actuales.map((producto) =>
+        String(producto.id) ===
+        String(productoId)
+          ? {
+              ...producto,
+              publicar_anticipadamente: true,
+            }
+          : producto
+      )
+    );
+  } catch (error) {
+    console.error(
+      "Error publicando producto:",
+      error
+    );
+
+    alert(
+      error?.message ||
+        "No se pudo publicar el producto."
+    );
+  }
+}
   /* =======================================================
      VARIANTES
   ======================================================= */
