@@ -21,8 +21,12 @@ function normalizar(texto) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 }
-function estadoPublicacionProducto(producto) {
-   
+function estadoPublicacionProducto(
+  producto,
+  tienda
+) {
+  // Si no conocemos la fecha del producto,
+  // no hay período de espera.
   if (!producto?.created_at) {
     return {
       enEspera: false,
@@ -30,13 +34,50 @@ function estadoPublicacionProducto(producto) {
     };
   }
 
-  const fechaCreacion =
+  // La tienda RA nunca necesita esperar.
+  if (tienda?.tipo_tienda === "RA") {
+    return {
+      enEspera: false,
+      horasRestantes: 0,
+    };
+  }
+
+  const fechaProducto =
     new Date(producto.created_at).getTime();
+
+  const fechaTienda =
+    tienda?.creado_en
+      ? new Date(tienda.creado_en).getTime()
+      : null;
+
+  // Si el producto ya existía cuando se creó
+  // la tienda, debe aparecer inmediatamente.
+  if (
+    Number.isFinite(fechaProducto) &&
+    Number.isFinite(fechaTienda) &&
+    fechaProducto <= fechaTienda
+  ) {
+    return {
+      enEspera: false,
+      horasRestantes: 0,
+    };
+  }
+
+  // Si el cliente ya decidió publicarlo,
+  // tampoco mostramos el aviso.
+  if (
+    producto.publicar_anticipadamente === true
+  ) {
+    return {
+      enEspera: false,
+      horasRestantes: 0,
+    };
+  }
 
   const ahora = Date.now();
 
   const horasTranscurridas =
-    (ahora - fechaCreacion) /
+    (ahora - fechaProducto) /
     (1000 * 60 * 60);
 
   const horasRestantes =
@@ -45,12 +86,11 @@ function estadoPublicacionProducto(producto) {
       Math.ceil(24 - horasTranscurridas)
     );
 
-  const enEspera =
-    horasTranscurridas < 24 &&
-    producto.publicar_anticipadamente !== true;
-
   return {
-    enEspera,
+    enEspera:
+      horasTranscurridas >= 0 &&
+      horasTranscurridas < 24,
+
     horasRestantes,
   };
 }
@@ -1619,6 +1659,8 @@ export default function ProductosMayoristaPage() {
 
   const [productos, setProductos] =
     useState([]);
+   const [tiendaActual, setTiendaActual] =
+  useState(null);
 
   const [cargando, setCargando] =
     useState(true);
@@ -1760,11 +1802,15 @@ const temporizadorResumenRef = useRef(null);
         return;
       }
 
-      setProductos(
-        productosData.productos || []
-      );
+    setProductos(
+  productosData.productos || []
+);
 
-      setCargando(false);
+setTiendaActual(
+  productosData.tienda || null
+);
+
+setCargando(false);
     } catch (error) {
       console.error(error);
 
@@ -5698,7 +5744,10 @@ async function publicarProductoAhora(productoId) {
   <h2 className="name">
     {producto.nombre}
   </h2>
-{estadoPublicacionProducto(producto).enEspera && (
+estadoPublicacionProducto(
+  producto,
+  tiendaActual
+).enEspera && (
   <div
     style={{
       marginBottom: "12px",
@@ -5730,9 +5779,15 @@ async function publicarProductoAhora(productoId) {
       Aún no aparece en tu tienda.
       Se publicará automáticamente en{" "}
       <strong>
-        {estadoPublicacionProducto(producto)
+       estadoPublicacionProducto(
+  producto,
+  tiendaActual
+)
           .horasRestantes}{" "}
-        {estadoPublicacionProducto(producto)
+     estadoPublicacionProducto(
+  producto,
+  tiendaActual
+)
           .horasRestantes === 1
           ? "hora"
           : "horas"}
