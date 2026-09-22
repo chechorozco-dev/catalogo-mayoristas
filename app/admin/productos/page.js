@@ -2775,7 +2775,46 @@ temporizadorResumenRef.current =
   line-height: 1;
 }
         }
+/* =================================================
+   BOTÓN CREAR CATÁLOGO PDF
+================================================= */
 
+.pdf-catalog-button {
+  height: 46px;
+  padding: 0 17px;
+
+  border: 1px solid #e3d5ee;
+  border-radius: 12px;
+
+  background: #f5edfb;
+  color: #6f45a0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  cursor: pointer;
+
+  font-size: 14px;
+  font-weight: 800;
+
+  white-space: nowrap;
+
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease;
+}
+
+.pdf-catalog-button:hover {
+  background: #eee1f8;
+  transform: translateY(-1px);
+}
+
+.pdf-catalog-icon {
+  font-size: 18px;
+  line-height: 1;
+}
         /* =================================================
            BOTÓN CARRITO SUPERIOR
         ================================================= */
@@ -3521,7 +3560,15 @@ temporizadorResumenRef.current =
     font-size: 13px;
     line-height: 1.25;
   }
+.pdf-catalog-button {
+  width: 100%;
+  height: 44px;
+  order: -1;
+}
 
+.top-buttons {
+  flex-wrap: wrap;
+}
   .new-prices-wrapper {
     margin-top: 5px;
   }
@@ -4783,6 +4830,29 @@ temporizadorResumenRef.current =
             </div>
 
             <div className="top-buttons">
+              <div className="top-buttons">
+
+  <button
+    type="button"
+    className="pdf-catalog-button"
+    onClick={() => {
+      window.alert(
+        "Aquí vamos a configurar y generar tu catálogo PDF."
+      );
+    }}
+  >
+    <span className="pdf-catalog-icon">📄</span>
+    <span>Crear catálogo PDF</span>
+  </button>
+
+  <button
+    ref={cartButtonRef}
+    type="button"
+    className={
+      carritoAnimando
+        ? "cart-top-button cart-bounce"
+        : "cart-top-button"
+    }
               <button
                 ref={cartButtonRef}
                 type="button"
