@@ -5744,7 +5744,7 @@ async function publicarProductoAhora(productoId) {
   <h2 className="name">
     {producto.nombre}
   </h2>
-estadoPublicacionProducto(
+{estadoPublicacionProducto(
   producto,
   tiendaActual
 ).enEspera && (
