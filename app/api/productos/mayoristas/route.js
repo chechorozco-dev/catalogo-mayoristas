@@ -531,9 +531,9 @@ if (Array.isArray(visibilidadData)) {
             id:
               producto.id,
 
-            referencia:
-              producto.referencia,
-            visible:
+           referencia:
+  producto.referencia,
+
 visible:
   mapaVisibilidad.has(
     String(producto.id)
