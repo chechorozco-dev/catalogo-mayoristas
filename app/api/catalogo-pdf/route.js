@@ -722,50 +722,131 @@ export async function POST(request) {
        6. FILTRAR PRODUCTOS VISIBLES
     =============================================== */
 
-  const productosCatalogo =
-  (productos || [])
-    .filter((producto) => {
-          if (
-            mapaVisibilidad.has(
-              String(producto.id)
-            )
-          ) {
-            return (
-              mapaVisibilidad.get(
-                String(
-                  producto.id
-                )
-              ) !== false
-            );
-          }
+ function normalizar(texto) {
+  return String(texto || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
 
-          /*
-            Si no existe fila en
-            tienda_productos,
-            el producto es visible
-            por defecto.
-          */
+let productosFiltrados = (productos || []).filter(
+  (producto) => {
+    // Primero respetamos la visibilidad de la tienda.
+    if (
+      mapaVisibilidad.has(String(producto.id)) &&
+      mapaVisibilidad.get(String(producto.id)) === false
+    ) {
+      return false;
+    }
 
-          return true;
-        })
-        .map((producto) => ({
-          ...producto,
+    return true;
+  }
+);
 
-          precio_pdf:
-            mapaPrecios.has(
-              String(producto.id)
-            )
-              ? mapaPrecios.get(
-                  String(
-                    producto.id
-                  )
-                )
-              : Number(
-                  producto.precio_detal ||
-                    0
-                ),
-               }))
-        .slice(0, 6);
+/* FILTRAR SEGÚN LA CATEGORÍA ELEGIDA */
+
+if (categoriaPdf === "Accesorios en Rodio") {
+  productosFiltrados = productosFiltrados.filter(
+    (producto) => {
+      const texto = normalizar(
+        `${producto.nombre || ""} ${producto.referencia || ""} ${producto.categoria || ""}`
+      );
+
+      return texto.includes("rodio");
+    }
+  );
+}
+
+if (categoriaPdf === "Accesorios en Acero") {
+  productosFiltrados = productosFiltrados.filter(
+    (producto) => {
+      const texto = normalizar(
+        `${producto.nombre || ""} ${producto.referencia || ""} ${producto.categoria || ""}`
+      );
+
+      return texto.includes("acero");
+    }
+  );
+}
+
+if (categoriaPdf === "Aretes") {
+  productosFiltrados = productosFiltrados.filter(
+    (producto) => {
+      const texto = normalizar(producto.nombre);
+
+      return (
+        texto.includes("arete") ||
+        texto.includes("aretes")
+      );
+    }
+  );
+}
+
+if (categoriaPdf === "Candongas") {
+  productosFiltrados = productosFiltrados.filter(
+    (producto) =>
+      normalizar(producto.nombre).includes("candonga")
+  );
+}
+
+if (categoriaPdf === "Collares") {
+  productosFiltrados = productosFiltrados.filter(
+    (producto) => {
+      const texto = normalizar(producto.nombre);
+
+      return (
+        texto.includes("collar") ||
+        texto.includes("cadena")
+      );
+    }
+  );
+}
+
+if (categoriaPdf === "Pulseras") {
+  productosFiltrados = productosFiltrados.filter(
+    (producto) =>
+      normalizar(producto.nombre).includes("pulsera")
+  );
+}
+
+if (categoriaPdf === "Anillos") {
+  productosFiltrados = productosFiltrados.filter(
+    (producto) =>
+      normalizar(producto.nombre).includes("anillo")
+  );
+}
+
+if (categoriaPdf === "Topos y maxitopos") {
+  productosFiltrados = productosFiltrados.filter(
+    (producto) => {
+      const texto = normalizar(producto.nombre);
+
+      return (
+        texto.includes("topo") ||
+        texto.includes("maxitopo")
+      );
+    }
+  );
+}
+
+/*
+  POR AHORA:
+  "Todos los productos" no aplica filtro adicional.
+
+  Dejamos "Nuevos" para después porque necesitamos
+  manejarlo por fecha y no quiero mezclar ese cambio
+  con esta primera prueba.
+*/
+
+const productosCatalogo = productosFiltrados
+  .map((producto) => ({
+    ...producto,
+
+    precio_pdf: mapaPrecios.has(String(producto.id))
+      ? mapaPrecios.get(String(producto.id))
+      : Number(producto.precio_detal || 0),
+  }))
+  .slice(0, 6);
     if (
       productosCatalogo.length === 0
     ) {
