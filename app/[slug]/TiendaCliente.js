@@ -4941,6 +4941,238 @@ color: var(--texto-principal);
             width: calc(100% - 34px);
           }
         }
+        /* ========================================
+   MODO COMPACTO - MÁS ESPACIO PARA PRODUCTOS
+======================================== */
+
+/* HEADER MÁS DELGADO */
+
+.header {
+  padding-top: 7px;
+  padding-bottom: 4px;
+}
+
+.header-contenido {
+  min-height: 54px;
+}
+
+.logo-tienda,
+.logo-placeholder {
+  width: 44px;
+  height: 44px;
+  flex-basis: 44px;
+}
+
+.nombre-tienda {
+  font-size: 16px;
+}
+
+.mensaje-portada {
+  font-size: 9px;
+}
+
+.redes-sociales {
+  margin-top: 1px;
+  gap: 5px;
+}
+
+.red-social {
+  width: 24px;
+  height: 24px;
+}
+
+
+/* CATEGORÍAS MÁS COMPACTAS */
+
+.categorias-superiores {
+  gap: 7px;
+  padding: 7px 8px 8px;
+}
+
+.categoria-superior {
+  width: 62px;
+  gap: 4px;
+}
+
+.categoria-circulo {
+  width: 54px;
+  height: 54px;
+}
+
+.categoria-nombre {
+  font-size: 11px;
+  line-height: 1.1;
+}
+
+
+/* TODOS / RODIO / ACERO MÁS DELGADOS */
+
+.lineas-producto {
+  gap: 7px;
+  padding: 7px 9px;
+}
+
+.linea-producto {
+  min-height: 32px;
+  padding: 5px 13px;
+
+  font-size: 12px;
+}
+
+
+/* AVISO MÁS COMPACTO */
+
+.anuncio-contenedor {
+  margin-top: 7px;
+  padding: 0 8px;
+}
+
+.anuncio-tienda {
+  min-height: 58px;
+  padding: 8px 11px;
+  gap: 8px;
+}
+
+.anuncio-icono {
+  width: 35px;
+  height: 35px;
+
+  font-size: 18px;
+}
+
+.anuncio-informacion {
+  gap: 2px;
+}
+
+.anuncio-informacion strong {
+  font-size: 11px;
+}
+
+.anuncio-informacion span {
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+
+/* CONTADOR DE PRODUCTOS MÁS PEGADO */
+
+.titulo-catalogo {
+  padding-top: 7px;
+  padding-bottom: 6px;
+}
+
+
+/* ========================================
+   BARRA INFERIOR DEL CARRITO MÁS DELGADA
+======================================== */
+
+.barra-carrito {
+  bottom: 8px;
+
+  width: calc(100% - 24px);
+  max-width: 680px;
+
+  min-height: 48px;
+  height: 48px;
+
+  padding: 0 17px;
+
+  border-radius: 11px;
+
+  font-size: 14px;
+}
+
+.barra-carrito-izquierda {
+  gap: 6px;
+}
+
+
+/* WHATSAPP UN POCO MÁS PEQUEÑO */
+
+.whatsapp-flotante {
+  width: 52px;
+  height: 52px;
+
+  right: 13px;
+  bottom: 14px;
+}
+
+.whatsapp-flotante svg {
+  width: 30px;
+  height: 30px;
+}
+
+.whatsapp-flotante.con-carrito {
+  bottom: 67px;
+}
+
+
+/* CELULAR */
+
+@media (max-width: 650px) {
+
+  .header {
+    padding: 6px 8px 3px;
+  }
+
+  .header-contenido {
+    min-height: 52px;
+  }
+
+  .logo-tienda,
+  .logo-placeholder {
+    width: 42px;
+    height: 42px;
+    flex-basis: 42px;
+  }
+
+  .categorias-superiores {
+    gap: 5px;
+    padding: 6px 6px 7px;
+  }
+
+  .categoria-superior {
+    width: 61px;
+  }
+
+  .categoria-circulo {
+    width: 52px;
+    height: 52px;
+  }
+
+  .lineas-producto {
+    padding: 6px 7px;
+  }
+
+  .linea-producto {
+    min-height: 31px;
+    padding: 5px 12px;
+  }
+
+  .barra-carrito {
+    bottom: 7px;
+
+    width: calc(100% - 22px);
+
+    min-height: 46px;
+    height: 46px;
+
+    padding: 0 15px;
+
+    border-radius: 10px;
+  }
+
+  .whatsapp-flotante {
+    width: 50px;
+    height: 50px;
+
+    right: 12px;
+  }
+
+  .whatsapp-flotante.con-carrito {
+    bottom: 62px;
+  }
+}
       `}</style>
     </>
   );
