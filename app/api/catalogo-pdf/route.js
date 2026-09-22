@@ -715,9 +715,9 @@ export async function POST(request) {
        6. FILTRAR PRODUCTOS VISIBLES
     =============================================== */
 
-    const productosCatalogo =
-      (productos || [])
-        .filter((producto) => {
+  const productosCatalogo =
+  (productos || [])
+    .filter((producto) => {
           if (
             mapaVisibilidad.has(
               String(producto.id)
@@ -757,8 +757,8 @@ export async function POST(request) {
                   producto.precio_detal ||
                     0
                 ),
-        }));
-
+               }))
+        .slice(0, 6);
     if (
       productosCatalogo.length === 0
     ) {
