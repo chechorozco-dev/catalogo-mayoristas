@@ -601,7 +601,7 @@ const colorFondo =
                   "tienda_creada_p",
 
                 broadcast_name:
-                  "tienda_creada_web",
+                  "creacion_de_tienda",
 
                 channel_number:
                   watiChannelNumber,
