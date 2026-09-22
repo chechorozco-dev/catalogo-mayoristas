@@ -5778,20 +5778,18 @@ async function publicarProductoAhora(productoId) {
     >
       Aún no aparece en tu tienda.
       Se publicará automáticamente en{" "}
-      <strong>
-       estadoPublicacionProducto(
-  producto,
-  tiendaActual
-)
-          .horasRestantes}{" "}
-     estadoPublicacionProducto(
-  producto,
-  tiendaActual
-)
-          .horasRestantes === 1
-          ? "hora"
-          : "horas"}
-      </strong>
+     <strong>
+  {estadoPublicacionProducto(
+    producto,
+    tiendaActual
+  ).horasRestantes}{" "}
+  {estadoPublicacionProducto(
+    producto,
+    tiendaActual
+  ).horasRestantes === 1
+    ? "hora"
+    : "horas"}
+</strong>
       .
     </span>
 
