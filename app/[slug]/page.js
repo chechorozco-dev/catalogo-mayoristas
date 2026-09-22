@@ -125,9 +125,9 @@ export default async function TiendaPage({
     error: tiendaError,
   } = await supabase
     .from("tiendas")
-    .select(
-      "id,nombre_tienda,slug,whatsapp,logo_url,color_principal,color_fondo,mensaje_portada,instagram,facebook,tiktok,tipo_tienda"
-    )
+   .select(
+  "id,nombre_tienda,slug,whatsapp,logo_url,color_principal,color_fondo,mensaje_portada,instagram,facebook,tiktok,tipo_tienda,creado_en"
+)
     .eq("slug", slug)
     .eq("activa", true)
     .single();
