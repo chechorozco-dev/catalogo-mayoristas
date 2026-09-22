@@ -3675,23 +3675,28 @@ height: 60px;
         /* BOTÓN AGREGAR */
 
         .boton-agregar {
-          position: absolute;
-          right: 10px;
-          bottom: 10px;
-          width: 58px;
-          height: 58px;
-          border-radius: 50%;
-          border: none;
-          background: white;
-          box-shadow: 0 3px 12px
-            rgba(0, 0, 0, 0.14);
-          display: flex;
-          justify-content: center;
-          align-items: center;
-        }
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+
+  width: 50px;
+  height: 50px;
+
+  border-radius: 50%;
+  border: none;
+
+  background: white;
+
+  box-shadow: 0 3px 10px
+    rgba(0, 0, 0, 0.14);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 
        .icono-carrito-agregar {
-  font-size: 27px;
+  font-size: 23px;
   line-height: 1;
   display: flex;
   align-items: center;
@@ -4902,8 +4907,8 @@ color: var(--texto-principal);
           }
 
           .boton-agregar {
-            width: 55px;
-            height: 55px;
+            width: 50px;
+            height: 50px;
           }
 
           .cambiar-foto-barra {
