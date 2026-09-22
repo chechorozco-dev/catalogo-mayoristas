@@ -251,7 +251,40 @@ export default function TiendaCliente({
     enlaceInstagram ||
     enlaceFacebook ||
     enlaceTiktok;
-    
+    // ========================================
+// IMÁGENES DE LAS CATEGORÍAS
+// ========================================
+
+const imagenesCategorias = useMemo(() => {
+  const resultado = {};
+
+  CATEGORIAS_PRINCIPALES.forEach((categoria) => {
+    if (categoria === "Todos") {
+      const primerProductoConFoto = productos.find(
+        (producto) => producto?.foto_url
+      );
+
+      resultado[categoria] =
+        primerProductoConFoto?.foto_url || "";
+
+      return;
+    }
+
+    const productoCategoria = productos.find(
+      (producto) =>
+        producto?.foto_url &&
+        productoPerteneceCategoria(
+          producto,
+          categoria
+        )
+    );
+
+    resultado[categoria] =
+      productoCategoria?.foto_url || "";
+  });
+
+  return resultado;
+}, [productos]);
 
   const [categoriaActiva, setCategoriaActiva] = useState("Todos");
   const [lineaActiva, setLineaActiva] = useState("Todos");
@@ -1484,24 +1517,54 @@ setCarrito([]);
   
         {/* CATEGORÍAS */}
 
-        <nav className="categorias-superiores">
-          {CATEGORIAS_PRINCIPALES.map((categoria) => (
-            <button
-              key={categoria}
-              className={`categoria-superior ${
-                categoriaActiva === categoria
-                  ? "activa"
-                  : ""
-              }`}
-              onClick={() => {
-                setCategoriaActiva(categoria);
-                scrollInicio();
-              }}
-            >
-              {categoria}
-            </button>
-          ))}
-        </nav>
+<nav className="categorias-superiores">
+  {CATEGORIAS_PRINCIPALES.map((categoria) => {
+    const imagenCategoria =
+      imagenesCategorias[categoria];
+
+    return (
+      <button
+        key={categoria}
+        type="button"
+        className={`categoria-superior ${
+          categoriaActiva === categoria
+            ? "activa"
+            : ""
+        }`}
+        onClick={() => {
+          setCategoriaActiva(categoria);
+          scrollInicio();
+        }}
+      >
+        <span className="categoria-circulo">
+          {categoria === "Todos" ? (
+            <span className="categoria-todos-icono">
+              <span />
+              <span />
+              <span />
+              <span />
+            </span>
+          ) : imagenCategoria ? (
+            <img
+              src={imagenCategoria}
+              alt={categoria}
+              loading="lazy"
+              decoding="async"
+            />
+          ) : (
+            <span className="categoria-sin-foto">
+              {categoria.charAt(0)}
+            </span>
+          )}
+        </span>
+
+        <span className="categoria-nombre">
+          {categoria}
+        </span>
+      </button>
+    );
+  })}
+</nav>
 {/* LÍNEAS DE PRODUCTO */}
 
 <nav className="lineas-producto">
@@ -3129,20 +3192,26 @@ body {
   background: var(--color-fondo);
 }
 
+/* CATEGORÍAS CON FOTOGRAFÍA */
+
 .categorias-superiores {
   display: flex;
-  gap: 28px;
-  overflow-x: auto;
-  white-space: nowrap;
+  align-items: flex-start;
+  gap: 18px;
 
   width: 100%;
   max-width: 1440px;
   margin: 0 auto;
 
-  padding: 0 14px;
+  padding: 12px 16px 14px;
+
+  overflow-x: auto;
+  white-space: nowrap;
 
   background: var(--color-fondo);
-  border-bottom: 1px solid #ededed;
+
+  border-bottom: 1px solid
+    rgba(128, 128, 128, 0.16);
 
   scrollbar-width: none;
 }
@@ -3151,25 +3220,122 @@ body {
   display: none;
 }
 
-        .categorias-superiores::-webkit-scrollbar {
-          display: none;
-        }
+.categoria-superior {
+  flex: 0 0 auto;
 
-        .categoria-superior {
-          flex: 0 0 auto;
-          padding: 14px 0 12px;
-          border: none;
-          border-bottom: 3px solid transparent;
-          background: transparent;
-          color: var(--texto-fondo);
-          font-size: 17px;
-          flex-shrink: 0;
-white-space: nowrap;
-        }
+  width: 82px;
+  padding: 0;
 
-        .categoria-superior.activa {
-  font-weight: 700;
-  border-bottom-color: var(--color-principal);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  gap: 7px;
+
+  border: none;
+  background: transparent;
+
+  color: var(--texto-fondo);
+
+  cursor: pointer;
+}
+
+.categoria-circulo {
+  width: 72px;
+  height: 72px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  overflow: hidden;
+
+  border: 2px solid transparent;
+  border-radius: 50%;
+
+  background: #f4f4f4;
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.categoria-circulo img {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  object-fit: cover;
+}
+
+.categoria-nombre {
+  width: 100%;
+
+  overflow: hidden;
+
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  opacity: 0.78;
+}
+
+.categoria-superior.activa .categoria-circulo {
+  border-color: var(--color-principal);
+
+  box-shadow:
+    0 0 0 2px var(--color-fondo),
+    0 0 0 4px var(--color-principal);
+
+  transform: scale(1.03);
+}
+
+.categoria-superior.activa .categoria-nombre {
+  color: var(--color-principal);
+  font-weight: 800;
+  opacity: 1;
+}
+
+/* ICONO PARA "TODOS" */
+
+.categoria-todos-icono {
+  width: 31px;
+  height: 31px;
+
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+
+  gap: 4px;
+}
+
+.categoria-todos-icono span {
+  display: block;
+
+  border-radius: 4px;
+
+  background: var(--color-principal);
+}
+
+/* RESPALDO SI UNA CATEGORÍA NO TIENE FOTO */
+
+.categoria-sin-foto {
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #777777;
+
+  font-size: 23px;
+  font-weight: 800;
 }
 /* LÍNEAS DE PRODUCTO */
 
@@ -4706,11 +4872,7 @@ color: var(--texto-principal);
   font-size: 14px;
 }
 
-          .categorias-superiores {
-            gap: 24px;
-padding-left: 16px;
-padding-right: 16px;
-          }
+         
 
           .titulo-catalogo {
             padding: 10px 7px 8px;
