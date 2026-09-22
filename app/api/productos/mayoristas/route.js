@@ -534,6 +534,7 @@ if (Array.isArray(visibilidadData)) {
             referencia:
               producto.referencia,
             visible:
+visible:
   mapaVisibilidad.has(
     String(producto.id)
   )
@@ -542,8 +543,17 @@ if (Array.isArray(visibilidadData)) {
       )
     : true,
 
-            nombre:
-              producto.nombre,
+publicar_anticipadamente:
+  mapaPublicacionAnticipada.has(
+    String(producto.id)
+  )
+    ? mapaPublicacionAnticipada.get(
+        String(producto.id)
+      )
+    : false,
+
+nombre:
+  producto.nombre,
 
             categoria:
               producto.categoria || "",
