@@ -5028,16 +5028,22 @@ color: var(--texto-principal);
 }
 
 .anuncio-tienda {
-  min-height: 58px;
-  padding: 8px 11px;
-  gap: 8px;
+
+  min-height: 60px;
+
+  padding: 7px 11px;
+
+  gap: 9px;
 }
 
 .anuncio-icono {
-  width: 35px;
-  height: 35px;
 
-  font-size: 18px;
+  width: 36px;
+
+  height: 36px;
+
+  font-size: 19px;
+
 }
 
 .anuncio-informacion {
@@ -5045,12 +5051,17 @@ color: var(--texto-principal);
 }
 
 .anuncio-informacion strong {
-  font-size: 11px;
+
+  font-size: 12px;
+
+  line-height: 1.2;
 }
 
 .anuncio-informacion span {
-  font-size: 11px;
-  line-height: 1.2;
+
+  font-size: 12px;
+
+  line-height: 1.25;
 }
 
 
