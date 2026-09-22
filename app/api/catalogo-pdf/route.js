@@ -536,10 +536,17 @@ async function dibujarProducto({
 
 export async function POST(request) {
   try {
+    const body = await request.json().catch(() => ({}));
+
+    const categoriaPdf =
+      String(
+        body?.categoria ||
+          "Todos los productos"
+      ).trim();
+
     /* ===============================================
        1. VERIFICAR SESIÓN
     =============================================== */
-
     const cookieSesion =
       obtenerCookie(
         request,
