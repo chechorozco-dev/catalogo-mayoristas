@@ -5161,12 +5161,15 @@ temporizadorResumenRef.current =
   className="pdf-generate-button"
   onClick={async () => {
     try {
-      const response = await fetch(
-        "/api/catalogo-pdf",
-        {
-          method: "POST",
-        }
-      );
+    const response = await fetch("/api/catalogo-pdf", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    categoria: categoriaPdf,
+  }),
+});
 
       if (!response.ok) {
         const data = await response
