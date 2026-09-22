@@ -124,6 +124,16 @@ export async function POST(request) {
     const authSessionSecret =
       process.env.AUTH_SESSION_SECRET;
 
+    // WATI
+    const watiEndpoint =
+      process.env.WATI_API_ENDPOINT;
+
+    const watiToken =
+      process.env.WATI_API_TOKEN;
+
+    const watiChannelNumber =
+      process.env.WATI_CHANNEL_NUMBER;
+
     if (
       !supabaseUrl ||
       !supabaseSecretKey ||
@@ -384,6 +394,7 @@ export async function POST(request) {
         `${supabaseUrl}/rest/v1/tiendas`,
         {
           method: "POST",
+
           headers: {
             ...supabaseHeaders,
             Prefer:
@@ -392,12 +403,17 @@ export async function POST(request) {
 
           body: JSON.stringify({
             usuario_id: null,
+
             nombre_tienda:
               nombreTienda,
+
             slug,
+
             whatsapp:
               cliente.telefono,
+
             logo_url: null,
+
             activa: true,
           }),
         }
@@ -451,6 +467,7 @@ export async function POST(request) {
         )}`,
         {
           method: "PATCH",
+
           headers: {
             ...supabaseHeaders,
             Prefer:
@@ -501,7 +518,144 @@ export async function POST(request) {
     }
 
     // =========================================
-    // 9. ACTUALIZAR SESIÓN CON tienda_id
+    // 9. ENVIAR BIENVENIDA POR WATI
+    // =========================================
+
+    /*
+      IMPORTANTE:
+
+      La tienda YA está creada y vinculada
+      antes de llegar a este punto.
+
+      Si WATI presenta algún problema,
+      NO eliminamos la tienda ni devolvemos
+      un error al cliente.
+    */
+
+    if (
+      watiEndpoint &&
+      watiToken &&
+      watiChannelNumber &&
+      cliente.telefono
+    ) {
+      try {
+        const authorization =
+          watiToken
+            .trim()
+            .toLowerCase()
+            .startsWith("bearer ")
+            ? watiToken.trim()
+            : `Bearer ${watiToken.trim()}`;
+
+        const baseWati =
+          watiEndpoint.replace(
+            /\/+$/,
+            ""
+          );
+
+        const telefonoWati =
+          String(
+            cliente.telefono || ""
+          ).replace(/\D/g, "");
+
+       const enlaceTienda =
+  `https://mi-catalogo-accesorios.vercel.app/${slug}`;
+
+        const urlWati =
+          `${baseWati}/api/v1/sendTemplateMessage` +
+          `?whatsappNumber=${encodeURIComponent(
+            telefonoWati
+          )}`;
+
+        const watiResponse =
+          await fetch(
+            urlWati,
+            {
+              method: "POST",
+
+              headers: {
+                Authorization:
+                  authorization,
+
+                "Content-Type":
+                  "application/json",
+              },
+
+              body: JSON.stringify({
+                template_name:
+                  "tienda_creada",
+
+                broadcast_name:
+                  "tienda_creada_web",
+
+                channel_number:
+                  watiChannelNumber,
+
+             parameters: [
+  {
+    name: "1",
+    value: nombreTienda,
+  },
+  {
+    name: "2",
+    value: slug,
+  },
+],
+
+                /*
+                  BOTÓN DINÁMICO
+
+                  La plantilla tiene:
+
+                  https://mi-catalogo-accesorios.vercel.app/{{1}}
+
+                  Por eso solamente enviamos
+                  el slug al botón.
+                */
+                buttons: [
+                  {
+                    type: "url",
+                    index: "0",
+                    parameters: [
+                      {
+                        type: "text",
+                        text: slug,
+                      },
+                    ],
+                  },
+                ],
+              }),
+            }
+          );
+
+        const watiTexto =
+          await watiResponse.text();
+
+        if (!watiResponse.ok) {
+          console.error(
+            "La tienda fue creada, pero WATI no pudo enviar la bienvenida:",
+            watiResponse.status,
+            watiTexto
+          );
+        } else {
+          console.log(
+            "Plantilla tienda_creada enviada correctamente."
+          );
+        }
+      } catch (errorWati) {
+        console.error(
+          "La tienda fue creada, pero ocurrió un error enviando la bienvenida por WATI:",
+          errorWati
+        );
+      }
+    } else {
+      console.warn(
+        "La tienda fue creada, pero faltan variables de WATI para enviar la bienvenida."
+      );
+    }
+
+    // =========================================
+    // 10. ACTUALIZAR SESIÓN CON tienda_id
     // =========================================
 
     const ahora = Math.floor(
@@ -538,7 +692,7 @@ export async function POST(request) {
       );
 
     // =========================================
-    // 10. RESPUESTA
+    // 11. RESPUESTA
     // =========================================
 
     const response =
@@ -565,11 +719,17 @@ export async function POST(request) {
 
     response.cookies.set({
       name: "ra_session",
+
       value: nuevoToken,
+
       httpOnly: true,
+
       secure: true,
+
       sameSite: "lax",
+
       path: "/",
+
       maxAge:
         duracionSesion,
     });
@@ -584,6 +744,7 @@ export async function POST(request) {
     return NextResponse.json(
       {
         ok: false,
+
         mensaje:
           "Ocurrió un error inesperado al crear tu tienda.",
       },
