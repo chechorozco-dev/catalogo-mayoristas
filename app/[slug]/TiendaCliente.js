@@ -1229,178 +1229,256 @@ setCarrito([]);
 
         {/* HEADER */}
 
-        <header className="header">
-          <div className="header-lateral header-izquierda">
-            <button
-              className="header-btn"
-              onClick={() => setMenuAbierto(true)}
-              aria-label="Abrir menú"
-            >
-              ☰
-            </button>
+<header className="header">
+  <div className="header-contenido">
 
-            <button
-              className="header-btn buscar-btn"
-              onClick={() =>
-                setMostrarBusqueda((actual) => !actual)
-              }
-              aria-label="Buscar"
-            >
-              ⌕
-            </button>
-          </div>
+    {/* MENÚ */}
 
-          <div className="marca">
-            {logoUrl ? (
-              <img
-                className="logo-tienda"
-                src={logoUrl}
-                alt={nombreTienda}
-              />
-            ) : (
-              <div className="logo-placeholder">
-                {String(nombreTienda || "T")
-                  .charAt(0)
-                  .toUpperCase()}
-              </div>
-            )}
-
-          <div className="nombre-tienda">
-  {nombreTienda}
-</div>
-
-{mensajePortada && (
-  <div className="mensaje-portada">
-    {mensajePortada}
-  </div>
-)}
-{tieneRedesSociales && (
-  <div className="redes-sociales">
-    {enlaceInstagram && (
-      <a
-        href={enlaceInstagram}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="red-social"
-        aria-label="Instagram"
-        title="Instagram"
+    <button
+      type="button"
+      className="header-btn menu-header-btn"
+      onClick={() => setMenuAbierto(true)}
+      aria-label="Abrir menú"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        width="26"
+        height="26"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
       >
-        <svg
-  viewBox="0 0 24 24"
-  width="16"
-  height="16"
-  fill="none"
-  stroke="currentColor"
-  strokeWidth="2"
-  strokeLinecap="round"
-  strokeLinejoin="round"
-  aria-hidden="true"
->
-  <rect
-    x="3"
-    y="3"
-    width="18"
-    height="18"
-    rx="5"
-  />
-  <circle cx="12" cy="12" r="4" />
-  <circle
-    cx="17.5"
-    cy="6.5"
-    r="1"
-    fill="currentColor"
-    stroke="none"
-  />
-</svg>
-      </a>
-    )}
+        <path d="M4 7h16" />
+        <path d="M4 12h16" />
+        <path d="M4 17h16" />
+      </svg>
+    </button>
 
-    {enlaceFacebook && (
-      <a
-        href={enlaceFacebook}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="red-social"
-        aria-label="Facebook"
-        title="Facebook"
-      >
-        <svg
-  viewBox="0 0 24 24"
-  width="16"
-  height="16"
-  fill="currentColor"
-  aria-hidden="true"
->
-  <path d="M13.5 22v-8h2.7l.4-3h-3.1V9.1c0-.9.3-1.5 1.6-1.5h1.7V4.9c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3V11H7.3v3h2.8v8h3.4Z" />
-</svg>
-      </a>
-    )}
+    {/* MARCA */}
 
-    {enlaceTiktok && (
-      <a
-        href={enlaceTiktok}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="red-social"
-        aria-label="TikTok"
-        title="TikTok"
-      >
-        <svg
-  viewBox="0 0 24 24"
-  width="16"
-  height="16"
-  fill="currentColor"
-  aria-hidden="true"
->
-  <path d="M15.5 3c.3 2.1 1.5 3.4 3.5 3.8v3.1c-1.3 0-2.5-.4-3.5-1.1v6.3a5.7 5.7 0 1 1-4.9-5.6v3.2a2.6 2.6 0 1 0 1.7 2.4V3h3.2Z" />
-</svg>
-      </a>
-    )}
-  </div>
-)}
-          </div>
+    <div className="marca">
+      {logoUrl ? (
+        <img
+          className="logo-tienda"
+          src={logoUrl}
+          alt={nombreTienda}
+        />
+      ) : (
+        <div className="logo-placeholder">
+          {String(nombreTienda || "T")
+            .charAt(0)
+            .toUpperCase()}
+        </div>
+      )}
 
-          <div className="header-lateral header-derecha">
-            <button
-              ref={carritoRef}
-              className="carrito-header"
-              onClick={() => setCarritoAbierto(true)}
-              aria-label="Abrir carrito"
-            >
-              <span className="bolsa">🛍️</span>
+      <div className="marca-textos">
+        <div className="nombre-tienda">
+          {nombreTienda}
+        </div>
 
-              {cantidadTotal > 0 && (
-                <span className="contador-carrito">
-                  {cantidadTotal}
-                </span>
-              )}
-            </button>
-          </div>
-        </header>
-
-        {/* BUSCADOR */}
-
-        {mostrarBusqueda && (
-          <div className="buscador-contenedor">
-            <input
-              autoFocus
-              className="buscador-input"
-              type="text"
-              placeholder="Buscar productos..."
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-            />
-
-            {busqueda && (
-              <button
-                className="limpiar-busqueda"
-                onClick={() => setBusqueda("")}
-              >
-                ×
-              </button>
-            )}
+        {mensajePortada && (
+          <div className="mensaje-portada">
+            {mensajePortada}
           </div>
         )}
+      </div>
+    </div>
+
+    {/* ACCIONES */}
+
+    <div className="header-acciones">
+
+      <button
+        type="button"
+        className="header-btn"
+        onClick={() => {
+          const buscador =
+            document.querySelector(".buscador-input");
+
+          if (buscador) {
+            buscador.focus();
+            buscador.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            });
+          }
+        }}
+        aria-label="Buscar"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="25"
+          height="25"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-3.5-3.5" />
+        </svg>
+      </button>
+
+      <button
+        ref={carritoRef}
+        type="button"
+        className="carrito-header"
+        onClick={() => setCarritoAbierto(true)}
+        aria-label="Abrir carrito"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="27"
+          height="27"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M6 8h12l1 13H5L6 8Z" />
+          <path d="M9 9V6a3 3 0 0 1 6 0v3" />
+        </svg>
+
+        {cantidadTotal > 0 && (
+          <span className="contador-carrito">
+            {cantidadTotal}
+          </span>
+        )}
+      </button>
+
+    </div>
+
+  </div>
+
+  {/* REDES SOCIALES */}
+
+  {tieneRedesSociales && (
+    <div className="redes-sociales">
+
+      {enlaceInstagram && (
+        <a
+          href={enlaceInstagram}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="red-social"
+          aria-label="Instagram"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <rect
+              x="3"
+              y="3"
+              width="18"
+              height="18"
+              rx="5"
+            />
+            <circle cx="12" cy="12" r="4" />
+            <circle
+              cx="17.5"
+              cy="6.5"
+              r="1"
+              fill="currentColor"
+              stroke="none"
+            />
+          </svg>
+        </a>
+      )}
+
+      {enlaceFacebook && (
+        <a
+          href={enlaceFacebook}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="red-social"
+          aria-label="Facebook"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="currentColor"
+          >
+            <path d="M13.5 22v-8h2.7l.4-3h-3.1V9.1c0-.9.3-1.5 1.6-1.5h1.7V4.9c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3V11H7.3v3h2.8v8h3.4Z" />
+          </svg>
+        </a>
+      )}
+
+      {enlaceTiktok && (
+        <a
+          href={enlaceTiktok}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="red-social"
+          aria-label="TikTok"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="currentColor"
+          >
+            <path d="M15.5 3c.3 2.1 1.5 3.4 3.5 3.8v3.1c-1.3 0-2.5-.4-3.5-1.1v6.3a5.7 5.7 0 1 1-4.9-5.6v3.2a2.6 2.6 0 1 0 1.7 2.4V3h3.2Z" />
+          </svg>
+        </a>
+      )}
+
+    </div>
+  )}
+</header>
+
+        {/* BUSCADOR PRINCIPAL */}
+
+<div className="buscador-contenedor">
+  <div className="buscador-caja">
+
+    <svg
+      className="buscador-icono"
+      viewBox="0 0 24 24"
+      width="22"
+      height="22"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+
+    <input
+      className="buscador-input"
+      type="search"
+      placeholder="Buscar productos, referencias..."
+      value={busqueda}
+      onChange={(e) =>
+        setBusqueda(e.target.value)
+      }
+    />
+
+    {busqueda && (
+      <button
+        type="button"
+        className="limpiar-busqueda"
+        onClick={() => setBusqueda("")}
+        aria-label="Limpiar búsqueda"
+      >
+        ×
+      </button>
+    )}
+
+  </div>
+</div>
 <div className="navegacion-sticky">
   
         {/* CATEGORÍAS */}
@@ -2650,157 +2728,324 @@ body {
 
         /* HEADER */
 
-        .header {
-          height: 165px;
-          position: relative;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 20px;
-          background: var(--color-fondo);
-          color: var(--texto-fondo);
-        }
-
-        .header-lateral {
-          position: absolute;
-          top: 50%;
-          transform: translateY(-50%);
-          display: flex;
-          align-items: center;
-          gap: 18px;
-        }
-
-        .header-izquierda {
-          left: 22px;
-        }
-
-        .header-derecha {
-          right: 20px;
-        }
-
-        .header-btn {
-          appearance: none;
-          border: none;
-          background: transparent;
-          padding: 7px;
-          font-size: 26px;
-          cursor: pointer;
-          color: var(--texto-fondo);
-        }
-
-        .buscar-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .marca {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          max-width: 50%;
-          text-align: center;
-        }
-
-        .logo-tienda {
-          width: 72px;
-          height: 72px;
-          object-fit: contain;
-          border-radius: 4px;
-        }
-
-        .logo-placeholder {
-          width: 72px;
-          height: 72px;
-          border-radius: 50%;
-          background: #f1f1f1;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          font-size: 30px;
-          font-weight: 700;
-        }
-
-        .nombre-tienda {
-          font-size: 20px;
-          font-weight: 700;
-          text-transform: uppercase;
-        }
-        .mensaje-portada {
-  max-width: 360px;
-  margin-top: 1px;
-  font-size: 13px;
-  font-weight: 400;
-  line-height: 1.35;
-  text-align: center;
+.header {
+  width: 100%;
+  padding: 15px 18px 10px;
+  background: var(--color-fondo);
   color: var(--texto-fondo);
-  opacity: 0.72;
-  white-space: normal;
 }
+
+.header-contenido {
+  width: 100%;
+  max-width: 1440px;
+  min-height: 76px;
+  margin: 0 auto;
+
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+}
+
+.header-btn {
+  width: 44px;
+  height: 44px;
+
+  padding: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  appearance: none;
+  border: none;
+  border-radius: 50%;
+
+  background: transparent;
+  color: var(--texto-fondo);
+
+  cursor: pointer;
+}
+
+.header-btn:hover {
+  background: rgba(128, 128, 128, 0.08);
+}
+
+.marca {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+
+  gap: 12px;
+}
+
+.logo-tienda {
+  width: 62px;
+  height: 62px;
+
+  flex: 0 0 62px;
+
+  object-fit: contain;
+  border-radius: 50%;
+}
+
+.logo-placeholder {
+  width: 62px;
+  height: 62px;
+
+  flex: 0 0 62px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: rgba(128, 128, 128, 0.12);
+
+  color: var(--texto-fondo);
+
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.marca-textos {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+.nombre-tienda {
+  max-width: 100%;
+
+  overflow: hidden;
+
+  color: var(--texto-fondo);
+
+  font-size: 20px;
+  font-weight: 800;
+
+  line-height: 1.1;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  text-transform: uppercase;
+}
+
+.mensaje-portada {
+  max-width: 330px;
+
+  overflow: hidden;
+
+  color: var(--texto-fondo);
+
+  font-size: 11px;
+  font-weight: 600;
+
+  line-height: 1.25;
+
+  opacity: 0.65;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header-acciones {
+  display: flex;
+  align-items: center;
+
+  gap: 3px;
+}
+
+.carrito-header {
+  position: relative;
+
+  width: 46px;
+  height: 46px;
+
+  padding: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  border-radius: 50%;
+
+  background: transparent;
+  color: var(--texto-fondo);
+
+  cursor: pointer;
+
+  transform-origin: center;
+}
+
+.contador-carrito {
+  position: absolute;
+
+  top: 0;
+  right: -2px;
+
+  min-width: 21px;
+  height: 21px;
+
+  padding: 0 5px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 2px solid var(--color-fondo);
+  border-radius: 999px;
+
+  background: var(--color-principal);
+  color: var(--texto-principal);
+
+  font-size: 11px;
+  font-weight: 800;
+}
+
 .redes-sociales {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+
+  gap: 7px;
+
   margin-top: 4px;
 }
 
 .red-social {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
+  width: 27px;
+  height: 27px;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--texto-fondo);
+
+  border: 1px solid currentColor;
+  border-radius: 50%;
+
   color: var(--texto-fondo);
+
   text-decoration: none;
-  font-size: 12px;
-  font-weight: 800;
-  opacity: 0.75;
+
+  opacity: 0.7;
+}
+
+/* BUSCADOR */
+
+.buscador-contenedor {
+  width: 100%;
+  max-width: 1000px;
+
+  margin: 0 auto;
+
+  padding: 4px 18px 14px;
+}
+
+.buscador-caja {
+  position: relative;
+
+  width: 100%;
+  height: 48px;
+
+  display: flex;
+  align-items: center;
+
+  border: 1px solid rgba(128, 128, 128, 0.22);
+  border-radius: 999px;
+
+  background: rgba(128, 128, 128, 0.06);
+
   transition:
-    transform 0.15s ease,
-    opacity 0.15s ease;
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
 }
 
-.red-social:hover {
-  transform: translateY(-2px);
-  opacity: 1;
+.buscador-caja:focus-within {
+  border-color: var(--color-principal);
+
+  background: var(--color-fondo);
+
+  box-shadow:
+    0 0 0 3px
+    color-mix(
+      in srgb,
+      var(--color-principal) 12%,
+      transparent
+    );
 }
 
-        .carrito-header {
-          position: relative;
-          border: none;
-          background: transparent;
-          cursor: pointer;
-          padding: 8px;
-          transform-origin: center;
-        }
+.buscador-icono {
+  position: absolute;
 
-        .bolsa {
-          font-size: 29px;
-          display: block;
-        }
+  left: 17px;
 
-        .contador-carrito {
-          position: absolute;
-          top: -1px;
-          right: -3px;
-          min-width: 25px;
-          height: 25px;
-          padding: 0 6px;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          border-radius: 999px;
-          background: var(--color-principal);
-          color: var(--texto-principal);
-          font-size: 13px;
-          font-weight: 700;
-          border: 2px solid white;
-        }
+  color: var(--texto-fondo);
+
+  opacity: 0.45;
+
+  pointer-events: none;
+}
+
+.buscador-input {
+  width: 100%;
+  height: 100%;
+
+  padding: 0 48px 0 49px;
+
+  border: none;
+  outline: none;
+
+  background: transparent;
+  color: var(--texto-fondo);
+
+  font-size: 15px;
+}
+
+.buscador-input::placeholder {
+  color: var(--texto-fondo);
+  opacity: 0.45;
+}
+
+.buscador-input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.limpiar-busqueda {
+  position: absolute;
+
+  right: 9px;
+  top: 50%;
+
+  width: 32px;
+  height: 32px;
+
+  padding: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transform: translateY(-50%);
+
+  border: none;
+  border-radius: 50%;
+
+  background: rgba(128, 128, 128, 0.1);
+  color: var(--texto-fondo);
+
+  font-size: 21px;
+}
 
         /* ANIMACIÓN */
 
@@ -4399,32 +4644,66 @@ color: var(--texto-principal);
 
         @media (max-width: 650px) {
           .header {
-            height: 165px;
-            padding: 14px 10px;
-          }
+  padding: 11px 10px 6px;
+}
 
-          .header-izquierda {
-            left: 20px;
-          }
+.header-contenido {
+  min-height: 64px;
 
-          .header-derecha {
-            right: 12px;
-          }
+  grid-template-columns:
+    42px minmax(0, 1fr) auto;
 
-          .marca {
-            max-width: 54%;
-          }
+  gap: 5px;
+}
 
-          .logo-tienda,
-          .logo-placeholder {
-            width: 68px;
-            height: 68px;
-          }
+.header-btn {
+  width: 40px;
+  height: 40px;
+}
 
-          .nombre-tienda {
-            font-size: 18px;
-            white-space: nowrap;
-          }
+.marca {
+  gap: 8px;
+}
+
+.logo-tienda,
+.logo-placeholder {
+  width: 48px;
+  height: 48px;
+
+  flex-basis: 48px;
+}
+
+.nombre-tienda {
+  font-size: 17px;
+}
+
+.mensaje-portada {
+  max-width: 190px;
+
+  font-size: 9px;
+}
+
+.header-acciones {
+  gap: 0;
+}
+
+.carrito-header {
+  width: 40px;
+  height: 40px;
+}
+
+.buscador-contenedor {
+  padding:
+    5px 13px 11px;
+}
+
+.buscador-caja {
+  height: 46px;
+}
+
+.buscador-input {
+  font-size: 14px;
+}
 
           .categorias-superiores {
             gap: 24px;
