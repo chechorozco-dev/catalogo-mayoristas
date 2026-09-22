@@ -2798,7 +2798,7 @@ temporizadorResumenRef.current =
   font-size: 21px;
   line-height: 1;
 }
-        }
+        
 /* =================================================
    BOTÓN CREAR CATÁLOGO PDF
 ================================================= */
@@ -5088,7 +5088,7 @@ temporizadorResumenRef.current =
               </p>
             </div>
 
-            <<div className="top-buttons">
+                        <div className="top-buttons">
 
   {/* CREAR CATÁLOGO PDF */}
   <button
