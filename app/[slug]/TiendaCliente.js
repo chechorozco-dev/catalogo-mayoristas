@@ -3197,13 +3197,13 @@ body {
 .categorias-superiores {
   display: flex;
   align-items: flex-start;
-  gap: 18px;
+  gap: 10px;
 
   width: 100%;
   max-width: 1440px;
   margin: 0 auto;
 
-  padding: 12px 16px 14px;
+  padding: 10px 12px 11px;
 
   overflow-x: auto;
   white-space: nowrap;
@@ -3223,7 +3223,7 @@ body {
 .categoria-superior {
   flex: 0 0 auto;
 
-  width: 82px;
+  width: 68px;
   padding: 0;
 
   display: flex;
@@ -3241,8 +3241,8 @@ body {
 }
 
 .categoria-circulo {
-  width: 72px;
-  height: 72px;
+  width: 60px;
+height: 60px;
 
   display: flex;
   align-items: center;
