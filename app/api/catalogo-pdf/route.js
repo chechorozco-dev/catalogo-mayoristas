@@ -846,7 +846,7 @@ const productosCatalogo = productosFiltrados
       ? mapaPrecios.get(String(producto.id))
       : Number(producto.precio_detal || 0),
   }))
-  .slice(0,40);
+  .slice(0,150);
     if (
       productosCatalogo.length === 0
     ) {
