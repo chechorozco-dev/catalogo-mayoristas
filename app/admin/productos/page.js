@@ -1608,6 +1608,10 @@ export default function ProductosMayoristaPage() {
   configuradorPdfAbierto,
   setConfiguradorPdfAbierto,
 ] = useState(false);
+   const [
+  categoriaPdf,
+  setCategoriaPdf,
+] = useState("Todos los productos");
 
   const [visor, setVisor] =
     useState(null);
@@ -2974,6 +2978,48 @@ temporizadorResumenRef.current =
 
   font-size: 12px;
   line-height: 1.45;
+}
+.pdf-category-section {
+  margin-bottom: 16px;
+  padding: 15px;
+  border: 1px solid #e8e8e8;
+  border-radius: 13px;
+  background: #fafafa;
+}
+
+.pdf-category-title {
+  display: block;
+  color: #222;
+  font-size: 14px;
+}
+
+.pdf-category-description {
+  margin: 5px 0 12px;
+  color: #777;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.pdf-category-select {
+  width: 100%;
+  height: 46px;
+  padding: 0 12px;
+
+  border: 1px solid #d8d8d8;
+  border-radius: 10px;
+
+  background: #fff;
+  color: #222;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  outline: none;
+  cursor: pointer;
+}
+
+.pdf-category-select:focus {
+  border-color: #6f45a0;
 }
 
 .pdf-generate-button {
@@ -5021,7 +5067,63 @@ temporizadorResumenRef.current =
           ✕
         </button>
       </div>
+<div className="pdf-category-section">
+  <strong className="pdf-category-title">
+    📂 Categoría del catálogo
+  </strong>
 
+  <p className="pdf-category-description">
+    Selecciona los productos que quieres incluir en este PDF.
+  </p>
+
+  <select
+    className="pdf-category-select"
+    value={categoriaPdf}
+    onChange={(e) =>
+      setCategoriaPdf(e.target.value)
+    }
+  >
+    <option value="Todos los productos">
+      Todos los productos
+    </option>
+
+    <option value="Accesorios en Rodio">
+      Accesorios en Rodio
+    </option>
+
+    <option value="Accesorios en Acero">
+      Accesorios en Acero
+    </option>
+
+    <option value="Nuevos">
+      Nuevos
+    </option>
+
+    <option value="Aretes">
+      Aretes
+    </option>
+
+    <option value="Candongas">
+      Candongas
+    </option>
+
+    <option value="Collares">
+      Collares
+    </option>
+
+    <option value="Pulseras">
+      Pulseras
+    </option>
+
+    <option value="Anillos">
+      Anillos
+    </option>
+
+    <option value="Topos y maxitopos">
+      Topos y maxitopos
+    </option>
+  </select>
+</div>
       <div className="pdf-option">
         <div>
           <strong>👁️ Productos de mi catálogo</strong>
