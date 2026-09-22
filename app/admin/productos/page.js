@@ -1612,6 +1612,10 @@ export default function ProductosMayoristaPage() {
   categoriaPdf,
   setCategoriaPdf,
 ] = useState("Todos los productos");
+   const [
+  generandoPdf,
+  setGenerandoPdf,
+] = useState(false);
 
   const [visor, setVisor] =
     useState(null);
@@ -2642,6 +2646,83 @@ temporizadorResumenRef.current =
           color: #666;
           font-size: 18px;
         }
+        .pdf-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.48);
+  backdrop-filter: blur(3px);
+}
+
+.pdf-loading-card {
+  width: 100%;
+  max-width: 390px;
+  padding: 28px 24px;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
+  text-align: center;
+}
+
+.pdf-loading-icon {
+  margin-bottom: 10px;
+  font-size: 38px;
+}
+
+.pdf-loading-card h3 {
+  margin: 0 0 8px;
+  color: #222;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.pdf-loading-card p {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.pdf-loading-card span {
+  display: block;
+  margin-top: 13px;
+  color: #888;
+  font-size: 12px;
+}
+
+.pdf-loading-bar {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  margin-top: 22px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eeeeee;
+}
+
+.pdf-loading-progress {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 42%;
+  border-radius: 999px;
+  background: #6f45a0;
+  animation: pdfLoading 1.15s ease-in-out infinite;
+}
+
+@keyframes pdfLoading {
+  0% {
+    left: -42%;
+  }
+
+  100% {
+    left: 100%;
+  }
+}
 
         .page {
           min-height: 100vh;
@@ -5160,6 +5241,7 @@ temporizadorResumenRef.current =
   type="button"
   className="pdf-generate-button"
   onClick={async () => {
+      setGenerandoPdf(true);
     try {
     const response = await fetch("/api/catalogo-pdf", {
   method: "POST",
@@ -5203,20 +5285,43 @@ temporizadorResumenRef.current =
         window.URL.revokeObjectURL(url);
       }, 1000);
     } catch (error) {
-      console.error(
-        "Error generando PDF:",
-        error
-      );
+  console.error("Error generando PDF:", error);
 
-      window.alert(
-        error.message ||
-          "No pudimos generar el catálogo PDF."
-      );
-    }
+  window.alert(
+    error.message ||
+      "No pudimos generar el catálogo PDF."
+  );
+} finally {
+  setGenerandoPdf(false);
+}
   }}
 >
   📄 Generar catálogo PDF
 </button>
+    </div>
+  </div>
+)}
+{generandoPdf && (
+  <div className="pdf-loading-overlay">
+    <div className="pdf-loading-card">
+      <div className="pdf-loading-icon">
+        📄
+      </div>
+
+      <h3>Preparando tu catálogo</h3>
+
+      <p>
+        Estamos organizando los productos,
+        precios y fotografías.
+      </p>
+
+      <div className="pdf-loading-bar">
+        <div className="pdf-loading-progress" />
+      </div>
+
+      <span>
+        Por favor no cierres esta ventana.
+      </span>
     </div>
   </div>
 )}
