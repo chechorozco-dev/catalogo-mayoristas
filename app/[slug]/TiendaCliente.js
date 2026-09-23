@@ -10,6 +10,7 @@ const CATEGORIAS_PRINCIPALES = [
   "Pulseras",
    "Tobilleras",
   "Earcuff",
+   "Camándulas y denarios",
 ];
 
 const CATEGORIAS_MENU = [
@@ -22,6 +23,7 @@ const CATEGORIAS_MENU = [
    "Tobilleras",
   "Earcuff",
   "Collares",
+  "Camándulas y denarios",
 
 ];
 
@@ -139,6 +141,14 @@ if (categoria === "Tobilleras") {
   if (categoria === "Earcuff") {
     return texto.includes("earcuff") || texto.includes("ear cuff");
   }
+ if (categoria === "Camándulas") {
+  return (
+    texto.includes("camandula") ||
+    texto.includes("camandulas") ||
+    texto.includes("denario") ||
+    texto.includes("denarios")
+  );
+}
 
   if (categoria === "Collares") {
     return texto.includes("collar") || texto.includes("cadena");
