@@ -1729,18 +1729,20 @@ const [
 ] = useState(false);
 
 const temporizadorResumenRef = useRef(null);
-  const categorias = [
-    "Accesorios en Rodio",
-    "Accesorios en Acero",
-    "Todos los productos",
-    "Nuevos",
-    "Aretes",
-    "Candongas",
-    "Collares",
-    "Pulseras",
-    "Anillos",
-    "Topos y maxitopos",
-  ];
+const categorias = [
+  "Accesorios en Rodio",
+  "Accesorios en Acero",
+  "Todos los productos",
+  "Nuevos",
+  "Aretes",
+  "Candongas",
+  "Collares",
+  "Pulseras",
+  "Tobilleras",
+  "Camándulas y denarios",
+  "Anillos",
+  "Topos y maxitopos",
+];
 
   /* =======================================================
      CARGAR PRODUCTOS
@@ -2338,7 +2340,51 @@ temporizadorResumenRef.current =
             ).includes("pulsera")
         );
       }
+       if (
+  categoriaActiva === "Pulseras"
+) {
+  lista = lista.filter(
+    (producto) =>
+      normalizar(
+        producto.nombre
+      ).includes("pulsera")
+  );
+}
+if (
+  categoriaActiva === "Tobilleras"
+) {
+  lista = lista.filter(
+    (producto) => {
+      const texto = normalizar(
+        `${producto.nombre || ""} ${producto.categoria || ""}`
+      );
 
+      return (
+        texto.includes("tobillera") ||
+        texto.includes("tobilleras")
+      );
+    }
+  );
+}
+
+if (
+  categoriaActiva === "Camándulas y denarios"
+) {
+  lista = lista.filter(
+    (producto) => {
+      const texto = normalizar(
+        `${producto.nombre || ""} ${producto.categoria || ""}`
+      );
+
+      return (
+        texto.includes("camandula") ||
+        texto.includes("camandulas") ||
+        texto.includes("denario") ||
+        texto.includes("denarios")
+      );
+    }
+  );
+}
       if (
         categoriaActiva === "Anillos"
       ) {
