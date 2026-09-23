@@ -8,6 +8,7 @@ const CATEGORIAS_PRINCIPALES = [
   "Juegos",
   "Anillos",
   "Pulseras",
+   "Tobilleras",
   "Earcuff",
 ];
 
@@ -18,6 +19,7 @@ const CATEGORIAS_MENU = [
   "Juegos",
   "Anillos",
   "Pulseras",
+   "Tobilleras",
   "Earcuff",
   "Collares",
 
@@ -128,7 +130,12 @@ function productoPerteneceCategoria(producto, categoria) {
   if (categoria === "Pulseras") {
     return texto.includes("pulsera") || texto.includes("brazalete");
   }
-
+if (categoria === "Tobilleras") {
+  return (
+    texto.includes("tobillera") ||
+    texto.includes("tobilleras")
+  );
+}
   if (categoria === "Earcuff") {
     return texto.includes("earcuff") || texto.includes("ear cuff");
   }
