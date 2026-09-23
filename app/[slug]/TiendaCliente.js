@@ -141,7 +141,7 @@ if (categoria === "Tobilleras") {
   if (categoria === "Earcuff") {
     return texto.includes("earcuff") || texto.includes("ear cuff");
   }
- if (categoria === "Camándulas") {
+ if (categoria === "Camándulas y denarios") {
   return (
     texto.includes("camandula") ||
     texto.includes("camandulas") ||
