@@ -178,9 +178,13 @@ async function descargarImagen(url) {
   if (!url) return null;
 
   try {
-    const response = await fetch(url, {
-      cache: "force-cache",
-    });
+   const response = await fetch(url, {
+  cache: "no-store",
+  headers: {
+    Accept: "image/png,image/jpeg,image/jpg,*/*",
+    "User-Agent": "Mozilla/5.0",
+  },
+});
 
     if (!response.ok) {
       return null;
@@ -234,19 +238,35 @@ async function insertarImagen(
     } = imagenDescargada;
 
     let imagenPdf = null;
+if (
+  contentType.includes("png") ||
+  String(url)
+    .toLowerCase()
+    .includes(".png")
+) {
+  imagenPdf =
+    await pdfDoc.embedPng(bytes);
+} else if (
+  contentType.includes("jpeg") ||
+  contentType.includes("jpg") ||
+  String(url)
+    .toLowerCase()
+    .includes(".jpg") ||
+  String(url)
+    .toLowerCase()
+    .includes(".jpeg")
+) {
+  imagenPdf =
+    await pdfDoc.embedJpg(bytes);
+} else {
+  console.error(
+    "FORMATO DE IMAGEN NO COMPATIBLE CON PDF:",
+    contentType,
+    url
+  );
 
-    if (
-      contentType.includes("png") ||
-      String(url)
-        .toLowerCase()
-        .includes(".png")
-    ) {
-      imagenPdf =
-        await pdfDoc.embedPng(bytes);
-    } else {
-      imagenPdf =
-        await pdfDoc.embedJpg(bytes);
-    }
+  return false;
+}
 
     const dimensiones =
       imagenPdf.scale(1);
