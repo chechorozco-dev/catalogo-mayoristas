@@ -464,35 +464,22 @@ async function dibujarProducto({
 
   /* IZQUIERDA */
 
-  pagina.drawText(
-    referencia,
-    {
-      x: x1 + 9,
-      y: y + 26,
-      size: 9,
-      font: fuenteBold,
-      color: rgb(
-        0.12,
-        0.12,
-        0.12
-      ),
-    }
-  );
+/* IZQUIERDA */
 
-  pagina.drawText(
-    nombre,
-    {
-      x: x1 + 9,
-      y: y + 12,
-      size: 7,
-      font: fuente,
-      color: rgb(
-        0.32,
-        0.32,
-        0.32
-      ),
-    }
-  );
+pagina.drawText(
+  `${referencia} · ${nombre}`,
+  {
+    x: x1 + 9,
+    y: y + 9,
+    size: 7,
+    font: fuenteBold,
+    color: rgb(
+      0.20,
+      0.20,
+      0.20
+    ),
+  }
+);
 
   /* DERECHA */
 
