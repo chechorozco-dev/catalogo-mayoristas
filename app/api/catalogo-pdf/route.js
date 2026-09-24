@@ -897,48 +897,119 @@ const productosCatalogo = productosFiltrados
 
     let posicionEnPagina = 0;
 
-    for (
-      let i = 0;
-      i <
-      productosCatalogo.length;
-      i++
-    ) {
-      if (
-        posicionEnPagina === 0
-      ) {
-        pagina =
-          pdfDoc.addPage([
-            anchoPagina,
-            altoPagina,
-          ]);
-      }
+  /* ===============================================
+   SEPARAR PRODUCTOS
+=============================================== */
 
-      const y =
-        altoPagina -
-        margenSuperior -
-        altoProducto -
-        posicionEnPagina *
-          (altoProducto +
-            espacioVertical);
+const productosDosFotos =
+  productosCatalogo.filter(
+    (producto) =>
+      Boolean(producto.foto_url) &&
+      Boolean(producto.foto_url_2)
+  );
 
-      await dibujarProducto({
-        pdfDoc,
-        pagina,
-        producto:
-          productosCatalogo[i],
-        y,
-        fuente,
-        fuenteBold,
-      });
+const productosUnaFoto =
+  productosCatalogo.filter(
+    (producto) =>
+      !producto.foto_url ||
+      !producto.foto_url_2
+  );
 
-      posicionEnPagina++;
+/* ===============================================
+   PRIMERO: PRODUCTOS CON DOS FOTOS
+=============================================== */
 
-      if (
-        posicionEnPagina === 3
-      ) {
-        posicionEnPagina = 0;
-      }
-    }
+pagina = null;
+posicionEnPagina = 0;
+
+for (
+  let i = 0;
+  i < productosDosFotos.length;
+  i++
+) {
+  if (posicionEnPagina === 0) {
+    pagina =
+      pdfDoc.addPage([
+        anchoPagina,
+        altoPagina,
+      ]);
+  }
+
+  const y =
+    altoPagina -
+    margenSuperior -
+    altoProducto -
+    posicionEnPagina *
+      (
+        altoProducto +
+        espacioVertical
+      );
+
+  await dibujarProducto({
+    pdfDoc,
+    pagina,
+    producto:
+      productosDosFotos[i],
+    y,
+    fuente,
+    fuenteBold,
+  });
+
+  posicionEnPagina++;
+
+  if (posicionEnPagina === 3) {
+    posicionEnPagina = 0;
+  }
+}
+
+/* ===============================================
+   DESPUÉS: PRODUCTOS CON UNA SOLA FOTO
+
+   Siempre comienzan en una página nueva.
+=============================================== */
+
+pagina = null;
+posicionEnPagina = 0;
+
+for (
+  let i = 0;
+  i < productosUnaFoto.length;
+  i++
+) {
+  if (posicionEnPagina === 0) {
+    pagina =
+      pdfDoc.addPage([
+        anchoPagina,
+        altoPagina,
+      ]);
+  }
+
+  const y =
+    altoPagina -
+    margenSuperior -
+    altoProducto -
+    posicionEnPagina *
+      (
+        altoProducto +
+        espacioVertical
+      );
+
+  await dibujarProducto({
+    pdfDoc,
+    pagina,
+    producto:
+      productosUnaFoto[i],
+    y,
+    fuente,
+    fuenteBold,
+  });
+
+  posicionEnPagina++;
+
+  if (posicionEnPagina === 3) {
+    posicionEnPagina = 0;
+  }
+}
 
     /* ===============================================
        8. METADATOS
