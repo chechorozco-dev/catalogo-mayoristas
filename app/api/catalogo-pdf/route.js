@@ -251,10 +251,10 @@ async function insertarImagen(
     const dimensiones =
       imagenPdf.scale(1);
 
-    const escala = Math.max(
-      ancho / dimensiones.width,
-      alto / dimensiones.height
-    );
+   const escala = Math.min(
+  ancho / dimensiones.width,
+  alto / dimensiones.height
+);
 
     const anchoFinal =
       dimensiones.width * escala;
