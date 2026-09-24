@@ -194,7 +194,12 @@ async function descargarImagen(url) {
       response.headers.get(
         "content-type"
       ) || "";
-
+console.log(
+  "IMAGEN DESCARGADA:",
+  url,
+  "TIPO:",
+  contentType
+);
     const bytes =
       await response.arrayBuffer();
 
