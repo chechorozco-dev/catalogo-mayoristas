@@ -849,7 +849,27 @@ if (categoriaPdf === "Topos y maxitopos") {
   manejarlo por fecha y no quiero mezclar ese cambio
   con esta primera prueba.
 */
+function tieneFotoReal(valor) {
+  if (valor === null || valor === undefined) {
+    return false;
+  }
 
+  const texto =
+    String(valor).trim();
+
+  if (
+    texto === "" ||
+    texto.toLowerCase() === "null" ||
+    texto.toLowerCase() === "undefined"
+  ) {
+    return false;
+  }
+
+  return (
+    texto.startsWith("http://") ||
+    texto.startsWith("https://")
+  );
+}
 const productosCatalogo = productosFiltrados
   .map((producto) => ({
     ...producto,
@@ -858,27 +878,6 @@ const productosCatalogo = productosFiltrados
       ? mapaPrecios.get(String(producto.id))
       : Number(producto.precio_detal || 0),
   }))
-  .sort((a, b) => {
-    const aTieneDosFotos =
-      Boolean(a.foto_url) &&
-      Boolean(a.foto_url_2);
-
-    const bTieneDosFotos =
-      Boolean(b.foto_url) &&
-      Boolean(b.foto_url_2);
-
-    // Los productos con dos fotos primero.
-    // Los productos con una sola foto al final.
-    if (aTieneDosFotos && !bTieneDosFotos) {
-      return -1;
-    }
-
-    if (!aTieneDosFotos && bTieneDosFotos) {
-      return 1;
-    }
-
-    return 0;
-  })
   .slice(0, 150);
     if (
       productosCatalogo.length === 0
@@ -943,17 +942,16 @@ const productosCatalogo = productosFiltrados
 const productosDosFotos =
   productosCatalogo.filter(
     (producto) =>
-      Boolean(producto.foto_url) &&
-      Boolean(producto.foto_url_2)
+      tieneFotoReal(producto.foto_url) &&
+      tieneFotoReal(producto.foto_url_2)
   );
 
 const productosUnaFoto =
   productosCatalogo.filter(
     (producto) =>
-      !producto.foto_url ||
-      !producto.foto_url_2
+      tieneFotoReal(producto.foto_url) &&
+      !tieneFotoReal(producto.foto_url_2)
   );
-
 /* ===============================================
    PRIMERO: PRODUCTOS CON DOS FOTOS
 =============================================== */
