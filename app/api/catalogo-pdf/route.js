@@ -600,7 +600,7 @@ async function dibujarProductoUnaFoto({
   );
 }
 /* =========================================================
-   CREAR PORTADA DEL CATÁLOGO
+   CREAR PORTADA PREMIUM DEL CATÁLOGO
 ========================================================= */
 
 async function crearPortadaCatalogo({
@@ -613,21 +613,19 @@ async function crearPortadaCatalogo({
   const anchoPagina = 595.28;
   const altoPagina = 841.89;
 
-  const pagina =
-    pdfDoc.addPage([
-      anchoPagina,
-      altoPagina,
-    ]);
+  const pagina = pdfDoc.addPage([
+    anchoPagina,
+    altoPagina,
+  ]);
 
-  /* ===============================================
+  /* =======================================================
      COLORES
-  =============================================== */
+  ======================================================= */
 
   function convertirHex(hex, fallback) {
-    const limpio =
-      String(hex || "")
-        .replace("#", "")
-        .trim();
+    const limpio = String(hex || "")
+      .replace("#", "")
+      .trim();
 
     if (!/^[0-9A-Fa-f]{6}$/.test(limpio)) {
       return fallback;
@@ -640,38 +638,529 @@ async function crearPortadaCatalogo({
     );
   }
 
-  const colorPrincipal =
-    convertirHex(
-      tienda.color_principal,
-      rgb(0.35, 0.16, 0.55)
-    );
+  const colorMarca = convertirHex(
+    tienda.color_principal,
+    rgb(0.78, 0.55, 0.16)
+  );
 
-  const colorFondo =
-    convertirHex(
-      tienda.color_fondo,
-      rgb(1, 1, 1)
-    );
+  const fondo = rgb(
+    0.99,
+    0.975,
+    0.94
+  );
 
-  /* FONDO */
+  const fondoDoradoClaro = rgb(
+    0.96,
+    0.91,
+    0.80
+  );
+
+  const doradoSuave = rgb(
+    0.88,
+    0.72,
+    0.39
+  );
+
+  const textoOscuro = rgb(
+    0.16,
+    0.14,
+    0.11
+  );
+
+  const textoSecundario = rgb(
+    0.40,
+    0.36,
+    0.31
+  );
+
+  /* =======================================================
+     FONDO GENERAL
+  ======================================================= */
 
   pagina.drawRectangle({
     x: 0,
     y: 0,
     width: anchoPagina,
     height: altoPagina,
-    color: colorFondo,
+    color: fondo,
   });
 
-  /* FRANJA SUPERIOR */
+  /* =======================================================
+     DECORACIÓN SUPERIOR
+  ======================================================= */
+
+  pagina.drawSvgPath(
+    `
+      M 0 841
+      L 190 841
+      C 145 805 105 765 0 735
+      Z
+    `,
+    {
+      color: fondoDoradoClaro,
+    }
+  );
+
+  pagina.drawSvgPath(
+    `
+      M 595 841
+      L 455 841
+      C 490 805 530 770 595 745
+      Z
+    `,
+    {
+      color: fondoDoradoClaro,
+    }
+  );
+
+  pagina.drawSvgPath(
+    `
+      M 0 841
+      L 105 841
+      C 78 810 45 790 0 775
+      Z
+    `,
+    {
+      color: colorMarca,
+      opacity: 0.85,
+    }
+  );
+
+  pagina.drawSvgPath(
+    `
+      M 595 841
+      L 520 841
+      C 545 815 570 795 595 785
+      Z
+    `,
+    {
+      color: colorMarca,
+      opacity: 0.70,
+    }
+  );
+
+  /* LÍNEAS FINAS SUPERIORES */
+
+  pagina.drawLine({
+    start: {
+      x: 0,
+      y: 735,
+    },
+    end: {
+      x: 145,
+      y: 841,
+    },
+    thickness: 1.3,
+    color: doradoSuave,
+  });
+
+  pagina.drawLine({
+    start: {
+      x: 450,
+      y: 841,
+    },
+    end: {
+      x: 595,
+      y: 750,
+    },
+    thickness: 1.3,
+    color: doradoSuave,
+  });
+
+  /* =======================================================
+     LOGO
+  ======================================================= */
+
+  if (tienda.logo_url) {
+    await insertarImagen(
+      pdfDoc,
+      pagina,
+      tienda.logo_url,
+      207,
+      620,
+      180,
+      145
+    );
+  }
+
+  /* =======================================================
+     NOMBRE DE LA TIENDA
+  ======================================================= */
+
+  const nombreTienda = limpiarTextoPdf(
+    tienda.nombre_tienda || "Mi tienda"
+  ).toUpperCase();
+
+  let tamanoNombre = 29;
+
+  let anchoNombre =
+    fuenteBold.widthOfTextAtSize(
+      nombreTienda,
+      tamanoNombre
+    );
+
+  while (
+    anchoNombre > 490 &&
+    tamanoNombre > 18
+  ) {
+    tamanoNombre -= 1;
+
+    anchoNombre =
+      fuenteBold.widthOfTextAtSize(
+        nombreTienda,
+        tamanoNombre
+      );
+  }
+
+  pagina.drawText(
+    nombreTienda,
+    {
+      x:
+        (anchoPagina - anchoNombre) /
+        2,
+      y: 570,
+      size: tamanoNombre,
+      font: fuenteBold,
+      color: textoOscuro,
+    }
+  );
+
+  /* =======================================================
+     SEPARADOR ELEGANTE
+  ======================================================= */
+
+  pagina.drawLine({
+    start: {
+      x: 185,
+      y: 542,
+    },
+    end: {
+      x: 278,
+      y: 542,
+    },
+    thickness: 1,
+    color: colorMarca,
+  });
+
+  pagina.drawLine({
+    start: {
+      x: 317,
+      y: 542,
+    },
+    end: {
+      x: 410,
+      y: 542,
+    },
+    thickness: 1,
+    color: colorMarca,
+  });
+
+  pagina.drawSvgPath(
+    `
+      M 297.5 535
+      L 304.5 542
+      L 297.5 549
+      L 290.5 542
+      Z
+    `,
+    {
+      color: colorMarca,
+    }
+  );
+
+  /* =======================================================
+     CATÁLOGO DE PRODUCTOS
+  ======================================================= */
+
+  const titulo =
+    "CATÁLOGO DE PRODUCTOS";
+
+  const anchoTitulo =
+    fuente.widthOfTextAtSize(
+      titulo,
+      15
+    );
+
+  pagina.drawText(
+    titulo,
+    {
+      x:
+        (anchoPagina - anchoTitulo) /
+        2,
+      y: 500,
+      size: 15,
+      font: fuente,
+      color: textoSecundario,
+    }
+  );
+
+  /* =======================================================
+     CATEGORÍA
+  ======================================================= */
+
+  const categoria =
+    limpiarTextoPdf(
+      categoriaPdf || "Productos"
+    ).toUpperCase();
+
+  /* CAJA DE LA CATEGORÍA */
 
   pagina.drawRectangle({
-    x: 0,
-    y: altoPagina - 18,
-    width: anchoPagina,
-    height: 18,
-    color: colorPrincipal,
+    x: 172,
+    y: 440,
+    width: 251,
+    height: 46,
+    color: fondoDoradoClaro,
+    borderColor: colorMarca,
+    borderWidth: 1,
   });
 
+  const anchoCategoria =
+    fuenteBold.widthOfTextAtSize(
+      categoria,
+      13
+    );
+
+  pagina.drawText(
+    categoria,
+    {
+      x:
+        (anchoPagina -
+          anchoCategoria) /
+        2,
+      y: 456,
+      size: 13,
+      font: fuenteBold,
+      color: textoOscuro,
+    }
+  );
+
+  /* =======================================================
+     TEXTO DECORATIVO
+  ======================================================= */
+
+  const frase =
+    "COLECCIÓN SELECCIONADA PARA TI";
+
+  const anchoFrase =
+    fuente.widthOfTextAtSize(
+      frase,
+      8
+    );
+
+  pagina.drawText(
+    frase,
+    {
+      x:
+        (anchoPagina - anchoFrase) /
+        2,
+      y: 410,
+      size: 8,
+      font: fuente,
+      color: colorMarca,
+    }
+  );
+
+  /* =======================================================
+     DECORACIÓN INFERIOR
+  ======================================================= */
+
+  /* ONDA DORADA GRANDE */
+
+  pagina.drawSvgPath(
+    `
+      M 0 285
+      C 85 330
+        165 325
+        245 285
+      C 335 240
+        425 255
+        595 320
+      L 595 0
+      L 0 0
+      Z
+    `,
+    {
+      color: fondoDoradoClaro,
+    }
+  );
+
+  /* SEGUNDA ONDA CLARA */
+
+  pagina.drawSvgPath(
+    `
+      M 0 215
+      C 100 270
+        190 245
+        285 215
+      C 390 180
+        480 215
+        595 270
+      L 595 0
+      L 0 0
+      Z
+    `,
+    {
+      color: rgb(
+        0.995,
+        0.985,
+        0.955
+      ),
+    }
+  );
+
+  /* BORDE DORADO DE LA ONDA */
+
+  pagina.drawSvgPath(
+    `
+      M 0 215
+      C 100 270
+        190 245
+        285 215
+      C 390 180
+        480 215
+        595 270
+    `,
+    {
+      borderColor: colorMarca,
+      borderWidth: 1.5,
+    }
+  );
+
+  /* =======================================================
+     DETALLE TIPO JOYERÍA
+  ======================================================= */
+
+  /*
+    Cadena de pequeñas piezas doradas.
+  */
+
+  const puntos = [
+    [92, 165, 5],
+    [120, 178, 3],
+    [148, 165, 5],
+    [176, 180, 3],
+    [204, 166, 5],
+    [232, 181, 3],
+    [260, 168, 5],
+    [288, 182, 3],
+    [316, 168, 5],
+    [344, 181, 3],
+    [372, 166, 5],
+    [400, 180, 3],
+    [428, 165, 5],
+    [456, 178, 3],
+    [484, 165, 5],
+  ];
+
+  for (
+    const [x, y, radio] of puntos
+  ) {
+    pagina.drawCircle({
+      x,
+      y,
+      size: radio,
+      color: colorMarca,
+    });
+  }
+
+  /* LÍNEAS ENTRE LAS PIEZAS */
+
+  for (
+    let i = 0;
+    i < puntos.length - 1;
+    i++
+  ) {
+    pagina.drawLine({
+      start: {
+        x: puntos[i][0] + 5,
+        y: puntos[i][1],
+      },
+      end: {
+        x: puntos[i + 1][0] - 5,
+        y: puntos[i + 1][1],
+      },
+      thickness: 0.8,
+      color: colorMarca,
+    });
+  }
+
+  /* =======================================================
+     WHATSAPP
+  ======================================================= */
+
+  if (tienda.whatsapp) {
+    const telefono =
+      limpiarTextoPdf(
+        tienda.whatsapp
+      );
+
+    const textoWhatsapp =
+      `WHATSAPP  ${telefono}`;
+
+    const anchoWhatsapp =
+      fuenteBold.widthOfTextAtSize(
+        textoWhatsapp,
+        10
+      );
+
+    pagina.drawText(
+      textoWhatsapp,
+      {
+        x:
+          (anchoPagina -
+            anchoWhatsapp) /
+          2,
+        y: 92,
+        size: 10,
+        font: fuenteBold,
+        color: textoOscuro,
+      }
+    );
+  }
+
+  /* =======================================================
+     PEQUEÑO DETALLE FINAL
+  ======================================================= */
+
+  pagina.drawLine({
+    start: {
+      x: 235,
+      y: 65,
+    },
+    end: {
+      x: 360,
+      y: 65,
+    },
+    thickness: 0.6,
+    color: colorMarca,
+  });
+
+  const textoPie =
+    "CATÁLOGO DIGITAL";
+
+  const anchoPie =
+    fuente.widthOfTextAtSize(
+      textoPie,
+      7
+    );
+
+  pagina.drawText(
+    textoPie,
+    {
+      x:
+        (anchoPagina -
+          anchoPie) /
+        2,
+      y: 43,
+      size: 7,
+      font: fuente,
+      color: colorMarca,
+    }
+  );
+
+  return pagina;
+}
   /* ===============================================
      LOGO
   =============================================== */
