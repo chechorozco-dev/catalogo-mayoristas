@@ -385,20 +385,7 @@ async function dibujarProducto({
         0.97
       ),
     });
-  } else {
-    pagina.drawRectangle({
-      x: margen,
-      y,
-      width: anchoDisponible,
-      height: altoFoto,
-      color: rgb(
-        0.97,
-        0.97,
-        0.97
-      ),
-    });
-  }
-
+}
   /* ===============================================
      IMÁGENES
   =============================================== */
