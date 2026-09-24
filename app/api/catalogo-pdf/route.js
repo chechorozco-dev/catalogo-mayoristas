@@ -329,145 +329,126 @@ async function dibujarProducto({
   fuenteBold,
 }) {
   const margen = 24;
-
   const espacio = 6;
 
   const anchoPagina =
     pagina.getWidth();
 
   const anchoDisponible =
-    anchoPagina -
-    margen * 2;
+    anchoPagina - margen * 2;
 
   const anchoFoto =
-    (anchoDisponible -
-      espacio) /
-    2;
+    (anchoDisponible - espacio) / 2;
 
   const altoFoto = 235;
 
   const x1 = margen;
 
   const x2 =
-    margen +
-    anchoFoto +
-    espacio;
+    margen + anchoFoto + espacio;
 
-  /* FONDOS */
+  const foto1 =
+    producto.foto_url || "";
 
-  pagina.drawRectangle({
-    x: x1,
-    y,
-    width: anchoFoto,
-    height: altoFoto,
-    color: rgb(
-      0.97,
-      0.97,
-      0.97
-    ),
-  });
+  const foto2 =
+    producto.foto_url_2 || "";
 
-  pagina.drawRectangle({
-    x: x2,
-    y,
-    width: anchoFoto,
-    height: altoFoto,
-    color: rgb(
-      0.97,
-      0.97,
-      0.97
-    ),
-  });
+  const tieneDosFotos =
+    Boolean(foto1) &&
+    Boolean(foto2);
 
- /* IMÁGENES */
+  /* ===============================================
+     FONDOS
+  =============================================== */
 
-const foto1 =
-  producto.foto_url || "";
+  if (tieneDosFotos) {
+    pagina.drawRectangle({
+      x: x1,
+      y,
+      width: anchoFoto,
+      height: altoFoto,
+      color: rgb(
+        0.97,
+        0.97,
+        0.97
+      ),
+    });
 
-const foto2 =
-  producto.foto_url_2 || "";
+    pagina.drawRectangle({
+      x: x2,
+      y,
+      width: anchoFoto,
+      height: altoFoto,
+      color: rgb(
+        0.97,
+        0.97,
+        0.97
+      ),
+    });
+  } else {
+    pagina.drawRectangle({
+      x: margen,
+      y,
+      width: anchoDisponible,
+      height: altoFoto,
+      color: rgb(
+        0.97,
+        0.97,
+        0.97
+      ),
+    });
+  }
 
-const tieneDosFotos =
-  Boolean(foto1) && Boolean(foto2);
+  /* ===============================================
+     IMÁGENES
+  =============================================== */
 
-if (tieneDosFotos) {
-  // PRODUCTO CON DOS FOTOS
-  await insertarImagen(
-    pdfDoc,
-    pagina,
-    foto1,
-    x1,
-    y,
-    anchoFoto,
-    altoFoto
-  );
-
-  await insertarImagen(
-    pdfDoc,
-    pagina,
-    foto2,
-    x2,
-    y,
-    anchoFoto,
-    altoFoto
-  );
-} else {
-  // PRODUCTO CON UNA SOLA FOTO:
-  // ocupa prácticamente el espacio de las dos.
-  const anchoFotoUnica =
-    anchoDisponible;
-
-  await insertarImagen(
-    pdfDoc,
-    pagina,
-    foto1 || foto2,
-    margen,
-    y,
-    anchoFotoUnica,
-    altoFoto
-  );
-}
-  await insertarImagen(
-    pdfDoc,
-    pagina,
-    foto1,
-    x1,
-    y,
-    anchoFoto,
-    altoFoto
-  );
-
-  /*
-    Si no existe segunda foto,
-    repetimos la primera temporalmente.
-
-    Más adelante podemos cambiar esto
-    por otro diseño especial.
-  */
-
-  await insertarImagen(
-    pdfDoc,
-    pagina,
-    foto2 || foto1,
-    x2,
-    y,
-    anchoFoto,
-    altoFoto
-  );
-
-
-  const referencia =
-    recortarTexto(
-      producto.referencia ||
-        "Sin referencia",
-      24
+  if (tieneDosFotos) {
+    // FOTO 1
+    await insertarImagen(
+      pdfDoc,
+      pagina,
+      foto1,
+      x1,
+      y,
+      anchoFoto,
+      altoFoto
     );
+
+    // FOTO 2
+    await insertarImagen(
+      pdfDoc,
+      pagina,
+      foto2,
+      x2,
+      y,
+      anchoFoto,
+      altoFoto
+    );
+  } else {
+    // PRODUCTO CON UNA SOLA FOTO
+    // Utiliza todo el ancho disponible
+    // y queda centrado.
+    await insertarImagen(
+      pdfDoc,
+      pagina,
+      foto1 || foto2,
+      margen,
+      y,
+      anchoDisponible,
+      altoFoto
+    );
+  }
+
+  /* ===============================================
+     DATOS DEL PRODUCTO
+  =============================================== */
 
   const nombre =
     recortarTexto(
       producto.nombre ||
         "Producto",
-      30
+      40
     );
 
   const precio =
@@ -475,33 +456,43 @@ if (tieneDosFotos) {
       producto.precio_pdf
     );
 
-/* IZQUIERDA */
+  /* ===============================================
+     NOMBRE
+  =============================================== */
 
-pagina.drawText(
- nombre,
-  {
-    x: x1 + 9,
-    y: y + 9,
-    size: 7,
-    font: fuenteBold,
-    color: rgb(
-      0.20,
-      0.20,
-      0.20
-    ),
-  }
-);
+  pagina.drawText(
+    nombre,
+    {
+      x: margen + 9,
+      y: y + 9,
+      size: 7,
+      font: fuenteBold,
+      color: rgb(
+        0.20,
+        0.20,
+        0.20
+      ),
+    }
+  );
 
-  /* DERECHA */
+  /* ===============================================
+     PRECIO
+  =============================================== */
+
+  const xPrecio =
+    tieneDosFotos
+      ? x2 +
+        anchoFoto -
+        72
+      : margen +
+        anchoDisponible -
+        72;
 
   pagina.drawText(
     precio,
     {
-      x:
-        x2 +
-        anchoFoto -
-        72,
-      y: y + 11,
+      x: xPrecio,
+      y: y + 9,
       size: 10,
       font: fuenteBold,
       color: rgb(
@@ -512,26 +503,6 @@ pagina.drawText(
     }
   );
 }
-
-const xPrecio = tieneDosFotos
-  ? x2 + anchoFoto - 72
-  : margen + anchoDisponible - 72;
-
-pagina.drawText(
-  precio,
-  {
-    x: xPrecio,
-    y: y + 9,
-    size: 10,
-    font: fuenteBold,
-    color: rgb(
-      0.12,
-      0.12,
-      0.12
-    ),
-  }
-);
-
 /* =========================================================
    POST
 ========================================================= */
