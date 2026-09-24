@@ -601,6 +601,7 @@ async function dibujarProductoUnaFoto({
 }
 /* =========================================================
    CREAR PORTADA PREMIUM DEL CATÁLOGO
+   VERSIÓN SEGURA - SIN drawSvgPath
 ========================================================= */
 
 async function crearPortadaCatalogo({
@@ -618,9 +619,9 @@ async function crearPortadaCatalogo({
     altoPagina,
   ]);
 
-  /* =======================================================
-     CONVERTIR COLOR HEX DE LA TIENDA A RGB
-  ======================================================= */
+  /* =====================================================
+     COLOR PRINCIPAL DE LA TIENDA
+  ===================================================== */
 
   function convertirHex(hex, fallback) {
     const limpio = String(hex || "")
@@ -637,10 +638,6 @@ async function crearPortadaCatalogo({
       parseInt(limpio.slice(4, 6), 16) / 255
     );
   }
-
-  /* =======================================================
-     COLORES
-  ======================================================= */
 
   const colorMarca = convertirHex(
     tienda?.color_principal,
@@ -665,12 +662,6 @@ async function crearPortadaCatalogo({
     0.90
   );
 
-  const doradoClaro = rgb(
-    0.88,
-    0.72,
-    0.39
-  );
-
   const textoOscuro = rgb(
     0.16,
     0.14,
@@ -683,9 +674,9 @@ async function crearPortadaCatalogo({
     0.31
   );
 
-  /* =======================================================
-     FONDO
-  ======================================================= */
+  /* =====================================================
+     FONDO GENERAL
+  ===================================================== */
 
   pagina.drawRectangle({
     x: 0,
@@ -695,121 +686,105 @@ async function crearPortadaCatalogo({
     color: fondo,
   });
 
-  /* =======================================================
+  /* =====================================================
      FRANJA SUPERIOR
-  ======================================================= */
+  ===================================================== */
 
   pagina.drawRectangle({
     x: 0,
-    y: altoPagina - 12,
+    y: altoPagina - 14,
     width: anchoPagina,
-    height: 12,
+    height: 14,
     color: colorMarca,
   });
 
-  /* =======================================================
-     FORMAS DECORATIVAS SUPERIORES
-  ======================================================= */
+  /* =====================================================
+     DECORACIÓN SUPERIOR IZQUIERDA
+  ===================================================== */
 
-  pagina.drawSvgPath(
-    `
-      M 0 830
-      L 165 830
-      C 125 800 75 760 0 735
-      Z
-    `,
-    {
-      color: beige,
-    }
-  );
+  pagina.drawRectangle({
+    x: 0,
+    y: 748,
+    width: 115,
+    height: 80,
+    color: beige,
+  });
 
-  pagina.drawSvgPath(
-    `
-      M 595 830
-      L 455 830
-      C 495 795 545 765 595 745
-      Z
-    `,
-    {
-      color: beigeClaro,
-    }
-  );
-
-  pagina.drawSvgPath(
-    `
-      M 0 830
-      L 85 830
-      C 65 808 35 790 0 780
-      Z
-    `,
-    {
-      color: colorMarca,
-      opacity: 0.82,
-    }
-  );
-
-  pagina.drawSvgPath(
-    `
-      M 595 830
-      L 530 830
-      C 550 810 575 795 595 787
-      Z
-    `,
-    {
-      color: colorMarca,
-      opacity: 0.65,
-    }
-  );
-
-  /* =======================================================
-     LÍNEAS DECORATIVAS SUPERIORES
-  ======================================================= */
-
-  pagina.drawLine({
-    start: {
-      x: 0,
-      y: 735,
-    },
-    end: {
-      x: 145,
-      y: 830,
-    },
-    thickness: 1,
-    color: doradoClaro,
+  pagina.drawRectangle({
+    x: 0,
+    y: 795,
+    width: 62,
+    height: 33,
+    color: colorMarca,
+    opacity: 0.75,
   });
 
   pagina.drawLine({
     start: {
-      x: 450,
-      y: 830,
+      x: 35,
+      y: 744,
     },
     end: {
-      x: 595,
-      y: 750,
+      x: 155,
+      y: 744,
     },
     thickness: 1,
-    color: doradoClaro,
+    color: colorMarca,
   });
 
-  /* =======================================================
-     LOGO DE LA EMPRESA
-  ======================================================= */
+  /* =====================================================
+     DECORACIÓN SUPERIOR DERECHA
+  ===================================================== */
+
+  pagina.drawRectangle({
+    x: 480,
+    y: 748,
+    width: 115,
+    height: 80,
+    color: beigeClaro,
+  });
+
+  pagina.drawRectangle({
+    x: 533,
+    y: 795,
+    width: 62,
+    height: 33,
+    color: colorMarca,
+    opacity: 0.55,
+  });
+
+  pagina.drawLine({
+    start: {
+      x: 440,
+      y: 744,
+    },
+    end: {
+      x: 560,
+      y: 744,
+    },
+    thickness: 1,
+    color: colorMarca,
+  });
+
+  /* =====================================================
+     LOGO DE LA TIENDA
+  ===================================================== */
 
   if (tienda?.logo_url) {
     await insertarImagen(
       pdfDoc,
       pagina,
       tienda.logo_url,
-      217,
-      625,
-      160,
-      135
+      207,
+      620,
+      180,
+      145
     );
   }
 
-  /* =======================================================
+  /* =====================================================
      NOMBRE DE LA TIENDA
-  ======================================================= */
+  ===================================================== */
 
   const nombreTienda = limpiarTextoPdf(
     tienda?.nombre_tienda || "Mi tienda"
@@ -842,25 +817,25 @@ async function crearPortadaCatalogo({
       x:
         (anchoPagina - anchoNombre) /
         2,
-      y: 575,
+      y: 570,
       size: tamanoNombre,
       font: fuenteBold,
       color: textoOscuro,
     }
   );
 
-  /* =======================================================
-     ADORNO CENTRAL
-  ======================================================= */
+  /* =====================================================
+     ADORNO DEBAJO DEL NOMBRE
+  ===================================================== */
 
   pagina.drawLine({
     start: {
-      x: 185,
-      y: 545,
+      x: 190,
+      y: 540,
     },
     end: {
-      x: 280,
-      y: 545,
+      x: 282,
+      y: 540,
     },
     thickness: 1,
     color: colorMarca,
@@ -868,33 +843,28 @@ async function crearPortadaCatalogo({
 
   pagina.drawLine({
     start: {
-      x: 315,
-      y: 545,
+      x: 313,
+      y: 540,
     },
     end: {
-      x: 410,
-      y: 545,
+      x: 405,
+      y: 540,
     },
     thickness: 1,
     color: colorMarca,
   });
 
-  pagina.drawSvgPath(
-    `
-      M 297.5 538
-      L 304.5 545
-      L 297.5 552
-      L 290.5 545
-      Z
-    `,
-    {
-      color: colorMarca,
-    }
-  );
+  pagina.drawRectangle({
+    x: 293.5,
+    y: 536,
+    width: 8,
+    height: 8,
+    color: colorMarca,
+  });
 
-  /* =======================================================
+  /* =====================================================
      TÍTULO
-  ======================================================= */
+  ===================================================== */
 
   const titulo =
     "CATÁLOGO DE PRODUCTOS";
@@ -911,20 +881,21 @@ async function crearPortadaCatalogo({
       x:
         (anchoPagina - anchoTitulo) /
         2,
-      y: 505,
+      y: 500,
       size: 16,
       font: fuenteBold,
       color: textoOscuro,
     }
   );
 
-  /* =======================================================
+  /* =====================================================
      CATEGORÍA
-  ======================================================= */
+  ===================================================== */
 
-  const categoria = limpiarTextoPdf(
-    categoriaPdf || "Productos"
-  ).toUpperCase();
+  const categoria =
+    limpiarTextoPdf(
+      categoriaPdf || "Productos"
+    ).toUpperCase();
 
   let tamanoCategoria = 13;
 
@@ -961,7 +932,8 @@ async function crearPortadaCatalogo({
     categoria,
     {
       x:
-        (anchoPagina - anchoCategoria) /
+        (anchoPagina -
+          anchoCategoria) /
         2,
       y: 458,
       size: tamanoCategoria,
@@ -970,9 +942,9 @@ async function crearPortadaCatalogo({
     }
   );
 
-  /* =======================================================
+  /* =====================================================
      FRASE
-  ======================================================= */
+  ===================================================== */
 
   const frase =
     "UNA SELECCIÓN ESPECIAL PARA TUS CLIENTES";
@@ -987,7 +959,8 @@ async function crearPortadaCatalogo({
     frase,
     {
       x:
-        (anchoPagina - anchoFrase) /
+        (anchoPagina -
+          anchoFrase) /
         2,
       y: 413,
       size: 8,
@@ -996,86 +969,70 @@ async function crearPortadaCatalogo({
     }
   );
 
-  /* =======================================================
-     DECORACIÓN INFERIOR
-  ======================================================= */
+  /* =====================================================
+     ZONA DECORATIVA INFERIOR
+  ===================================================== */
 
-  pagina.drawSvgPath(
-    `
-      M 0 310
-      C 95 350
-        175 325
-        255 290
-      C 350 250
-        455 275
-        595 330
-      L 595 0
-      L 0 0
-      Z
-    `,
-    {
-      color: beige,
-    }
-  );
+  pagina.drawRectangle({
+    x: 0,
+    y: 0,
+    width: anchoPagina,
+    height: 245,
+    color: beigeClaro,
+  });
 
-  pagina.drawSvgPath(
-    `
-      M 0 235
-      C 95 280
-        195 255
-        290 220
-      C 390 185
-        490 220
-        595 270
-      L 595 0
-      L 0 0
-      Z
-    `,
-    {
-      color: fondo,
-    }
-  );
+  pagina.drawRectangle({
+    x: 0,
+    y: 0,
+    width: anchoPagina,
+    height: 150,
+    color: fondo,
+  });
 
-  /* =======================================================
-     BORDE DE LA ONDA
-  ======================================================= */
+  pagina.drawLine({
+    start: {
+      x: 0,
+      y: 245,
+    },
+    end: {
+      x: anchoPagina,
+      y: 245,
+    },
+    thickness: 1.2,
+    color: colorMarca,
+  });
 
-  pagina.drawSvgPath(
-    `
-      M 0 235
-      C 95 280
-        195 255
-        290 220
-      C 390 185
-        490 220
-        595 270
-    `,
-    {
-      borderColor: colorMarca,
-      borderWidth: 1.4,
-    }
-  );
+  pagina.drawLine({
+    start: {
+      x: 0,
+      y: 150,
+    },
+    end: {
+      x: anchoPagina,
+      y: 150,
+    },
+    thickness: 0.7,
+    color: colorMarca,
+  });
 
-  /* =======================================================
-     ADORNO TIPO CADENA
-  ======================================================= */
+  /* =====================================================
+     DECORACIÓN TIPO JOYERÍA
+  ===================================================== */
 
   const puntos = [
-    [110, 174, 4],
-    [137, 184, 3],
-    [164, 174, 4],
-    [191, 185, 3],
-    [218, 174, 4],
-    [245, 185, 3],
-    [272, 174, 4],
-    [299, 185, 3],
-    [326, 174, 4],
-    [353, 185, 3],
-    [380, 174, 4],
-    [407, 185, 3],
-    [434, 174, 4],
-    [461, 184, 3],
-    [488, 174, 4],
+    [120, 198, 4],
+    [150, 208, 3],
+    [180, 198, 4],
+    [210, 208, 3],
+    [240, 198, 4],
+    [270, 208, 3],
+    [297.5, 198, 6],
+    [325, 208, 3],
+    [355, 198, 4],
+    [385, 208, 3],
+    [415, 198, 4],
+    [445, 208, 3],
+    [475, 198, 4],
   ];
 
   for (
@@ -1096,7 +1053,10 @@ async function crearPortadaCatalogo({
       color: colorMarca,
     });
 
-    if (i < puntos.length - 1) {
+    if (
+      i <
+      puntos.length - 1
+    ) {
       pagina.drawLine({
         start: {
           x: x + radio,
@@ -1106,7 +1066,8 @@ async function crearPortadaCatalogo({
           x:
             puntos[i + 1][0] -
             puntos[i + 1][2],
-          y: puntos[i + 1][1],
+          y:
+            puntos[i + 1][1],
         },
         thickness: 0.7,
         color: colorMarca,
@@ -1114,46 +1075,15 @@ async function crearPortadaCatalogo({
     }
   }
 
-  /* =======================================================
-     DIJE CENTRAL DECORATIVO
-  ======================================================= */
-
-  pagina.drawCircle({
-    x: anchoPagina / 2,
-    y: 145,
-    size: 12,
-    borderColor: colorMarca,
-    borderWidth: 1.5,
-  });
-
-  pagina.drawCircle({
-    x: anchoPagina / 2,
-    y: 145,
-    size: 4,
-    color: colorMarca,
-  });
-
-  pagina.drawLine({
-    start: {
-      x: anchoPagina / 2,
-      y: 157,
-    },
-    end: {
-      x: anchoPagina / 2,
-      y: 172,
-    },
-    thickness: 1,
-    color: colorMarca,
-  });
-
-  /* =======================================================
+  /* =====================================================
      WHATSAPP
-  ======================================================= */
+  ===================================================== */
 
   if (tienda?.whatsapp) {
-    const telefono = limpiarTextoPdf(
-      tienda.whatsapp
-    );
+    const telefono =
+      limpiarTextoPdf(
+        tienda.whatsapp
+      );
 
     const textoWhatsapp =
       `WHATSAPP  ${telefono}`;
@@ -1171,7 +1101,7 @@ async function crearPortadaCatalogo({
           (anchoPagina -
             anchoWhatsapp) /
           2,
-        y: 88,
+        y: 92,
         size: 10,
         font: fuenteBold,
         color: textoOscuro,
@@ -1179,9 +1109,9 @@ async function crearPortadaCatalogo({
     );
   }
 
-  /* =======================================================
-     PIE DE PÁGINA
-  ======================================================= */
+  /* =====================================================
+     PIE
+  ===================================================== */
 
   pagina.drawLine({
     start: {
@@ -1209,7 +1139,8 @@ async function crearPortadaCatalogo({
     textoPie,
     {
       x:
-        (anchoPagina - anchoPie) /
+        (anchoPagina -
+          anchoPie) /
         2,
       y: 43,
       size: 7,
