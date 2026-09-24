@@ -430,22 +430,26 @@ async function dibujarProductoDosFotos({
 ========================================================= */
 
 async function dibujarProductoUnaFoto({
-  pagina.drawText(
-  "UNA SOLA FOTO",
-  {
-    x: 230,
-    y: y + 220,
-    size: 14,
-    font: fuenteBold,
-    color: rgb(1, 0, 0),
-  }
-);
   pdfDoc,
   pagina,
   producto,
   y,
   fuenteBold,
 }) {
+
+  /* PRUEBA TEMPORAL */
+
+  pagina.drawText(
+    "UNA SOLA FOTO",
+    {
+      x: 230,
+      y: y + 220,
+      size: 14,
+      font: fuenteBold,
+      color: rgb(1, 0, 0),
+    }
+  );
+
   const anchoPagina =
     pagina.getWidth();
 
