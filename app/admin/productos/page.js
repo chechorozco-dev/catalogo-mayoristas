@@ -5336,45 +5336,15 @@ async function publicarProductoAhora(productoId) {
       setCategoriaPdf(e.target.value)
     }
   >
-    <option value="Todos los productos">
-      Todos los productos
-    </option>
-
-    <option value="Accesorios en Rodio">
-      Accesorios en Rodio
-    </option>
-
-    <option value="Accesorios en Acero">
-      Accesorios en Acero
-    </option>
-
-    <option value="Nuevos">
-      Nuevos
-    </option>
-
-    <option value="Aretes">
-      Aretes
-    </option>
-
-    <option value="Candongas">
-      Candongas
-    </option>
-
-    <option value="Collares">
-      Collares
-    </option>
-
-    <option value="Pulseras">
-      Pulseras
-    </option>
-
-    <option value="Anillos">
-      Anillos
-    </option>
-
-    <option value="Topos y maxitopos">
-      Topos y maxitopos
-    </option>
+  <option value="Nuevos">Nuevos</option>
+<option value="Aretes">Aretes</option>
+<option value="Candongas">Candongas</option>
+<option value="Juegos">Juegos</option>
+<option value="Pulseras">Pulseras</option>
+<option value="Anillos">Anillos</option>
+<option value="Topos y maxitopos">Topos y maxitopos</option>
+<option value="Tobilleras">Tobilleras</option>
+<option value="Camándulas">Camándulas</option>
   </select>
 </div>
       <div className="pdf-option">
