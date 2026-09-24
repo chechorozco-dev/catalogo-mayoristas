@@ -852,10 +852,15 @@ if (!producto.created_at) {
                     variante.foto_url_2,
 
                   precio:
-                    precioFinal,
+  precioFinal,
 
-                  activo:
-                    variante.activo,
+precio_detal:
+  Number(
+    variante.precio_detal || 0
+  ),
+
+activo:
+  variante.activo,
 
                   orden:
                     variante.orden,
@@ -957,15 +962,24 @@ if (!producto.created_at) {
             "",
 
           precio:
-            primeraVariante
-              ? Number(
-                  primeraVariante.precio ||
-                    0
-                )
-              : precioProductoNormal,
+  primeraVariante
+    ? Number(
+        primeraVariante.precio ||
+          0
+      )
+    : precioProductoNormal,
 
-          created_at:
-            producto.created_at,
+precio_detal:
+  esTiendaRA
+    ? Number(
+        primeraVariante
+          ? primeraVariante.precio_detal || 0
+          : producto.precio_detal || 0
+      )
+    : null,
+
+created_at:
+  producto.created_at,
 
           tiene_variantes:
             tieneVariantes,
