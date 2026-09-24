@@ -813,7 +813,58 @@ if (categoriaPdf === "Collares") {
     }
   );
 }
+/* JUEGOS */
 
+if (categoriaPdf === "Juegos") {
+  productosFiltrados = productosFiltrados.filter(
+    (producto) => {
+      const texto = normalizar(
+        `${producto.nombre || ""} ${producto.categoria || ""}`
+      );
+
+      return (
+        texto.includes("juego") ||
+        texto.includes("juegos")
+      );
+    }
+  );
+}
+
+/* TOBILLERAS */
+
+if (categoriaPdf === "Tobilleras") {
+  productosFiltrados = productosFiltrados.filter(
+    (producto) => {
+      const texto = normalizar(
+        `${producto.nombre || ""} ${producto.categoria || ""}`
+      );
+
+      return (
+        texto.includes("tobillera") ||
+        texto.includes("tobilleras")
+      );
+    }
+  );
+}
+
+/* CAMÁNDULAS */
+
+if (categoriaPdf === "Camándulas") {
+  productosFiltrados = productosFiltrados.filter(
+    (producto) => {
+      const texto = normalizar(
+        `${producto.nombre || ""} ${producto.categoria || ""}`
+      );
+
+      return (
+        texto.includes("camandula") ||
+        texto.includes("camandulas") ||
+        texto.includes("denario") ||
+        texto.includes("denarios")
+      );
+    }
+  );
+}
 if (categoriaPdf === "Pulseras") {
   productosFiltrados = productosFiltrados.filter(
     (producto) =>
