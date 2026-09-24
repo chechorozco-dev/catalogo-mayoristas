@@ -619,7 +619,8 @@ async function crearPortadaCatalogo({
      LOGO
   =============================================== */
 
-  if (tienda.logo_url) {
+if (tienda.logo_url) {
+  const logoInsertado =
     await insertarImagen(
       pdfDoc,
       pagina,
@@ -629,7 +630,31 @@ async function crearPortadaCatalogo({
       200,
       130
     );
+
+  if (!logoInsertado) {
+    pagina.drawText(
+      "LOGO NO PUDO CARGARSE",
+      {
+        x: 205,
+        y: 670,
+        size: 10,
+        font: fuenteBold,
+        color: rgb(0.8, 0.1, 0.1),
+      }
+    );
   }
+} else {
+  pagina.drawText(
+    "LOGO_URL VACIO",
+    {
+      x: 235,
+      y: 670,
+      size: 10,
+      font: fuenteBold,
+      color: rgb(0.8, 0.1, 0.1),
+    }
+  );
+}
 
   /* ===============================================
      NOMBRE DE LA TIENDA
