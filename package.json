@@ -11,8 +11,9 @@
   "@supabase/supabase-js": "^2.57.4",
   "@vercel/analytics": "^1.5.0",
   "next": "^15.5.2",
-  "pdf-lib": "^1.17.1",
-  "react": "^19.1.1",
+ "pdf-lib": "^1.17.1",
+"sharp": "^0.34.4",
+"react": "^19.1.1",
   "react-dom": "^19.1.1"
 }
 }
