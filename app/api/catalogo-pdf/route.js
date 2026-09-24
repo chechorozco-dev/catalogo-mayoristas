@@ -543,6 +543,371 @@ async function dibujarProductoUnaFoto({
   );
 }
 /* =========================================================
+   CREAR PORTADA DEL CATÁLOGO
+========================================================= */
+
+async function crearPortadaCatalogo({
+  pdfDoc,
+  tienda,
+  categoriaPdf,
+  fuente,
+  fuenteBold,
+}) {
+  const anchoPagina = 595.28;
+  const altoPagina = 841.89;
+
+  const pagina =
+    pdfDoc.addPage([
+      anchoPagina,
+      altoPagina,
+    ]);
+
+  /* ===============================================
+     COLORES
+  =============================================== */
+
+  function convertirHex(hex, fallback) {
+    const limpio =
+      String(hex || "")
+        .replace("#", "")
+        .trim();
+
+    if (!/^[0-9A-Fa-f]{6}$/.test(limpio)) {
+      return fallback;
+    }
+
+    return rgb(
+      parseInt(limpio.slice(0, 2), 16) / 255,
+      parseInt(limpio.slice(2, 4), 16) / 255,
+      parseInt(limpio.slice(4, 6), 16) / 255
+    );
+  }
+
+  const colorPrincipal =
+    convertirHex(
+      tienda.color_principal,
+      rgb(0.35, 0.16, 0.55)
+    );
+
+  const colorFondo =
+    convertirHex(
+      tienda.color_fondo,
+      rgb(1, 1, 1)
+    );
+
+  /* FONDO */
+
+  pagina.drawRectangle({
+    x: 0,
+    y: 0,
+    width: anchoPagina,
+    height: altoPagina,
+    color: colorFondo,
+  });
+
+  /* FRANJA SUPERIOR */
+
+  pagina.drawRectangle({
+    x: 0,
+    y: altoPagina - 18,
+    width: anchoPagina,
+    height: 18,
+    color: colorPrincipal,
+  });
+
+  /* ===============================================
+     LOGO
+  =============================================== */
+
+  if (tienda.logo_url) {
+    await insertarImagen(
+      pdfDoc,
+      pagina,
+      tienda.logo_url,
+      197,
+      610,
+      200,
+      130
+    );
+  }
+
+  /* ===============================================
+     NOMBRE DE LA TIENDA
+  =============================================== */
+
+  const nombreTienda =
+    limpiarTextoPdf(
+      tienda.nombre_tienda ||
+        "Mi tienda"
+    );
+
+  const anchoNombre =
+    fuenteBold.widthOfTextAtSize(
+      nombreTienda,
+      27
+    );
+
+  pagina.drawText(
+    nombreTienda,
+    {
+      x:
+        (anchoPagina -
+          anchoNombre) /
+        2,
+      y: 555,
+      size: 27,
+      font: fuenteBold,
+      color: rgb(
+        0.12,
+        0.12,
+        0.12
+      ),
+    }
+  );
+
+  /* LÍNEA DECORATIVA */
+
+  pagina.drawRectangle({
+    x: 222,
+    y: 525,
+    width: 150,
+    height: 3,
+    color: colorPrincipal,
+  });
+
+  /* ===============================================
+     TÍTULO
+  =============================================== */
+
+  const titulo =
+    "CATÁLOGO DE PRODUCTOS";
+
+  const anchoTitulo =
+    fuenteBold.widthOfTextAtSize(
+      titulo,
+      17
+    );
+
+  pagina.drawText(
+    titulo,
+    {
+      x:
+        (anchoPagina -
+          anchoTitulo) /
+        2,
+      y: 480,
+      size: 17,
+      font: fuenteBold,
+      color: colorPrincipal,
+    }
+  );
+
+  /* CATEGORÍA */
+
+  const categoria =
+    limpiarTextoPdf(
+      categoriaPdf ||
+        "Productos"
+    ).toUpperCase();
+
+  const anchoCategoria =
+    fuenteBold.widthOfTextAtSize(
+      categoria,
+      12
+    );
+
+  pagina.drawText(
+    categoria,
+    {
+      x:
+        (anchoPagina -
+          anchoCategoria) /
+        2,
+      y: 452,
+      size: 12,
+      font: fuenteBold,
+      color: rgb(
+        0.32,
+        0.32,
+        0.32
+      ),
+    }
+  );
+
+  /* ===============================================
+     INFORMACIÓN DE CONTACTO
+  =============================================== */
+
+  let yContacto = 325;
+
+  if (tienda.whatsapp) {
+    const texto =
+      `WhatsApp: ${limpiarTextoPdf(
+        tienda.whatsapp
+      )}`;
+
+    const ancho =
+      fuente.widthOfTextAtSize(
+        texto,
+        11
+      );
+
+    pagina.drawText(
+      texto,
+      {
+        x:
+          (anchoPagina -
+            ancho) /
+          2,
+        y: yContacto,
+        size: 11,
+        font: fuente,
+        color: rgb(
+          0.20,
+          0.20,
+          0.20
+        ),
+      }
+    );
+
+    yContacto -= 26;
+  }
+
+  if (tienda.instagram) {
+    const texto =
+      `Instagram: ${limpiarTextoPdf(
+        tienda.instagram
+      )}`;
+
+    const ancho =
+      fuente.widthOfTextAtSize(
+        texto,
+        11
+      );
+
+    pagina.drawText(
+      texto,
+      {
+        x:
+          (anchoPagina -
+            ancho) /
+          2,
+        y: yContacto,
+        size: 11,
+        font: fuente,
+        color: rgb(
+          0.20,
+          0.20,
+          0.20
+        ),
+      }
+    );
+
+    yContacto -= 26;
+  }
+
+  if (tienda.facebook) {
+    const texto =
+      `Facebook: ${limpiarTextoPdf(
+        tienda.facebook
+      )}`;
+
+    const ancho =
+      fuente.widthOfTextAtSize(
+        texto,
+        11
+      );
+
+    pagina.drawText(
+      texto,
+      {
+        x:
+          (anchoPagina -
+            ancho) /
+          2,
+        y: yContacto,
+        size: 11,
+        font: fuente,
+        color: rgb(
+          0.20,
+          0.20,
+          0.20
+        ),
+      }
+    );
+
+    yContacto -= 26;
+  }
+
+  if (tienda.tiktok) {
+    const texto =
+      `TikTok: ${limpiarTextoPdf(
+        tienda.tiktok
+      )}`;
+
+    const ancho =
+      fuente.widthOfTextAtSize(
+        texto,
+        11
+      );
+
+    pagina.drawText(
+      texto,
+      {
+        x:
+          (anchoPagina -
+            ancho) /
+          2,
+        y: yContacto,
+        size: 11,
+        font: fuente,
+        color: rgb(
+          0.20,
+          0.20,
+          0.20
+        ),
+      }
+    );
+  }
+
+  /* ===============================================
+     PIE DE PORTADA
+  =============================================== */
+
+  pagina.drawRectangle({
+    x: 70,
+    y: 105,
+    width: anchoPagina - 140,
+    height: 1,
+    color: colorPrincipal,
+  });
+
+  const textoPie =
+    "CATÁLOGO DIGITAL";
+
+  const anchoPie =
+    fuenteBold.widthOfTextAtSize(
+      textoPie,
+      9
+    );
+
+  pagina.drawText(
+    textoPie,
+    {
+      x:
+        (anchoPagina -
+          anchoPie) /
+        2,
+      y: 75,
+      size: 9,
+      font: fuenteBold,
+      color: colorPrincipal,
+    }
+  );
+
+  return pagina;
+}
+/* =========================================================
    POST
 ========================================================= */
 
@@ -645,7 +1010,33 @@ export async function POST(request) {
 
     const tiendaId =
       cliente.tienda_id;
+/* ===============================================
+   DATOS DE LA TIENDA PARA LA PORTADA
+=============================================== */
 
+const tiendaResponse =
+  await supabaseFetch(
+    `tiendas?id=eq.${tiendaId}&select=id,nombre_tienda,whatsapp,logo_url,color_principal,color_fondo,instagram,facebook,tiktok&limit=1`
+  );
+
+const tiendas =
+  await tiendaResponse.json();
+
+const tienda =
+  tiendas?.[0] || null;
+
+if (!tienda) {
+  return NextResponse.json(
+    {
+      ok: false,
+      mensaje:
+        "No encontramos los datos de la tienda.",
+    },
+    {
+      status: 404,
+    }
+  );
+}
     /* ===============================================
        3. PRODUCTOS GLOBALES
     =============================================== */
@@ -944,6 +1335,17 @@ const productosCatalogo = productosFiltrados
       await pdfDoc.embedFont(
         StandardFonts.HelveticaBold
       );
+    /* ===============================================
+   PORTADA
+=============================================== */
+
+await crearPortadaCatalogo({
+  pdfDoc,
+  tienda,
+  categoriaPdf,
+  fuente,
+  fuenteBold,
+});
 
     /*
       A4:
