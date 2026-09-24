@@ -1683,7 +1683,34 @@ for (
   i++
 ) {
 if (posicionEnPagina === 0) {
-  pagina = crearPaginaProductos();
+  pagina = pdfDoc.addPage([
+    anchoPagina,
+    altoPagina,
+  ]);
+
+  const hexFondo = String(
+    tienda?.color_fondo || "#FFFFFF"
+  )
+    .replace("#", "")
+    .trim();
+
+  let colorFondoPagina = rgb(1, 1, 1);
+
+  if (/^[0-9A-Fa-f]{6}$/.test(hexFondo)) {
+    colorFondoPagina = rgb(
+      parseInt(hexFondo.slice(0, 2), 16) / 255,
+      parseInt(hexFondo.slice(2, 4), 16) / 255,
+      parseInt(hexFondo.slice(4, 6), 16) / 255
+    );
+  }
+
+  pagina.drawRectangle({
+    x: 0,
+    y: 0,
+    width: anchoPagina,
+    height: altoPagina,
+    color: colorFondoPagina,
+  });
 }
 
   const y =
@@ -1728,7 +1755,34 @@ for (
   i++
 ) {
 if (posicionEnPagina === 0) {
-  pagina = crearPaginaProductos();
+  pagina = pdfDoc.addPage([
+    anchoPagina,
+    altoPagina,
+  ]);
+
+  const hexFondo = String(
+    tienda?.color_fondo || "#FFFFFF"
+  )
+    .replace("#", "")
+    .trim();
+
+  let colorFondoPagina = rgb(1, 1, 1);
+
+  if (/^[0-9A-Fa-f]{6}$/.test(hexFondo)) {
+    colorFondoPagina = rgb(
+      parseInt(hexFondo.slice(0, 2), 16) / 255,
+      parseInt(hexFondo.slice(2, 4), 16) / 255,
+      parseInt(hexFondo.slice(4, 6), 16) / 255
+    );
+  }
+
+  pagina.drawRectangle({
+    x: 0,
+    y: 0,
+    width: anchoPagina,
+    height: altoPagina,
+    color: colorFondoPagina,
+  });
 }
 
   const y =
