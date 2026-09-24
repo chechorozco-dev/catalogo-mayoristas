@@ -317,15 +317,14 @@ function recortarTexto(
 }
 
 /* =========================================================
-   CREAR UNA FILA DEL CATÁLOGO
+   PRODUCTO CON DOS FOTOS
 ========================================================= */
 
-async function dibujarProducto({
+async function dibujarProductoDosFotos({
   pdfDoc,
   pagina,
   producto,
   y,
-  fuente,
   fuenteBold,
 }) {
   const margen = 24;
@@ -345,91 +344,35 @@ async function dibujarProducto({
   const x1 = margen;
 
   const x2 =
-    margen + anchoFoto + espacio;
+    margen +
+    anchoFoto +
+    espacio;
 
-  const foto1 =
-    producto.foto_url || "";
+  /* FOTO 1 */
 
-  const foto2 =
-    producto.foto_url_2 || "";
+  await insertarImagen(
+    pdfDoc,
+    pagina,
+    producto.foto_url,
+    x1,
+    y,
+    anchoFoto,
+    altoFoto
+  );
 
-  const tieneDosFotos =
-    Boolean(foto1) &&
-    Boolean(foto2);
+  /* FOTO 2 */
 
-  /* ===============================================
-     FONDOS
-  =============================================== */
+  await insertarImagen(
+    pdfDoc,
+    pagina,
+    producto.foto_url_2,
+    x2,
+    y,
+    anchoFoto,
+    altoFoto
+  );
 
-  if (tieneDosFotos) {
-    pagina.drawRectangle({
-      x: x1,
-      y,
-      width: anchoFoto,
-      height: altoFoto,
-      color: rgb(
-        0.97,
-        0.97,
-        0.97
-      ),
-    });
-
-    pagina.drawRectangle({
-      x: x2,
-      y,
-      width: anchoFoto,
-      height: altoFoto,
-      color: rgb(
-        0.97,
-        0.97,
-        0.97
-      ),
-    });
-}
-  /* ===============================================
-     IMÁGENES
-  =============================================== */
-
-  if (tieneDosFotos) {
-    // FOTO 1
-    await insertarImagen(
-      pdfDoc,
-      pagina,
-      foto1,
-      x1,
-      y,
-      anchoFoto,
-      altoFoto
-    );
-
-    // FOTO 2
-    await insertarImagen(
-      pdfDoc,
-      pagina,
-      foto2,
-      x2,
-      y,
-      anchoFoto,
-      altoFoto
-    );
-  } else {
-    // PRODUCTO CON UNA SOLA FOTO
-    // Utiliza todo el ancho disponible
-    // y queda centrado.
-    await insertarImagen(
-      pdfDoc,
-      pagina,
-      foto1 || foto2,
-      margen,
-      y,
-      anchoDisponible,
-      altoFoto
-    );
-  }
-
-  /* ===============================================
-     DATOS DEL PRODUCTO
-  =============================================== */
+  /* DATOS */
 
   const nombre =
     recortarTexto(
@@ -443,14 +386,12 @@ async function dibujarProducto({
       producto.precio_pdf
     );
 
-  /* ===============================================
-     NOMBRE
-  =============================================== */
+  /* NOMBRE */
 
   pagina.drawText(
     nombre,
     {
-      x: margen + 9,
+      x: x1 + 9,
       y: y + 9,
       size: 7,
       font: fuenteBold,
@@ -462,23 +403,120 @@ async function dibujarProducto({
     }
   );
 
-  /* ===============================================
-     PRECIO
-  =============================================== */
-
-  const xPrecio =
-    tieneDosFotos
-      ? x2 +
-        anchoFoto -
-        72
-      : margen +
-        anchoDisponible -
-        72;
+  /* PRECIO */
 
   pagina.drawText(
     precio,
     {
-      x: xPrecio,
+      x:
+        x2 +
+        anchoFoto -
+        72,
+      y: y + 9,
+      size: 10,
+      font: fuenteBold,
+      color: rgb(
+        0.12,
+        0.12,
+        0.12
+      ),
+    }
+  );
+}
+
+
+/* =========================================================
+   PRODUCTO CON UNA SOLA FOTO
+========================================================= */
+
+async function dibujarProductoUnaFoto({
+  pdfDoc,
+  pagina,
+  producto,
+  y,
+  fuenteBold,
+}) {
+  const anchoPagina =
+    pagina.getWidth();
+
+  /*
+    La foto tendrá un área grande,
+    pero NO se deformará.
+
+    Dejamos 55 puntos de margen
+    a cada lado.
+  */
+
+  const margenLateral = 55;
+
+  const anchoArea =
+    anchoPagina -
+    margenLateral * 2;
+
+  const altoArea = 235;
+
+  const foto =
+    producto.foto_url ||
+    producto.foto_url_2;
+
+  /*
+    FOTO ÚNICA
+
+    insertarImagen usa Math.min,
+    por lo que mantiene la proporción
+    y la centra automáticamente.
+  */
+
+  await insertarImagen(
+    pdfDoc,
+    pagina,
+    foto,
+    margenLateral,
+    y,
+    anchoArea,
+    altoArea
+  );
+
+  /* DATOS */
+
+  const nombre =
+    recortarTexto(
+      producto.nombre ||
+        "Producto",
+      45
+    );
+
+  const precio =
+    formatoPrecio(
+      producto.precio_pdf
+    );
+
+  /* NOMBRE */
+
+  pagina.drawText(
+    nombre,
+    {
+      x: margenLateral + 9,
+      y: y + 9,
+      size: 7,
+      font: fuenteBold,
+      color: rgb(
+        0.20,
+        0.20,
+        0.20
+      ),
+    }
+  );
+
+  /* PRECIO */
+
+  pagina.drawText(
+    precio,
+    {
+      x:
+        anchoPagina -
+        margenLateral -
+        72,
       y: y + 9,
       size: 10,
       font: fuenteBold,
@@ -932,7 +970,7 @@ for (
         espacioVertical
       );
 
-  await dibujarProducto({
+await dibujarProductoDosFotos({
     pdfDoc,
     pagina,
     producto:
@@ -981,7 +1019,7 @@ for (
         espacioVertical
       );
 
-  await dibujarProducto({
+ await dibujarProductoUnaFoto({
     pdfDoc,
     pagina,
     producto:
