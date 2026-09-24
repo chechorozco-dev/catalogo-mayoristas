@@ -840,7 +840,7 @@ const productosCatalogo = productosFiltrados
 
     const altoProducto = 235;
 
-    const espacioVertical = 18;
+    const espacioVertical = 4;
 
     let pagina = null;
 
