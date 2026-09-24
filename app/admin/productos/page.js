@@ -5344,7 +5344,6 @@ async function publicarProductoAhora(productoId) {
 <option value="Anillos">Anillos</option>
 <option value="Topos y maxitopos">Topos y maxitopos</option>
 <option value="Tobilleras">Tobilleras</option>
-<option value="Camándulas">Camándulas</option>
   </select>
 </div>
       <div className="pdf-option">
