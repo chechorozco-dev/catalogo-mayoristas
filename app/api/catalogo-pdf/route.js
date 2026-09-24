@@ -1682,13 +1682,9 @@ for (
   i < productosDosFotos.length;
   i++
 ) {
-  if (posicionEnPagina === 0) {
-    pagina =
-      pdfDoc.addPage([
-        anchoPagina,
-        altoPagina,
-      ]);
-  }
+if (posicionEnPagina === 0) {
+  pagina = crearPaginaProductos();
+}
 
   const y =
     altoPagina -
