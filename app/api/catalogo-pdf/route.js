@@ -462,12 +462,10 @@ async function dibujarProducto({
       producto.precio_pdf
     );
 
-  /* IZQUIERDA */
-
 /* IZQUIERDA */
 
 pagina.drawText(
-  `${referencia} · ${nombre}`,
+ nombre,
   {
     x: x1 + 9,
     y: y + 9,
@@ -482,21 +480,6 @@ pagina.drawText(
 );
 
   /* DERECHA */
-
-  pagina.drawText(
-    referencia,
-    {
-      x: x2 + 9,
-      y: y + 26,
-      size: 9,
-      font: fuenteBold,
-      color: rgb(
-        0.12,
-        0.12,
-        0.12
-      ),
-    }
-  );
 
   pagina.drawText(
     precio,
