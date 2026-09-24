@@ -415,33 +415,6 @@ async function dibujarProducto({
     altoFoto
   );
 
-  /* SOMBRA INFERIOR PARA TEXTO */
-
-  pagina.drawRectangle({
-    x: x1,
-    y,
-    width: anchoFoto,
-    height: 42,
-    color: rgb(
-      1,
-      1,
-      1
-    ),
-    opacity: 0.9,
-  });
-
-  pagina.drawRectangle({
-    x: x2,
-    y,
-    width: anchoFoto,
-    height: 42,
-    color: rgb(
-      1,
-      1,
-      1
-    ),
-    opacity: 0.9,
-  });
 
   const referencia =
     recortarTexto(
