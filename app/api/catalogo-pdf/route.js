@@ -379,14 +379,54 @@ async function dibujarProducto({
     ),
   });
 
-  /* IMÁGENES */
+ /* IMÁGENES */
 
-  const foto1 =
-    producto.foto_url || "";
+const foto1 =
+  producto.foto_url || "";
 
-  const foto2 =
-    producto.foto_url_2 || "";
+const foto2 =
+  producto.foto_url_2 || "";
 
+const tieneDosFotos =
+  Boolean(foto1) && Boolean(foto2);
+
+if (tieneDosFotos) {
+  // PRODUCTO CON DOS FOTOS
+  await insertarImagen(
+    pdfDoc,
+    pagina,
+    foto1,
+    x1,
+    y,
+    anchoFoto,
+    altoFoto
+  );
+
+  await insertarImagen(
+    pdfDoc,
+    pagina,
+    foto2,
+    x2,
+    y,
+    anchoFoto,
+    altoFoto
+  );
+} else {
+  // PRODUCTO CON UNA SOLA FOTO:
+  // ocupa prácticamente el espacio de las dos.
+  const anchoFotoUnica =
+    anchoDisponible;
+
+  await insertarImagen(
+    pdfDoc,
+    pagina,
+    foto1 || foto2,
+    margen,
+    y,
+    anchoFotoUnica,
+    altoFoto
+  );
+}
   await insertarImagen(
     pdfDoc,
     pagina,
@@ -472,6 +512,25 @@ pagina.drawText(
     }
   );
 }
+
+const xPrecio = tieneDosFotos
+  ? x2 + anchoFoto - 72
+  : margen + anchoDisponible - 72;
+
+pagina.drawText(
+  precio,
+  {
+    x: xPrecio,
+    y: y + 9,
+    size: 10,
+    font: fuenteBold,
+    color: rgb(
+      0.12,
+      0.12,
+      0.12
+    ),
+  }
+);
 
 /* =========================================================
    POST
@@ -789,7 +848,28 @@ const productosCatalogo = productosFiltrados
       ? mapaPrecios.get(String(producto.id))
       : Number(producto.precio_detal || 0),
   }))
-  .slice(0,150);
+  .sort((a, b) => {
+    const aTieneDosFotos =
+      Boolean(a.foto_url) &&
+      Boolean(a.foto_url_2);
+
+    const bTieneDosFotos =
+      Boolean(b.foto_url) &&
+      Boolean(b.foto_url_2);
+
+    // Los productos con dos fotos primero.
+    // Los productos con una sola foto al final.
+    if (aTieneDosFotos && !bTieneDosFotos) {
+      return -1;
+    }
+
+    if (!aTieneDosFotos && bTieneDosFotos) {
+      return 1;
+    }
+
+    return 0;
+  })
+  .slice(0, 150);
     if (
       productosCatalogo.length === 0
     ) {
