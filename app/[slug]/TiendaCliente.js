@@ -1868,27 +1868,37 @@ setCarrito([]);
                       </div>
                     )}
 
-                    <div className="producto-precio">
-                      {tieneVariantes &&
-                      producto.variantes.some(
-                        (variante) =>
-                          Number(variante.precio) !==
-                          Number(
-                            producto.variantes[0]?.precio
-                          )
-                      )
-                        ? `Desde ${formatoPrecio(
-                            Math.min(
-                              ...producto.variantes.map(
-                                (variante) =>
-                                  Number(
-                                    variante.precio || 0
-                                  )
-                              )
-                            )
-                          )}`
-                        : formatoPrecio(producto.precio)}
-                    </div>
+                    {String(tipoTienda || "")
+  .trim()
+  .toUpperCase() === "RA" &&
+  Number(producto.precio_detal || 0) > 0 && (
+    <div className="producto-precio-detal">
+      <span>Al detal</span>
+      <del>
+        {formatoPrecio(producto.precio_detal)}
+      </del>
+    </div>
+  )}
+
+<div className="producto-precio">
+  {tieneVariantes &&
+  producto.variantes.some(
+    (variante) =>
+      Number(variante.precio) !==
+      Number(
+        producto.variantes[0]?.precio
+      )
+  )
+    ? `Desde ${formatoPrecio(
+        Math.min(
+          ...producto.variantes.map(
+            (variante) =>
+              Number(variante.precio || 0)
+          )
+        )
+      )}`
+    : formatoPrecio(producto.precio)}
+</div>
                   </div>
                 </article>
                            );
@@ -3832,7 +3842,21 @@ height: 60px;
           font-size: 12px;
           font-weight: 600;
         }
+.producto-precio-detal {
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #8a8a8a;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.2;
+}
 
+.producto-precio-detal del {
+  color: #8a8a8a;
+  text-decoration-thickness: 1px;
+}
         .producto-precio {
   margin-top: 5px;
   font-size: 18px;
