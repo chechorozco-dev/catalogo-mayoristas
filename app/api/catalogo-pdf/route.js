@@ -5,6 +5,7 @@ import {
   rgb,
 } from "pdf-lib";
 import crypto from "crypto";
+import sharp from "sharp";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -242,7 +243,10 @@ async function insertarImagen(
       contentType,
     } = imagenDescargada;
 
-    let imagenPdf = null;
+   let imagenPdf = null;
+
+/* PNG */
+
 if (
   contentType.includes("png") ||
   String(url)
@@ -251,7 +255,11 @@ if (
 ) {
   imagenPdf =
     await pdfDoc.embedPng(bytes);
-} else if (
+}
+
+/* JPG / JPEG */
+
+else if (
   contentType.includes("jpeg") ||
   contentType.includes("jpg") ||
   String(url)
@@ -263,16 +271,40 @@ if (
 ) {
   imagenPdf =
     await pdfDoc.embedJpg(bytes);
-} else {
+}
+
+/* WEBP */
+
+else if (
+  contentType.includes("webp") ||
+  String(url)
+    .toLowerCase()
+    .includes(".webp")
+) {
+  const pngConvertido =
+    await sharp(
+      Buffer.from(bytes)
+    )
+      .png()
+      .toBuffer();
+
+  imagenPdf =
+    await pdfDoc.embedPng(
+      pngConvertido
+    );
+}
+
+/* OTROS FORMATOS */
+
+else {
   console.error(
-    "FORMATO DE IMAGEN NO COMPATIBLE CON PDF:",
+    "FORMATO DE IMAGEN NO COMPATIBLE:",
     contentType,
     url
   );
 
   return false;
 }
-
     const dimensiones =
       imagenPdf.scale(1);
 
