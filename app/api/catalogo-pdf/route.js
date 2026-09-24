@@ -613,11 +613,49 @@ async function crearPortadaCatalogo({
 }) {
   const anchoPagina = 595.28;
   const altoPagina = 841.89;
+  /* =========================================================
+   COLOR DE FONDO DE LA TIENDA PARA LAS PÁGINAS DE PRODUCTOS
+========================================================= */
 
+function convertirColorFondoPdf(hex) {
+  const limpio = String(hex || "")
+    .replace("#", "")
+    .trim();
+
+  if (!/^[0-9A-Fa-f]{6}$/.test(limpio)) {
+    return rgb(1, 1, 1);
+  }
+
+  return rgb(
+    parseInt(limpio.slice(0, 2), 16) / 255,
+    parseInt(limpio.slice(2, 4), 16) / 255,
+    parseInt(limpio.slice(4, 6), 16) / 255
+  );
+}
+
+const colorFondoProductos =
+  convertirColorFondoPdf(
+    tienda?.color_fondo
+  );
+
+function crearPaginaProductos() {
   const pagina = pdfDoc.addPage([
     anchoPagina,
     altoPagina,
   ]);
+
+  pagina.drawRectangle({
+    x: 0,
+    y: 0,
+    width: anchoPagina,
+    height: altoPagina,
+    color: colorFondoProductos,
+  });
+
+  return pagina;
+}
+
+ const pagina = crearPaginaProductos();
 
   /* =====================================================
      COLOR PRINCIPAL DE LA TIENDA
@@ -946,8 +984,8 @@ async function crearPortadaCatalogo({
      FRASE
   ===================================================== */
 
-  const frase =
-    "UNA SELECCIÓN ESPECIAL PARA TUS CLIENTES";
+ const frase =
+  "DESCUBRE NUESTRA COLECCIÓN";
 
   const anchoFrase =
     fuente.widthOfTextAtSize(
