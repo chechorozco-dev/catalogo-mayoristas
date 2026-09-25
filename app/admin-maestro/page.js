@@ -98,7 +98,13 @@ export default function AdminMaestroPage() {
   function irAdminCliente() {
     router.push("/admin");
   }
+// =====================================================
+// CARRITOS EN VIVO
+// =====================================================
 
+function irCarritos() {
+  router.push("/admin-maestro/carritos");
+}
   // =====================================================
   // CARGANDO
   // =====================================================
@@ -396,7 +402,65 @@ export default function AdminMaestroPage() {
             </button>
           </div>
         </section>
+{/* =================================================
+    CARRITOS EN VIVO
+================================================= */}
 
+<section
+  style={{
+    background: "white",
+    marginTop: "16px",
+    borderRadius: "20px",
+    padding: "24px",
+    boxShadow: "0 8px 30px rgba(0,0,0,0.06)",
+  }}
+>
+  <div
+    style={{
+      width: "52px",
+      height: "52px",
+      borderRadius: "15px",
+      background: "#eef8ff",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: "25px",
+      marginBottom: "15px",
+    }}
+  >
+    🛒
+  </div>
+
+  <h2
+    style={{
+      margin: 0,
+      fontSize: "24px",
+    }}
+  >
+    Carritos en vivo
+  </h2>
+
+  <p
+    style={{
+      marginTop: "8px",
+      marginBottom: "22px",
+      color: "#666",
+      lineHeight: "1.6",
+    }}
+  >
+    Revisa los pedidos que los clientes están armando,
+    los que llegaron al checkout y los que ya fueron
+    completados.
+  </p>
+
+  <button
+    type="button"
+    onClick={irCarritos}
+    style={botonPrincipal}
+  >
+    🛒 Ver carritos en vivo
+  </button>
+</section>
         {/* =================================================
             INFORMACIÓN PARA PEDIDOS
         ================================================= */}
