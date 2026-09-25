@@ -40,7 +40,10 @@ export default function AdminMaestroPage() {
       setCliente(data.cliente);
       setCargando(false);
     } catch (error) {
-      console.error("Error verificando acceso maestro:", error);
+      console.error(
+        "Error verificando acceso maestro:",
+        error
+      );
 
       setMensaje(
         "No pudimos comprobar tu acceso al administrador maestro."
@@ -67,10 +70,6 @@ export default function AdminMaestroPage() {
     router.refresh();
   }
 
-  // =====================================================
-  // NAVEGACIÓN PRODUCTOS NORMALES
-  // =====================================================
-
   function irProductos() {
     router.push("/admin-maestro/productos");
   }
@@ -78,10 +77,6 @@ export default function AdminMaestroPage() {
   function irNuevoProducto() {
     router.push("/admin-maestro/productos/nuevo");
   }
-
-  // =====================================================
-  // NAVEGACIÓN PRODUCTOS CON VARIANTES
-  // =====================================================
 
   function irVariantes() {
     router.push("/admin-maestro/variantes");
@@ -91,36 +86,17 @@ export default function AdminMaestroPage() {
     router.push("/admin-maestro/variantes/nuevo");
   }
 
-  // =====================================================
-  // ADMINISTRADOR COMO CLIENTE
-  // =====================================================
+  function irCarritos() {
+    router.push("/admin-maestro/carritos");
+  }
 
   function irAdminCliente() {
     router.push("/admin");
   }
-// =====================================================
-// CARRITOS EN VIVO
-// =====================================================
-
-function irCarritos() {
-  router.push("/admin-maestro/carritos");
-}
-  // =====================================================
-  // CARGANDO
-  // =====================================================
 
   if (cargando) {
     return (
-      <main
-        style={{
-          minHeight: "100vh",
-          background: "#f6f7f9",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "20px",
-        }}
-      >
+      <main style={paginaCargando}>
         <p
           style={{
             margin: 0,
@@ -134,445 +110,379 @@ function irCarritos() {
     );
   }
 
-  // =====================================================
-  // PÁGINA
-  // =====================================================
-
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background: "#f6f7f9",
-        padding: "24px 16px 50px",
-      }}
-    >
-      <div
-        style={{
-          maxWidth: "900px",
-          margin: "0 auto",
-        }}
-      >
-        {/* =================================================
+    <main style={pagina}>
+      <div style={contenedor}>
+        {/* =====================================
             ENCABEZADO
-        ================================================= */}
+        ===================================== */}
 
-        <div
-          style={{
-            background: "#111",
-            color: "white",
-            borderRadius: "22px",
-            padding: "26px",
-            boxShadow: "0 12px 35px rgba(0,0,0,0.12)",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              gap: "20px",
-              flexWrap: "wrap",
-            }}
-          >
-            <div>
-              <div
-                style={{
-                  display: "inline-block",
-                  background: "#d97883",
-                  padding: "6px 11px",
-                  borderRadius: "999px",
-                  fontSize: "12px",
-                  fontWeight: "800",
-                  marginBottom: "13px",
-                }}
-              >
-                ADMINISTRADOR MAESTRO
-              </div>
-
-              <h1
-                style={{
-                  margin: 0,
-                  fontSize: "32px",
-                }}
-              >
-                Panel maestro
-              </h1>
-
-              <p
-                style={{
-                  marginTop: "9px",
-                  marginBottom: 0,
-                  color: "#ccc",
-                  lineHeight: "1.5",
-                }}
-              >
-                {cliente?.nombre
-                  ? `Hola, ${cliente.nombre}`
-                  : "Administrador"}
-              </p>
+        <header style={encabezado}>
+          <div>
+            <div style={badge}>
+              ADMINISTRADOR MAESTRO
             </div>
 
-            <button
-              type="button"
-              onClick={cerrarSesion}
-              disabled={cerrando}
-              style={{
-                border: "1px solid #444",
-                background: "#222",
-                color: "white",
-                padding: "11px 16px",
-                borderRadius: "10px",
-                cursor: cerrando ? "not-allowed" : "pointer",
-                opacity: cerrando ? 0.6 : 1,
-                fontSize: "15px",
-              }}
-            >
-              {cerrando ? "Cerrando..." : "Cerrar sesión"}
-            </button>
+            <h1 style={titulo}>
+              Panel maestro
+            </h1>
+
+            <p style={saludo}>
+              {cliente?.nombre
+                ? `Hola, ${cliente.nombre}`
+                : "Administrador"}
+            </p>
           </div>
-        </div>
 
-        {/* =================================================
-            MENSAJE DE ERROR
-        ================================================= */}
-
-        {mensaje && (
-          <div
+          <button
+            type="button"
+            onClick={cerrarSesion}
+            disabled={cerrando}
             style={{
-              marginTop: "18px",
-              padding: "14px",
-              borderRadius: "12px",
-              background: "#ffeaea",
-              color: "#a33",
+              ...botonCerrar,
+              cursor: cerrando
+                ? "not-allowed"
+                : "pointer",
+              opacity: cerrando ? 0.6 : 1,
             }}
           >
+            {cerrando
+              ? "Cerrando..."
+              : "Cerrar sesión"}
+          </button>
+        </header>
+
+        {mensaje && (
+          <div style={mensajeError}>
             {mensaje}
           </div>
         )}
 
-        {/* =================================================
-            PRODUCTOS NORMALES
-        ================================================= */}
+        {/* =====================================
+            TÍTULO ACCESOS
+        ===================================== */}
 
-        <section
-          style={{
-            background: "white",
-            marginTop: "20px",
-            borderRadius: "20px",
-            padding: "24px",
-            boxShadow: "0 8px 30px rgba(0,0,0,0.06)",
-          }}
-        >
-          <div
-            style={{
-              width: "52px",
-              height: "52px",
-              borderRadius: "15px",
-              background: "#fff0f2",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "25px",
-              marginBottom: "15px",
-            }}
-          >
-            💎
-          </div>
-
-          <h2
-            style={{
-              margin: 0,
-              fontSize: "24px",
-            }}
-          >
-            Productos
-          </h2>
-
-          <p
-            style={{
-              marginTop: "8px",
-              marginBottom: "22px",
-              color: "#666",
-              lineHeight: "1.6",
-            }}
-          >
-            Administra el catálogo central. Los productos que agregues aquí
-            podrán aparecer en los catálogos de tus clientes mayoristas.
-          </p>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: "12px",
-            }}
-          >
-            <button
-              type="button"
-              onClick={irProductos}
-              style={botonSecundario}
+        <div style={tituloSeccion}>
+          <div>
+            <h2
+              style={{
+                margin: 0,
+                fontSize: "22px",
+              }}
             >
-              📦 Ver todos los productos
-            </button>
+              Accesos principales
+            </h2>
 
-            <button
-              type="button"
-              onClick={irNuevoProducto}
-              style={botonPrincipal}
+            <p
+              style={{
+                margin: "6px 0 0",
+                color: "#777",
+                lineHeight: "1.5",
+              }}
             >
-              ＋ Agregar producto manual
-            </button>
+              Administra tus productos, pedidos y
+              catálogo desde un solo lugar.
+            </p>
           </div>
-        </section>
+        </div>
 
-        {/* =================================================
-            PRODUCTOS CON VARIANTES
-        ================================================= */}
+        {/* =====================================
+            CUADRÍCULA PRINCIPAL
+        ===================================== */}
 
-        <section
-          style={{
-            background: "white",
-            marginTop: "16px",
-            borderRadius: "20px",
-            padding: "24px",
-            boxShadow: "0 8px 30px rgba(0,0,0,0.06)",
-          }}
-        >
-          <div
-            style={{
-              width: "52px",
-              height: "52px",
-              borderRadius: "15px",
-              background: "#f2f1ff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "25px",
-              marginBottom: "15px",
-            }}
-          >
-            🔤
-          </div>
+        <div style={grid}>
+          {/* PRODUCTOS */}
 
-          <h2
-            style={{
-              margin: 0,
-              fontSize: "24px",
-            }}
-          >
-            Productos con variantes
-          </h2>
-
-          <p
-            style={{
-              marginTop: "8px",
-              marginBottom: "22px",
-              color: "#666",
-              lineHeight: "1.6",
-            }}
-          >
-            Aquí podremos manejar productos como dijes de letras, donde un
-            mismo producto tiene opciones A, B, C, D... y cada opción puede
-            tener su propio código, foto, precio e información interna.
-          </p>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: "12px",
-            }}
-          >
-            <button
-              type="button"
-              onClick={irVariantes}
-              style={botonSecundario}
+          <section style={tarjeta}>
+            <div
+              style={{
+                ...icono,
+                background: "#fff0f2",
+              }}
             >
-              🔤 Ver productos con variantes
-            </button>
+              💎
+            </div>
 
-            <button
-              type="button"
-              onClick={irNuevaVariante}
-              style={botonPrincipal}
+            <h2 style={tituloTarjeta}>
+              Productos
+            </h2>
+
+            <p style={descripcion}>
+              Administra el catálogo central y agrega
+              nuevos productos para tus tiendas.
+            </p>
+
+            <div style={acciones}>
+              <button
+                type="button"
+                onClick={irProductos}
+                style={botonSecundario}
+              >
+                📦 Ver productos
+              </button>
+
+              <button
+                type="button"
+                onClick={irNuevoProducto}
+                style={botonPrincipal}
+              >
+                ＋ Agregar producto
+              </button>
+            </div>
+          </section>
+
+          {/* VARIANTES */}
+
+          <section style={tarjeta}>
+            <div
+              style={{
+                ...icono,
+                background: "#f2f1ff",
+              }}
             >
-              ＋ Agregar producto con variantes
-            </button>
-          </div>
-        </section>
-{/* =================================================
-    CARRITOS EN VIVO
-================================================= */}
+              🔤
+            </div>
 
-<section
-  style={{
-    background: "white",
-    marginTop: "16px",
-    borderRadius: "20px",
-    padding: "24px",
-    boxShadow: "0 8px 30px rgba(0,0,0,0.06)",
-  }}
->
-  <div
-    style={{
-      width: "52px",
-      height: "52px",
-      borderRadius: "15px",
-      background: "#eef8ff",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontSize: "25px",
-      marginBottom: "15px",
-    }}
-  >
-    🛒
-  </div>
+            <h2 style={tituloTarjeta}>
+              Productos con variantes
+            </h2>
 
-  <h2
-    style={{
-      margin: 0,
-      fontSize: "24px",
-    }}
-  >
-    Carritos en vivo
-  </h2>
+            <p style={descripcion}>
+              Maneja productos con opciones como
+              letras, colores o referencias diferentes.
+            </p>
 
-  <p
-    style={{
-      marginTop: "8px",
-      marginBottom: "22px",
-      color: "#666",
-      lineHeight: "1.6",
-    }}
-  >
-    Revisa los pedidos que los clientes están armando,
-    los que llegaron al checkout y los que ya fueron
-    completados.
-  </p>
+            <div style={acciones}>
+              <button
+                type="button"
+                onClick={irVariantes}
+                style={botonSecundario}
+              >
+                🔤 Ver variantes
+              </button>
 
-  <button
-    type="button"
-    onClick={irCarritos}
-    style={botonPrincipal}
-  >
-    🛒 Ver carritos en vivo
-  </button>
-</section>
-        {/* =================================================
-            INFORMACIÓN PARA PEDIDOS
-        ================================================= */}
+              <button
+                type="button"
+                onClick={irNuevaVariante}
+                style={botonPrincipal}
+              >
+                ＋ Agregar con variantes
+              </button>
+            </div>
+          </section>
 
-        <section
-          style={{
-            background: "white",
-            marginTop: "16px",
-            borderRadius: "20px",
-            padding: "24px",
-            boxShadow: "0 8px 30px rgba(0,0,0,0.06)",
-          }}
-        >
-          <div
-            style={{
-              width: "52px",
-              height: "52px",
-              borderRadius: "15px",
-              background: "#eef8ff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "25px",
-              marginBottom: "15px",
-            }}
-          >
-            🔗
-          </div>
+          {/* CARRITOS */}
 
-          <h2
-            style={{
-              margin: 0,
-              fontSize: "24px",
-            }}
-          >
-            Información para pedidos
-          </h2>
+          <section style={tarjeta}>
+            <div
+              style={{
+                ...icono,
+                background: "#eef8ff",
+              }}
+            >
+              🛒
+            </div>
 
-          <p
-            style={{
-              marginTop: "8px",
-              marginBottom: 0,
-              color: "#666",
-              lineHeight: "1.6",
-            }}
-          >
-            Conservaremos INFOIMAGEN y los códigos internamente para que más
-            adelante podamos enviar toda esa información por webhook cuando
-            tus clientes hagan pedidos. Estos datos no necesitan mostrarse
-            en el catálogo público.
-          </p>
-        </section>
+            <h2 style={tituloTarjeta}>
+              Carritos en vivo
+            </h2>
 
-        {/* =================================================
-            MI CATÁLOGO COMO CLIENTE
-        ================================================= */}
+            <p style={descripcion}>
+              Revisa los pedidos que están armando,
+              los que llegaron al checkout y los
+              completados.
+            </p>
 
-        <section
-          style={{
-            marginTop: "16px",
-            padding: "22px",
-            borderRadius: "20px",
-            border: "1px solid #e5e5e5",
-            background: "white",
-          }}
-        >
-          <h2
-            style={{
-              margin: 0,
-              fontSize: "20px",
-            }}
-          >
-            Mi catálogo como cliente
-          </h2>
+            <div style={acciones}>
+              <button
+                type="button"
+                onClick={irCarritos}
+                style={botonPrincipal}
+              >
+                🛒 Ver carritos en vivo
+              </button>
+            </div>
+          </section>
 
-          <p
-            style={{
-              marginTop: "7px",
-              marginBottom: "17px",
-              color: "#777",
-              lineHeight: "1.5",
-            }}
-          >
-            También puedes entrar al mismo administrador que utilizan tus
-            clientes para revisar tu tienda.
-          </p>
+          {/* MI CATÁLOGO */}
 
-          <button
-            type="button"
-            onClick={irAdminCliente}
-            style={botonSecundario}
-          >
-            🏪 Ir a mi catálogo
-          </button>
-        </section>
+          <section style={tarjeta}>
+            <div
+              style={{
+                ...icono,
+                background: "#f1f8ee",
+              }}
+            >
+              🏪
+            </div>
+
+            <h2 style={tituloTarjeta}>
+              Mi catálogo
+            </h2>
+
+            <p style={descripcion}>
+              Entra al administrador que utilizan tus
+              clientes y revisa cómo funciona tu propia
+              tienda.
+            </p>
+
+            <div style={acciones}>
+              <button
+                type="button"
+                onClick={irAdminCliente}
+                style={botonSecundario}
+              >
+                🏪 Ir a mi catálogo
+              </button>
+            </div>
+          </section>
+        </div>
       </div>
     </main>
   );
 }
 
-// =====================================================
-// ESTILOS DE BOTONES
-// =====================================================
+// =========================================
+// ESTILOS
+// =========================================
+
+const pagina = {
+  minHeight: "100vh",
+  background: "#f6f7f9",
+  padding: "24px 16px 60px",
+};
+
+const paginaCargando = {
+  minHeight: "100vh",
+  background: "#f6f7f9",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "20px",
+};
+
+const contenedor = {
+  maxWidth: "1100px",
+  margin: "0 auto",
+};
+
+const encabezado = {
+  background: "#111",
+  color: "white",
+  borderRadius: "24px",
+  padding: "28px",
+  boxShadow:
+    "0 12px 35px rgba(0,0,0,0.12)",
+
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "flex-start",
+  gap: "20px",
+  flexWrap: "wrap",
+};
+
+const badge = {
+  display: "inline-block",
+  background: "#d97883",
+  padding: "6px 11px",
+  borderRadius: "999px",
+  fontSize: "12px",
+  fontWeight: "800",
+  marginBottom: "13px",
+};
+
+const titulo = {
+  margin: 0,
+  fontSize: "32px",
+};
+
+const saludo = {
+  marginTop: "9px",
+  marginBottom: 0,
+  color: "#ccc",
+  lineHeight: "1.5",
+};
+
+const botonCerrar = {
+  border: "1px solid #444",
+  background: "#222",
+  color: "white",
+  padding: "11px 16px",
+  borderRadius: "10px",
+  fontSize: "15px",
+};
+
+const mensajeError = {
+  marginTop: "18px",
+  padding: "14px",
+  borderRadius: "12px",
+  background: "#ffeaea",
+  color: "#a33",
+};
+
+const tituloSeccion = {
+  marginTop: "26px",
+  marginBottom: "14px",
+};
+
+const grid = {
+  display: "grid",
+  gridTemplateColumns:
+    "repeat(auto-fit, minmax(300px, 1fr))",
+  gap: "16px",
+};
+
+const tarjeta = {
+  background: "white",
+  borderRadius: "20px",
+  padding: "24px",
+  boxShadow:
+    "0 8px 30px rgba(0,0,0,0.055)",
+
+  display: "flex",
+  flexDirection: "column",
+  minHeight: "290px",
+};
+
+const icono = {
+  width: "52px",
+  height: "52px",
+  borderRadius: "15px",
+
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+
+  fontSize: "25px",
+  marginBottom: "15px",
+};
+
+const tituloTarjeta = {
+  margin: 0,
+  fontSize: "22px",
+};
+
+const descripcion = {
+  marginTop: "8px",
+  marginBottom: "22px",
+  color: "#666",
+  lineHeight: "1.6",
+  flex: 1,
+};
+
+const acciones = {
+  display: "grid",
+  gap: "10px",
+};
 
 const botonPrincipal = {
   width: "100%",
   border: "none",
-  padding: "15px 18px",
+  padding: "14px 17px",
   borderRadius: "12px",
   background: "#d97883",
   color: "white",
-  fontSize: "16px",
+  fontSize: "15px",
   fontWeight: "800",
   cursor: "pointer",
 };
@@ -580,11 +490,11 @@ const botonPrincipal = {
 const botonSecundario = {
   width: "100%",
   border: "1px solid #ddd",
-  padding: "15px 18px",
+  padding: "14px 17px",
   borderRadius: "12px",
   background: "white",
   color: "#222",
-  fontSize: "16px",
+  fontSize: "15px",
   fontWeight: "700",
   cursor: "pointer",
 };
