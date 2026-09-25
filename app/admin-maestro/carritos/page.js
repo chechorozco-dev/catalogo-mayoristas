@@ -71,7 +71,59 @@ export default function CarritosMaestroPage() {
       setCargando(false);
     }
   }
+async function reenviarAMake(carrito) {
+  const confirmar = window.confirm(
+    `¿Seguro que quieres reenviar este pedido a Make?\n\n` +
+      `Cliente: ${carrito.nombre_cliente || "Sin nombre"}\n` +
+      `Valor del carrito: ${dinero(carrito.subtotal)}\n\n` +
+      `Se generará un NUEVO número de pedido.`
+  );
 
+  if (!confirmar) return;
+
+  try {
+    setMensaje("");
+
+    const response = await fetch(
+      "/api/admin-maestro/reenviar-carrito",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          carrito_id: carrito.id,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      throw new Error(
+        data.error ||
+          "No se pudo reenviar el pedido."
+      );
+    }
+
+    window.alert(
+      `✅ Pedido enviado nuevamente a Make.\n\n` +
+        `Nuevo pedido: #${data.numero_pedido}\n` +
+        `Total: ${dinero(data.total_pedido)}`
+    );
+  } catch (error) {
+    console.error(
+      "Error reenviando pedido:",
+      error
+    );
+
+    window.alert(
+      `❌ No se pudo reenviar el pedido.\n\n${
+        error.message || "Error desconocido."
+      }`
+    );
+  }
+}
   function dinero(valor) {
     return new Intl.NumberFormat("es-CO", {
       style: "currency",
