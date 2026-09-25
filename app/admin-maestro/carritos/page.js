@@ -110,12 +110,24 @@ async function cargarCiudades() {
     }
   }
 function iniciarEdicion(carrito) {
+  const ciudadActual =
+    ciudadesEnvio.find(
+      (ciudad) =>
+        normalizarTexto(
+          ciudad.ciudad_departamento
+        ) ===
+        normalizarTexto(
+          carrito.ciudad
+        )
+    ) || null;
+
   setEditando(carrito.id);
 
   setCarritoEditado({
     ...carrito,
 
-    ciudad_id: "",
+    ciudad_id:
+      ciudadActual?.ciudad_id || "",
 
     productos: Array.isArray(carrito.productos)
       ? carrito.productos.map((producto) => ({
@@ -132,6 +144,116 @@ function iniciarEdicion(carrito) {
 function cancelarEdicion() {
   setEditando(null);
   setCarritoEditado(null);
+}
+  async function guardarCambiosCarrito() {
+  if (
+    guardandoCambios ||
+    !carritoEditado
+  ) {
+    return;
+  }
+
+  if (
+    busquedaCiudadEditar.trim() &&
+    !carritoEditado.ciudad_id
+  ) {
+    window.alert(
+      "Selecciona la ciudad correcta de la lista antes de guardar."
+    );
+
+    return;
+  }
+
+  try {
+    setGuardandoCambios(true);
+    setMensaje("");
+
+    const response = await fetch(
+      "/api/admin-maestro/editar-carrito",
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+
+        body: JSON.stringify({
+          carrito_id:
+            carritoEditado.id,
+
+          nombre_cliente:
+            carritoEditado.nombre_cliente ||
+            "",
+
+          cedula_cliente:
+            carritoEditado.cedula_cliente ||
+            "",
+
+          telefono_cliente:
+            carritoEditado.telefono_cliente ||
+            "",
+
+          correo_cliente:
+            carritoEditado.correo_cliente ||
+            "",
+
+          direccion_cliente:
+            carritoEditado.direccion_cliente ||
+            "",
+
+          ciudad_id:
+            carritoEditado.ciudad_id ||
+            "",
+
+          forma_pago:
+            carritoEditado.forma_pago ||
+            "",
+
+          estado:
+            carritoEditado.estado ||
+            "EN_PROCESO",
+
+          productos:
+            carritoEditado.productos || [],
+        }),
+      }
+    );
+
+    const data =
+      await response.json();
+
+    if (!response.ok || !data.ok) {
+      throw new Error(
+        data.error ||
+          "No se pudieron guardar los cambios."
+      );
+    }
+
+    setEditando(null);
+    setCarritoEditado(null);
+    setBusquedaCiudadEditar("");
+
+    await cargarCarritos(false);
+
+    window.alert(
+      "✅ Carrito actualizado correctamente."
+    );
+  } catch (error) {
+    console.error(
+      "Error guardando carrito:",
+      error
+    );
+
+    window.alert(
+      `❌ No se pudieron guardar los cambios.\n\n${
+        error.message ||
+        "Error desconocido."
+      }`
+    );
+  } finally {
+    setGuardandoCambios(false);
+  }
 }
 async function reenviarAMake(carrito) {
   const confirmar = window.confirm(
@@ -185,6 +307,13 @@ async function reenviarAMake(carrito) {
       }`
     );
   }
+}
+  function normalizarTexto(valor = "") {
+  return String(valor)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 }
   function dinero(valor) {
     return new Intl.NumberFormat("es-CO", {
@@ -584,37 +713,229 @@ const estaEditando =
       />
     </label>
 
-    <div>
-      <div style={etiquetaCampo}>
-        Ciudad
-      </div>
+   <div>
+  <div style={etiquetaCampo}>
+    Ciudad
+  </div>
 
+  <input
+    type="text"
+    value={busquedaCiudadEditar}
+    onChange={(e) => {
+      const valor = e.target.value;
+
+      setBusquedaCiudadEditar(valor);
+
+      setCarritoEditado((actual) => ({
+        ...actual,
+        ciudad_id: "",
+        ciudad: valor,
+      }));
+    }}
+    placeholder="Buscar ciudad..."
+    autoComplete="off"
+    style={campoEdicion}
+  />
+
+  {busquedaCiudadEditar.trim() &&
+    !carritoEditado?.ciudad_id && (
       <div
         style={{
-          ...campoEdicion,
-          background: "#f3f3f3",
-          color: "#666",
+          border: "1px solid #ddd",
+          borderRadius: "10px",
+          background: "white",
+          maxHeight: "220px",
+          overflowY: "auto",
+          marginTop: "6px",
         }}
       >
-        {carrito.ciudad ||
-          "Sin registrar"}
-      </div>
-    </div>
+        {ciudadesEnvio
+          .filter((ciudad) =>
+            normalizarTexto(
+              ciudad.ciudad_departamento
+            ).includes(
+              normalizarTexto(
+                busquedaCiudadEditar
+              )
+            )
+          )
+          .slice(0, 20)
+          .map((ciudad) => (
+            <button
+              key={ciudad.ciudad_id}
+              type="button"
+              onClick={() => {
+                setCarritoEditado(
+                  (actual) => ({
+                    ...actual,
 
-    <button
-      type="button"
-      onClick={cancelarEdicion}
+                    ciudad_id:
+                      ciudad.ciudad_id,
+
+                    ciudad:
+                      ciudad.ciudad_departamento,
+                  })
+                );
+
+                setBusquedaCiudadEditar(
+                  ciudad.ciudad_departamento
+                );
+              }}
+              style={{
+                width: "100%",
+                border: "none",
+                borderBottom:
+                  "1px solid #eee",
+                background: "white",
+                padding: "11px 12px",
+                textAlign: "left",
+                cursor: "pointer",
+                fontSize: "14px",
+              }}
+            >
+              📍{" "}
+              {ciudad.ciudad_departamento}
+            </button>
+          ))}
+      </div>
+    )}
+
+  {carritoEditado?.ciudad_id && (
+    <div
       style={{
-        border: "1px solid #ddd",
-        background: "white",
-        padding: "11px",
-        borderRadius: "10px",
+        marginTop: "6px",
+        color: "#18763b",
+        fontSize: "13px",
         fontWeight: "700",
-        cursor: "pointer",
       }}
     >
-      Cancelar edición
-    </button>
+      ✓ Ciudad seleccionada correctamente
+    </div>
+  )}
+</div>
+
+<label>
+  <div style={etiquetaCampo}>
+    Forma de pago
+  </div>
+
+  <select
+    value={
+      carritoEditado?.forma_pago ||
+      ""
+    }
+    onChange={(e) =>
+      setCarritoEditado((actual) => ({
+        ...actual,
+        forma_pago:
+          e.target.value,
+      }))
+    }
+    style={campoEdicion}
+  >
+    <option value="">
+      Sin seleccionar
+    </option>
+
+    <option value="CONTRA_ENTREGA">
+      Contra entrega
+    </option>
+
+    <option value="TRANSFERENCIA">
+      Transferencia
+    </option>
+  </select>
+</label>
+
+<label>
+  <div style={etiquetaCampo}>
+    Estado del carrito
+  </div>
+
+  <select
+    value={
+      carritoEditado?.estado ||
+      "EN_PROCESO"
+    }
+    onChange={(e) =>
+      setCarritoEditado((actual) => ({
+        ...actual,
+        estado:
+          e.target.value,
+      }))
+    }
+    style={campoEdicion}
+  >
+    <option value="EN_PROCESO">
+      🛒 Armando carrito
+    </option>
+
+    <option value="CHECKOUT">
+      🟣 Llenando datos
+    </option>
+
+    <option value="COMPLETADO">
+      ✅ Completado
+    </option>
+
+    <option value="ABANDONADO">
+      ⚠️ Abandonado
+    </option>
+  </select>
+</label>
+
+<div
+  style={{
+    display: "grid",
+    gridTemplateColumns:
+      "1fr 1fr",
+    gap: "10px",
+    marginTop: "5px",
+  }}
+>
+  <button
+    type="button"
+    onClick={cancelarEdicion}
+    disabled={guardandoCambios}
+    style={{
+      border: "1px solid #ddd",
+      background: "white",
+      padding: "12px",
+      borderRadius: "10px",
+      fontWeight: "700",
+      cursor: "pointer",
+    }}
+  >
+    Cancelar
+  </button>
+
+  <button
+    type="button"
+    onClick={guardarCambiosCarrito}
+    disabled={guardandoCambios}
+    style={{
+      border: "none",
+      background: "#d97883",
+      color: "white",
+      padding: "12px",
+      borderRadius: "10px",
+      fontWeight: "800",
+      cursor: guardandoCambios
+        ? "not-allowed"
+        : "pointer",
+      opacity:
+        guardandoCambios
+          ? 0.6
+          : 1,
+    }}
+  >
+    {guardandoCambios
+      ? "Guardando..."
+      : "💾 Guardar cambios"}
+  </button>
+</div>
+
+
   </div>
 ) : (
   <div style={datosCliente}>
