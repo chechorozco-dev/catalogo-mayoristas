@@ -2638,7 +2638,21 @@ try {
               placeholder="Buscar ciudad o departamento..."
               autoComplete="off"
             />
-
+{busquedaCiudad.trim() &&
+  !ciudadSeleccionada && (
+    <div
+      style={{
+        marginTop: "7px",
+        color: "#c62828",
+        fontSize: "13px",
+        fontWeight: "700",
+        lineHeight: "1.4",
+      }}
+    >
+      ⚠️ Selecciona una ciudad de la lista para calcular
+      el envío.
+    </div>
+  )}
             {busquedaCiudad.trim() &&
               !ciudadSeleccionada && (
                 <div className="ciudades-resultados">
