@@ -10,7 +10,9 @@ export default function CarritosMaestroPage() {
   const [cargando, setCargando] = useState(true);
   const [mensaje, setMensaje] = useState("");
   const [abierto, setAbierto] = useState(null);
-
+const [editando, setEditando] = useState(null);
+const [carritoEditado, setCarritoEditado] = useState(null);
+const [guardandoCambios, setGuardandoCambios] = useState(false);
   useEffect(() => {
     cargarCarritos();
 
@@ -71,6 +73,24 @@ export default function CarritosMaestroPage() {
       setCargando(false);
     }
   }
+  function iniciarEdicion(carrito) {
+  setEditando(carrito.id);
+
+  setCarritoEditado({
+    ...carrito,
+
+    productos: Array.isArray(carrito.productos)
+      ? carrito.productos.map((producto) => ({
+          ...producto,
+        }))
+      : [],
+  });
+}
+
+function cancelarEdicion() {
+  setEditando(null);
+  setCarritoEditado(null);
+}
 async function reenviarAMake(carrito) {
   const confirmar = window.confirm(
     `¿Seguro que quieres reenviar este pedido a Make?\n\n` +
@@ -287,7 +307,8 @@ async function reenviarAMake(carrito) {
 
               const estaAbierto =
                 abierto === carrito.id;
-
+const estaEditando =
+  editando === carrito.id;
               return (
                 <article
                   key={carrito.id}
@@ -370,48 +391,228 @@ async function reenviarAMake(carrito) {
 
                   {estaAbierto && (
                     <div style={detalle}>
-                      <h3 style={{ marginTop: 0 }}>
-                        Datos del cliente
-                      </h3>
+                    
+<div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "12px",
+    marginBottom: "14px",
+  }}
+>
+  <h3 style={{ margin: 0 }}>
+    Datos del cliente
+  </h3>
 
-                      <div style={datosCliente}>
-                        <div>
-                          <strong>Nombre:</strong>{" "}
-                          {carrito.nombre_cliente ||
-                            "Sin registrar"}
-                        </div>
+  {!estaEditando && (
+    <button
+      type="button"
+      onClick={() =>
+        iniciarEdicion(carrito)
+      }
+      style={{
+        border: "1px solid #ddd",
+        background: "white",
+        padding: "9px 13px",
+        borderRadius: "9px",
+        fontWeight: "700",
+        cursor: "pointer",
+      }}
+    >
+      ✏️ Editar
+    </button>
+  )}
+</div>
 
-                        <div>
-                          <strong>Cédula:</strong>{" "}
-                          {carrito.cedula_cliente ||
-                            "Sin registrar"}
-                        </div>
+{estaEditando ? (
+  <div
+    style={{
+      display: "grid",
+      gap: "13px",
+    }}
+  >
+    <label>
+      <div style={etiquetaCampo}>
+        Nombre
+      </div>
 
-                        <div>
-                          <strong>WhatsApp:</strong>{" "}
-                          {carrito.telefono_cliente ||
-                            "Sin registrar"}
-                        </div>
+      <input
+        type="text"
+        value={
+          carritoEditado?.nombre_cliente ||
+          ""
+        }
+        onChange={(e) =>
+          setCarritoEditado((actual) => ({
+            ...actual,
+            nombre_cliente:
+              e.target.value,
+          }))
+        }
+        style={campoEdicion}
+      />
+    </label>
 
-                        <div>
-                          <strong>Correo:</strong>{" "}
-                          {carrito.correo_cliente ||
-                            "Sin registrar"}
-                        </div>
+    <label>
+      <div style={etiquetaCampo}>
+        Cédula
+      </div>
 
-                        <div>
-                          <strong>Dirección:</strong>{" "}
-                          {carrito.direccion_cliente ||
-                            "Sin registrar"}
-                        </div>
+      <input
+        type="text"
+        value={
+          carritoEditado?.cedula_cliente ||
+          ""
+        }
+        onChange={(e) =>
+          setCarritoEditado((actual) => ({
+            ...actual,
+            cedula_cliente:
+              e.target.value,
+          }))
+        }
+        style={campoEdicion}
+      />
+    </label>
 
-                        <div>
-                          <strong>Ciudad:</strong>{" "}
-                          {carrito.ciudad ||
-                            "Sin registrar"}
-                        </div>
-                      </div>
+    <label>
+      <div style={etiquetaCampo}>
+        WhatsApp
+      </div>
 
+      <input
+        type="text"
+        value={
+          carritoEditado
+            ?.telefono_cliente || ""
+        }
+        onChange={(e) =>
+          setCarritoEditado((actual) => ({
+            ...actual,
+            telefono_cliente:
+              e.target.value,
+          }))
+        }
+        style={campoEdicion}
+      />
+    </label>
+
+    <label>
+      <div style={etiquetaCampo}>
+        Correo
+      </div>
+
+      <input
+        type="email"
+        value={
+          carritoEditado?.correo_cliente ||
+          ""
+        }
+        onChange={(e) =>
+          setCarritoEditado((actual) => ({
+            ...actual,
+            correo_cliente:
+              e.target.value,
+          }))
+        }
+        style={campoEdicion}
+      />
+    </label>
+
+    <label>
+      <div style={etiquetaCampo}>
+        Dirección
+      </div>
+
+      <input
+        type="text"
+        value={
+          carritoEditado
+            ?.direccion_cliente || ""
+        }
+        onChange={(e) =>
+          setCarritoEditado((actual) => ({
+            ...actual,
+            direccion_cliente:
+              e.target.value,
+          }))
+        }
+        style={campoEdicion}
+      />
+    </label>
+
+    <div>
+      <div style={etiquetaCampo}>
+        Ciudad
+      </div>
+
+      <div
+        style={{
+          ...campoEdicion,
+          background: "#f3f3f3",
+          color: "#666",
+        }}
+      >
+        {carrito.ciudad ||
+          "Sin registrar"}
+      </div>
+    </div>
+
+    <button
+      type="button"
+      onClick={cancelarEdicion}
+      style={{
+        border: "1px solid #ddd",
+        background: "white",
+        padding: "11px",
+        borderRadius: "10px",
+        fontWeight: "700",
+        cursor: "pointer",
+      }}
+    >
+      Cancelar edición
+    </button>
+  </div>
+) : (
+  <div style={datosCliente}>
+    <div>
+      <strong>Nombre:</strong>{" "}
+      {carrito.nombre_cliente ||
+        "Sin registrar"}
+    </div>
+
+    <div>
+      <strong>Cédula:</strong>{" "}
+      {carrito.cedula_cliente ||
+        "Sin registrar"}
+    </div>
+
+    <div>
+      <strong>WhatsApp:</strong>{" "}
+      {carrito.telefono_cliente ||
+        "Sin registrar"}
+    </div>
+
+    <div>
+      <strong>Correo:</strong>{" "}
+      {carrito.correo_cliente ||
+        "Sin registrar"}
+    </div>
+
+    <div>
+      <strong>Dirección:</strong>{" "}
+      {carrito.direccion_cliente ||
+        "Sin registrar"}
+    </div>
+
+    <div>
+      <strong>Ciudad:</strong>{" "}
+      {carrito.ciudad ||
+        "Sin registrar"}
+    </div>
+  </div>
+)}
                       <h3>
                         Productos
                       </h3>
@@ -704,6 +905,22 @@ const vacio = {
   padding: "45px 20px",
   borderRadius: "20px",
   textAlign: "center",
+};
+const etiquetaCampo = {
+  fontSize: "13px",
+  fontWeight: "700",
+  marginBottom: "5px",
+  color: "#555",
+};
+
+const campoEdicion = {
+  width: "100%",
+  boxSizing: "border-box",
+  border: "1px solid #ddd",
+  borderRadius: "10px",
+  padding: "11px 12px",
+  fontSize: "15px",
+  background: "white",
 };
 
 const error = {
