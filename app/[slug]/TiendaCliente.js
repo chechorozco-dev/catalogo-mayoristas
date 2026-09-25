@@ -1209,40 +1209,51 @@ function fotosProducto(producto) {
 async function confirmarPedido() {
   if (enviandoPedido) return;
 
-  const telefonoNormalizado =
-    normalizarTelefonoColombia(telefonoCliente);
+const telefonoNormalizado =
+  normalizarTelefonoColombia(telefonoCliente);
 
-  if (!nombreCliente.trim()) {
-    alert("Por favor ingresa tu nombre.");
-    return;
-  }
+const erroresFormulario = [];
 
-  if (!/^573\d{9}$/.test(telefonoNormalizado)) {
-    alert(
-      "Ingresa un número de WhatsApp colombiano válido."
-    );
-    return;
-  }
+if (!nombreCliente.trim()) {
+  erroresFormulario.push("Nombre");
+}
 
-  if (!direccionCliente.trim()) {
-    alert("Por favor ingresa tu dirección.");
-    return;
-  }
+if (!/^573\d{9}$/.test(telefonoNormalizado)) {
+  erroresFormulario.push(
+    "Número de WhatsApp válido"
+  );
+}
 
-  if (!ciudadSeleccionada?.ciudad_id) {
-    alert("Selecciona tu ciudad.");
-    return;
-  }
+if (!direccionCliente.trim()) {
+  erroresFormulario.push("Dirección");
+}
 
-  if (!formaPago) {
-    alert("Selecciona una forma de pago.");
-    return;
-  }
+if (!ciudadSeleccionada?.ciudad_id) {
+  erroresFormulario.push(
+    "Selecciona una ciudad de la lista"
+  );
+}
 
-  if (!carrito.length) {
-    alert("Tu carrito está vacío.");
-    return;
-  }
+if (!formaPago) {
+  erroresFormulario.push("Forma de pago");
+}
+
+if (!carrito.length) {
+  erroresFormulario.push(
+    "Agrega al menos un producto al carrito"
+  );
+}
+
+if (erroresFormulario.length > 0) {
+  alert(
+    "⚠️ Para continuar completa lo siguiente:\n\n" +
+      erroresFormulario
+        .map((error) => `• ${error}`)
+        .join("\n")
+  );
+
+  return;
+}
 
   const pedido = {
     cliente: {
