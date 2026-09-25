@@ -13,16 +13,52 @@ export default function CarritosMaestroPage() {
 const [editando, setEditando] = useState(null);
 const [carritoEditado, setCarritoEditado] = useState(null);
 const [guardandoCambios, setGuardandoCambios] = useState(false);
-  useEffect(() => {
-    cargarCarritos();
+const [ciudadesEnvio, setCiudadesEnvio] = useState([]);
+const [busquedaCiudadEditar, setBusquedaCiudadEditar] =
+  useState("");
+ useEffect(() => {
+  cargarCarritos();
+  cargarCiudades();
 
-    const intervalo = setInterval(() => {
-      cargarCarritos(false);
-    }, 15000);
+  const intervalo = setInterval(() => {
+    cargarCarritos(false);
+  }, 15000);
 
-    return () => clearInterval(intervalo);
-  }, []);
+  return () => clearInterval(intervalo);
+}, []);
+async function cargarCiudades() {
+  try {
+    const response = await fetch(
+      "/api/ciudades-envio",
+      {
+        method: "GET",
+        cache: "no-store",
+      }
+    );
 
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data?.error ||
+          "No se pudieron cargar las ciudades."
+      );
+    }
+
+    setCiudadesEnvio(
+      Array.isArray(data?.ciudades)
+        ? data.ciudades
+        : []
+    );
+  } catch (error) {
+    console.error(
+      "Error cargando ciudades:",
+      error
+    );
+
+    setCiudadesEnvio([]);
+  }
+}
   async function cargarCarritos(mostrarCarga = true) {
     if (mostrarCarga) {
       setCargando(true);
@@ -73,11 +109,13 @@ const [guardandoCambios, setGuardandoCambios] = useState(false);
       setCargando(false);
     }
   }
-  function iniciarEdicion(carrito) {
+function iniciarEdicion(carrito) {
   setEditando(carrito.id);
 
   setCarritoEditado({
     ...carrito,
+
+    ciudad_id: "",
 
     productos: Array.isArray(carrito.productos)
       ? carrito.productos.map((producto) => ({
@@ -85,6 +123,10 @@ const [guardandoCambios, setGuardandoCambios] = useState(false);
         }))
       : [],
   });
+
+  setBusquedaCiudadEditar(
+    carrito.ciudad || ""
+  );
 }
 
 function cancelarEdicion() {
