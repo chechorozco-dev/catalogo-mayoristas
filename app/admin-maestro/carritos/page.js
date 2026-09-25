@@ -415,7 +415,25 @@ async function reenviarAMake(carrito) {
                       <h3>
                         Productos
                       </h3>
-
+<button
+  type="button"
+  onClick={() => reenviarAMake(carrito)}
+  style={{
+    width: "100%",
+    border: "none",
+    background: "#111",
+    color: "white",
+    padding: "14px 16px",
+    borderRadius: "11px",
+    fontSize: "15px",
+    fontWeight: "800",
+    cursor: "pointer",
+    marginTop: "10px",
+    marginBottom: "18px",
+  }}
+>
+  🔄 Reenviar pedido a Make
+</button>
                       {productos.length === 0 ? (
                         <p>
                           No hay productos registrados.
