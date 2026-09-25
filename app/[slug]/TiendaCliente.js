@@ -203,6 +203,7 @@ function obtenerTipoProducto(producto) {
 }
 
 export default function TiendaCliente({
+  tiendaId,
   tipoTienda = "CLIENTE",
   nombreTienda,
   logoUrl,
@@ -529,12 +530,14 @@ useEffect(() => {
   // ========================================
 
   useEffect(() => {
-    if (!carritoCargado) return;
-    if (!sesionCarrito) return;
+  if (!carritoCargado) return;
+  if (!sesionCarrito) return;
+  if (!tiendaId) return;
+  if (pedidoEnviado) return;
 
-    // No creamos seguimiento mientras
-    // el visitante todavía no tenga productos.
-    if (!carrito.length) return;
+  // No creamos seguimiento mientras
+  // el visitante todavía no tenga productos.
+  if (!carrito.length) return;
 
     const temporizador = setTimeout(async () => {
       try {
@@ -550,7 +553,7 @@ useEffect(() => {
 
             // Por ahora enviamos la ruta de la tienda.
             // En el siguiente paso conectaremos el ID real.
-            tienda_id: null,
+            tienda_id: tiendaId,
 
             estado: "EN_PROCESO",
 
@@ -567,11 +570,79 @@ useEffect(() => {
 
     return () => clearTimeout(temporizador);
   }, [
-    carrito,
-    carritoCargado,
-    sesionCarrito,
-  ]);
+  carrito,
+  carritoCargado,
+  sesionCarrito,
+  tiendaId,
+  pedidoEnviado,
+]);
+// ========================================
+// GUARDAR PROGRESO DEL CHECKOUT
+// ========================================
 
+useEffect(() => {
+  if (!formularioCompraAbierto) return;
+  if (!carritoCargado) return;
+  if (!sesionCarrito) return;
+  if (!tiendaId) return;
+  if (!carrito.length) return;
+  if (pedidoEnviado) return;
+
+  const temporizador = setTimeout(async () => {
+    try {
+      await fetch("/api/seguimiento-carrito", {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          sesion_id: sesionCarrito,
+          tienda_id: tiendaId,
+          estado: "CHECKOUT",
+
+          productos: carrito,
+
+          nombre_cliente:
+            nombreCliente.trim(),
+
+          telefono_cliente:
+            telefonoCliente.trim(),
+
+          correo_cliente:
+            correoCliente.trim(),
+
+          ciudad:
+            ciudadSeleccionada
+              ?.ciudad_departamento || "",
+
+          forma_pago:
+            formaPago || "",
+        }),
+      });
+    } catch (error) {
+      console.error(
+        "Error guardando progreso del checkout:",
+        error
+      );
+    }
+  }, 1000);
+
+  return () => clearTimeout(temporizador);
+}, [
+  formularioCompraAbierto,
+  carrito,
+  carritoCargado,
+  sesionCarrito,
+  tiendaId,
+  nombreCliente,
+  telefonoCliente,
+  correoCliente,
+  ciudadSeleccionada,
+  formaPago,
+  pedidoEnviado,
+]);
   // ========================================
   // PRODUCTOS FILTRADOS
   // ========================================
@@ -1270,8 +1341,87 @@ async function confirmarPedido() {
       );
     }
 
-    setPedidoEnviado(true);
+    // ========================================
+// MARCAR CARRITO COMO COMPLETADO
+// ========================================
+
+try {
+  await fetch("/api/seguimiento-carrito", {
+    method: "POST",
+
+    headers: {
+      "Content-Type": "application/json",
+    },
+
+    body: JSON.stringify({
+      sesion_id: sesionCarrito,
+      tienda_id: tiendaId,
+      estado: "COMPLETADO",
+
+      productos: carrito,
+
+      nombre_cliente:
+        nombreCliente.trim(),
+
+      telefono_cliente:
+        telefonoNormalizado,
+
+      correo_cliente:
+        correoCliente.trim(),
+
+      ciudad:
+        ciudadSeleccionada
+          ?.ciudad_departamento || "",
+
+      forma_pago:
+        formaPago || "",
+    }),
+  });
+} catch (errorSeguimiento) {
+  // IMPORTANTE:
+  // Si falla solamente el seguimiento,
+  // NO dañamos un pedido que ya fue creado.
+  console.error(
+    "Error marcando carrito como completado:",
+    errorSeguimiento
+  );
+}
+
+// El pedido sí fue confirmado correctamente.
+setPedidoEnviado(true);
+
 setCarrito([]);
+
+// ========================================
+// PREPARAR UNA NUEVA SESIÓN DE CARRITO
+// ========================================
+//
+// Así, si este mismo cliente hace otra
+// compra, se crea un carrito nuevo y no
+// se modifica el pedido anterior.
+// ========================================
+
+try {
+  const nuevaSesion =
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `sesion_${Date.now()}_${Math.random()
+          .toString(36)
+          .slice(2)}`;
+
+  localStorage.setItem(
+    "ra_sesion_carrito",
+    nuevaSesion
+  );
+
+  setSesionCarrito(nuevaSesion);
+} catch (errorSesion) {
+  console.error(
+    "Error creando nueva sesión del carrito:",
+    errorSesion
+  );
+}
 
   } catch (error) {
     console.error(
@@ -2832,9 +2982,41 @@ setCarrito([]);
   .toUpperCase() === "RA" ? (
   <button
   className="confirmar-compra-btn"
-  onClick={() => {
+  onClick={async () => {
     setCarritoAbierto(false);
     setFormularioCompraAbierto(true);
+
+    try {
+      await fetch("/api/seguimiento-carrito", {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          sesion_id: sesionCarrito,
+          tienda_id: tiendaId,
+          estado: "CHECKOUT",
+          productos: carrito,
+
+          nombre_cliente: nombreCliente,
+          telefono_cliente: telefonoCliente,
+          correo_cliente: correoCliente,
+
+          ciudad:
+            ciudadSeleccionada?.ciudad_departamento ||
+            "",
+
+          forma_pago: formaPago,
+        }),
+      });
+    } catch (error) {
+      console.error(
+        "Error registrando inicio del checkout:",
+        error
+      );
+    }
   }}
 >
   Confirmar compra
