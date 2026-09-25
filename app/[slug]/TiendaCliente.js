@@ -380,6 +380,7 @@ const [cedulaCliente, setCedulaCliente] = useState("");
 const [telefonoCliente, setTelefonoCliente] = useState("");
 const [correoCliente, setCorreoCliente] = useState("");
 const [direccionCliente, setDireccionCliente] = useState("");
+  const [erroresCompra, setErroresCompra] = useState({});
 
 // FORMA DE PAGO
 // "CONTRA_ENTREGA" o "TRANSFERENCIA"
@@ -1212,45 +1213,59 @@ async function confirmarPedido() {
 const telefonoNormalizado =
   normalizarTelefonoColombia(telefonoCliente);
 
-const erroresFormulario = [];
+const nuevosErrores = {};
 
 if (!nombreCliente.trim()) {
-  erroresFormulario.push("Nombre");
+  nuevosErrores.nombre =
+    "Por favor completa tu nombre.";
 }
 
 if (!/^573\d{9}$/.test(telefonoNormalizado)) {
-  erroresFormulario.push(
-    "Número de WhatsApp válido"
-  );
+  nuevosErrores.telefono =
+    "Por favor ingresa un WhatsApp válido.";
 }
 
 if (!direccionCliente.trim()) {
-  erroresFormulario.push("Dirección");
+  nuevosErrores.direccion =
+    "Por favor completa tu dirección.";
 }
 
 if (!ciudadSeleccionada?.ciudad_id) {
-  erroresFormulario.push(
-    "Selecciona una ciudad de la lista"
-  );
+  nuevosErrores.ciudad =
+    "Por favor selecciona una ciudad de la lista.";
 }
 
 if (!formaPago) {
-  erroresFormulario.push("Forma de pago");
+  nuevosErrores.pago =
+    "Por favor selecciona una forma de pago.";
 }
 
-if (!carrito.length) {
-  erroresFormulario.push(
-    "Agrega al menos un producto al carrito"
-  );
-}
+setErroresCompra(nuevosErrores);
 
-if (erroresFormulario.length > 0) {
-  alert(
-    "⚠️ Para continuar completa lo siguiente:\n\n" +
-      erroresFormulario
-        .map((error) => `• ${error}`)
-        .join("\n")
-  );
+if (Object.keys(nuevosErrores).length > 0) {
+  const primerCampo =
+    nuevosErrores.nombre
+      ? "campo-nombre"
+      : nuevosErrores.telefono
+        ? "campo-telefono"
+        : nuevosErrores.direccion
+          ? "campo-direccion"
+          : nuevosErrores.ciudad
+            ? "campo-ciudad"
+            : nuevosErrores.pago
+              ? "campo-pago"
+              : null;
+
+  if (primerCampo) {
+    setTimeout(() => {
+      document
+        .getElementById(primerCampo)
+        ?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+    }, 100);
+  }
 
   return;
 }
