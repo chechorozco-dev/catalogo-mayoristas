@@ -1366,17 +1366,23 @@ try {
       productos: carrito,
 
       nombre_cliente:
-        nombreCliente.trim(),
+  nombreCliente.trim(),
 
-      telefono_cliente:
-        telefonoNormalizado,
+cedula_cliente:
+  cedulaCliente.trim(),
 
-      correo_cliente:
-        correoCliente.trim(),
+telefono_cliente:
+  telefonoNormalizado,
 
-      ciudad:
-        ciudadSeleccionada
-          ?.ciudad_departamento || "",
+correo_cliente:
+  correoCliente.trim(),
+
+direccion_cliente:
+  direccionCliente.trim(),
+
+ciudad:
+  ciudadSeleccionada
+    ?.ciudad_departamento || "",
 
       forma_pago:
         formaPago || "",
