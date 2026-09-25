@@ -2559,21 +2559,42 @@ try {
 ) : (
   <>
 
-          <label className="compra-campo">
-            <span>Nombre completo</span>
+        <label
+  className="compra-campo"
+  id="campo-nombre"
+>
+  {erroresCompra.nombre && (
+    <div
+      style={{
+        color: "#c62828",
+        fontSize: "13px",
+        fontWeight: "700",
+        marginBottom: "6px",
+      }}
+    >
+      ⚠️ {erroresCompra.nombre}
+    </div>
+  )}
 
-            <input
-  type="text"
-  name="nombre_cliente"
-  autoComplete="name"
-  enterKeyHint="next"
-  value={nombreCliente}
-  onChange={(e) =>
-    setNombreCliente(e.target.value)
-  }
-  placeholder="Ej. María Rodríguez"
-/>
-          </label>
+  <span>Nombre completo</span>
+
+  <input
+    type="text"
+    name="nombre_cliente"
+    autoComplete="name"
+    enterKeyHint="next"
+    value={nombreCliente}
+    onChange={(e) => {
+      setNombreCliente(e.target.value);
+
+      setErroresCompra((actual) => ({
+        ...actual,
+        nombre: "",
+      }));
+    }}
+    placeholder="Ej. María Rodríguez"
+  />
+</label>
 
           <label className="compra-campo">
   <span>Cédula (opcional)</span>
@@ -2594,23 +2615,44 @@ try {
   />
 </label>
 
-          <label className="compra-campo">
-            <span>WhatsApp</span>
+       <label
+  className="compra-campo"
+  id="campo-telefono"
+>
+  {erroresCompra.telefono && (
+    <div
+      style={{
+        color: "#c62828",
+        fontSize: "13px",
+        fontWeight: "700",
+        marginBottom: "6px",
+      }}
+    >
+      ⚠️ {erroresCompra.telefono}
+    </div>
+  )}
 
-           <input
-  type="tel"
-  inputMode="tel"
-  autoComplete="tel"
-  name="tel"
-  value={telefonoCliente}
-  onChange={(e) =>
-    setTelefonoCliente(
-      e.target.value.replace(/\D/g, "")
-    )
-  }
-  placeholder="Ej. 3101234567"
-/>
-          </label>
+  <span>WhatsApp</span>
+
+  <input
+    type="tel"
+    inputMode="tel"
+    autoComplete="tel"
+    name="tel"
+    value={telefonoCliente}
+    onChange={(e) => {
+      setTelefonoCliente(
+        e.target.value.replace(/\D/g, "")
+      );
+
+      setErroresCompra((actual) => ({
+        ...actual,
+        telefono: "",
+      }));
+    }}
+    placeholder="Ej. 3101234567"
+  />
+</label>
           <label className="compra-campo">
   <span>Correo electrónico (opcional)</span>
 
@@ -2627,28 +2669,69 @@ try {
   />
 </label>
 
-          <label className="compra-campo">
-            <span>Dirección</span>
+        <label
+  className="compra-campo"
+  id="campo-direccion"
+>
+  {erroresCompra.direccion && (
+    <div
+      style={{
+        color: "#c62828",
+        fontSize: "13px",
+        fontWeight: "700",
+        marginBottom: "6px",
+      }}
+    >
+      ⚠️ {erroresCompra.direccion}
+    </div>
+  )}
 
-            <input
-              type="text"
-              value={direccionCliente}
-              onChange={(e) =>
-                setDireccionCliente(e.target.value)
-              }
-              placeholder="Ej. Calle 15 # 20-30"
-            />
-          </label>
+  <span>Dirección</span>
 
-          <div className="compra-campo">
-            <span>Ciudad y departamento</span>
+  <input
+    type="text"
+    value={direccionCliente}
+    onChange={(e) => {
+      setDireccionCliente(e.target.value);
 
+      setErroresCompra((actual) => ({
+        ...actual,
+        direccion: "",
+      }));
+    }}
+    placeholder="Ej. Calle 15 # 20-30"
+  />
+</label>
+
+        <div
+  className="compra-campo"
+  id="campo-ciudad"
+>
+  {erroresCompra.ciudad && (
+    <div
+      style={{
+        color: "#c62828",
+        fontSize: "13px",
+        fontWeight: "700",
+        marginBottom: "6px",
+      }}
+    >
+      ⚠️ {erroresCompra.ciudad}
+    </div>
+  )}
+
+  <span>Ciudad y departamento</span>
             <input
               type="text"
               value={busquedaCiudad}
-              onChange={(e) => {
-                setBusquedaCiudad(e.target.value);
-                setCiudadSeleccionada(null);
+             onChange={(e) => {
+  setBusquedaCiudad(e.target.value);
+  setCiudadSeleccionada(null);
+
+  setErroresCompra((actual) => ({
+    ...actual,
+    ciudad: "",
+  }));
               }}
               placeholder="Buscar ciudad o departamento..."
               autoComplete="off"
@@ -2694,7 +2777,10 @@ try {
                             setCiudadSeleccionada(
                               ciudad
                             );
-
+setErroresCompra((actual) => ({
+  ...actual,
+  ciudad: "",
+}));
                             setBusquedaCiudad(
                               ciudad.ciudad_departamento
                             );
@@ -2745,7 +2831,22 @@ try {
 
           {/* FORMA DE PAGO */}
 
-          <div className="forma-pago">
+        <div
+  className="forma-pago"
+  id="campo-pago"
+>
+  {erroresCompra.pago && (
+    <div
+      style={{
+        color: "#c62828",
+        fontSize: "13px",
+        fontWeight: "700",
+        marginBottom: "8px",
+      }}
+    >
+      ⚠️ {erroresCompra.pago}
+    </div>
+  )}
             <span className="forma-pago-titulo">
               Forma de pago
             </span>
