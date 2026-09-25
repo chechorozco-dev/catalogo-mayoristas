@@ -393,8 +393,41 @@ const [cargandoCiudades, setCargandoCiudades] =
   useState(false);
 
   const [carrito, setCarrito] = useState([]);
-  const [carritoCargado, setCarritoCargado] = useState(false);
-  const [carritoAbierto, setCarritoAbierto] = useState(false);
+const [carritoCargado, setCarritoCargado] = useState(false);
+const [carritoAbierto, setCarritoAbierto] = useState(false);
+
+// ========================================
+// SEGUIMIENTO DEL CARRITO
+// ========================================
+
+const [sesionCarrito, setSesionCarrito] = useState("");
+
+useEffect(() => {
+  try {
+    const claveSesion = "ra_sesion_carrito";
+
+    let sesion = localStorage.getItem(claveSesion);
+
+    if (!sesion) {
+      sesion =
+        typeof crypto !== "undefined" &&
+        typeof crypto.randomUUID === "function"
+          ? crypto.randomUUID()
+          : `sesion_${Date.now()}_${Math.random()
+              .toString(36)
+              .slice(2)}`;
+
+      localStorage.setItem(claveSesion, sesion);
+    }
+
+    setSesionCarrito(sesion);
+  } catch (error) {
+    console.error(
+      "Error creando sesión del carrito:",
+      error
+    );
+  }
+}, []);
 
   const [productoModal, setProductoModal] = useState(null);
   const [varianteSeleccionadaId, setVarianteSeleccionadaId] =
@@ -491,6 +524,53 @@ useEffect(() => {
       console.error("Error guardando carrito:", error);
     }
   }, [carrito, carritoCargado]);
+    // ========================================
+  // ENVIAR PROGRESO DEL CARRITO AL SERVIDOR
+  // ========================================
+
+  useEffect(() => {
+    if (!carritoCargado) return;
+    if (!sesionCarrito) return;
+
+    // No creamos seguimiento mientras
+    // el visitante todavía no tenga productos.
+    if (!carrito.length) return;
+
+    const temporizador = setTimeout(async () => {
+      try {
+        await fetch("/api/seguimiento-carrito", {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify({
+            sesion_id: sesionCarrito,
+
+            // Por ahora enviamos la ruta de la tienda.
+            // En el siguiente paso conectaremos el ID real.
+            tienda_id: null,
+
+            estado: "EN_PROCESO",
+
+            productos: carrito,
+          }),
+        });
+      } catch (error) {
+        console.error(
+          "Error enviando seguimiento del carrito:",
+          error
+        );
+      }
+    }, 800);
+
+    return () => clearTimeout(temporizador);
+  }, [
+    carrito,
+    carritoCargado,
+    sesionCarrito,
+  ]);
 
   // ========================================
   // PRODUCTOS FILTRADOS
