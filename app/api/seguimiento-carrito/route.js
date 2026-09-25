@@ -5,16 +5,18 @@ export async function POST(request) {
     const body = await request.json();
 
     const {
-      sesion_id,
-      tienda_id,
-      estado = "EN_PROCESO",
-      productos = [],
-      nombre_cliente = "",
-      telefono_cliente = "",
-      correo_cliente = "",
-      ciudad = "",
-      forma_pago = "",
-    } = body || {};
+  sesion_id,
+  tienda_id,
+  estado = "EN_PROCESO",
+  productos = [],
+  nombre_cliente = "",
+  cedula_cliente = "",
+  telefono_cliente = "",
+  correo_cliente = "",
+  direccion_cliente = "",
+  ciudad = "",
+  forma_pago = "",
+} = body || {};
 
     // ========================================
     // VALIDACIONES BÁSICAS
@@ -216,22 +218,21 @@ export async function POST(request) {
       subtotal,
 
       nombre_cliente:
-        String(nombre_cliente || "").slice(
-          0,
-          200
-        ) || null,
+  String(nombre_cliente || "").slice(0, 200) || null,
 
-      telefono_cliente:
-        String(
-          telefono_cliente || ""
-        ).slice(0, 30) || null,
+cedula_cliente:
+  String(cedula_cliente || "").slice(0, 30) || null,
 
-      correo_cliente:
-        String(
-          correo_cliente || ""
-        ).slice(0, 200) || null,
+telefono_cliente:
+  String(telefono_cliente || "").slice(0, 30) || null,
 
-      ciudad:
+correo_cliente:
+  String(correo_cliente || "").slice(0, 200) || null,
+
+direccion_cliente:
+  String(direccion_cliente || "").slice(0, 300) || null,
+
+ciudad:
         String(ciudad || "").slice(
           0,
           200
