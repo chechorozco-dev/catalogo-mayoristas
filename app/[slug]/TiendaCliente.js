@@ -2837,17 +2837,10 @@ try {
             </div>
           </div>
 
-          <button
+         <button
   type="button"
   className="confirmar-pedido-btn"
-  disabled={
-    enviandoPedido ||
-    !nombreCliente.trim() ||
-    !telefonoCliente.trim() ||
-    !direccionCliente.trim() ||
-    !ciudadSeleccionada ||
-    !formaPago
-  }
+  disabled={enviandoPedido}
   onClick={confirmarPedido}
 >
   {enviandoPedido
