@@ -153,7 +153,7 @@ export async function POST(request) {
     const urlBuscar =
       `${supabaseUrl}` +
       `/rest/v1/carritos_web` +
-      `?select=id,estado` +
+      `?select=id,estado,nombre_cliente,cedula_cliente,telefono_cliente,correo_cliente,direccion_cliente,ciudad,forma_pago` +
       `&sesion_id=eq.${encodeURIComponent(
         sesion_id
       )}` +
@@ -218,31 +218,53 @@ export async function POST(request) {
       subtotal,
 
       nombre_cliente:
-  String(nombre_cliente || "").slice(0, 200) || null,
+  String(
+    nombre_cliente ||
+      carritoExistente?.nombre_cliente ||
+      ""
+  ).slice(0, 200) || null,
 
 cedula_cliente:
-  String(cedula_cliente || "").slice(0, 30) || null,
+  String(
+    cedula_cliente ||
+      carritoExistente?.cedula_cliente ||
+      ""
+  ).slice(0, 30) || null,
 
 telefono_cliente:
-  String(telefono_cliente || "").slice(0, 30) || null,
+  String(
+    telefono_cliente ||
+      carritoExistente?.telefono_cliente ||
+      ""
+  ).slice(0, 30) || null,
 
 correo_cliente:
-  String(correo_cliente || "").slice(0, 200) || null,
+  String(
+    correo_cliente ||
+      carritoExistente?.correo_cliente ||
+      ""
+  ).slice(0, 200) || null,
 
 direccion_cliente:
-  String(direccion_cliente || "").slice(0, 300) || null,
+  String(
+    direccion_cliente ||
+      carritoExistente?.direccion_cliente ||
+      ""
+  ).slice(0, 300) || null,
 
 ciudad:
-        String(ciudad || "").slice(
-          0,
-          200
-        ) || null,
+  String(
+    ciudad ||
+      carritoExistente?.ciudad ||
+      ""
+  ).slice(0, 200) || null,
 
-      forma_pago:
-        String(forma_pago || "").slice(
-          0,
-          50
-        ) || null,
+forma_pago:
+  String(
+    forma_pago ||
+      carritoExistente?.forma_pago ||
+      ""
+  ).slice(0, 50) || null,
 
       ultima_actividad: ahora,
 
