@@ -1089,9 +1089,11 @@ created_at:
   return (
     <main>
       <TiendaCliente
-      tipoTienda={
-  tienda.tipo_tienda || "CLIENTE"
-}
+  tiendaId={tienda.id}
+
+  tipoTienda={
+    tienda.tipo_tienda || "CLIENTE"
+  }
         nombreTienda={
           tienda.nombre_tienda
         }
