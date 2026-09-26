@@ -3215,6 +3215,43 @@ setErroresCompra((actual) => ({
   --texto-principal: ${colorTextoPrincipal};
   --texto-fondo: ${colorTextoFondo};
 }
+.footer-ra {
+  margin-top: 70px;
+  padding: 45px 20px;
+  background: #f7f7f7;
+  border-top: 1px solid #e5e5e5;
+  text-align: center;
+}
+
+.footer-ra-contenido {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.footer-ra-marca {
+  display: block;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+.footer-ra p {
+  margin: 5px 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.footer-ra-web {
+  margin-top: 14px !important;
+  font-weight: 700;
+}
+
+.footer-ra-copyright {
+  margin-top: 18px !important;
+  font-size: 12px !important;
+  opacity: 0.65;
+}
 
   * {
     box-sizing: border-box;
