@@ -1124,7 +1124,28 @@ function fotosProducto(producto) {
         : obtenerProductoSeleccionado(producto);
 
     const clave = claveCarrito(productoFinal);
+// ========================================
+// META PIXEL - AGREGAR AL CARRITO
+// ========================================
 
+if (
+  typeof window !== "undefined" &&
+  typeof window.fbq === "function"
+) {
+  window.fbq("track", "AddToCart", {
+    content_ids: [
+      String(
+        productoFinal.referencia ||
+        productoFinal.id_producto ||
+        productoFinal.id
+      ),
+    ],
+    content_name: productoFinal.nombre || "",
+    content_type: "product",
+    value: Number(productoFinal.precio || 0),
+    currency: "COP",
+  });
+}
     setCarrito((actual) => {
       const existe = actual.find(
         (item) => item.clave_carrito === clave
