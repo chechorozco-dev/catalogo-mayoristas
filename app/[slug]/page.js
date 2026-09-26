@@ -1100,9 +1100,33 @@ created_at:
   // 11. CATÁLOGO
   // =========================================
 
-  return (
-    <main>
-      <TiendaCliente
+ return (
+  <main>
+
+    {esTiendaRA && (
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            name: "RA Accesorios",
+            url: "https://www.mayoristasra.com/mayoristas-ra",
+            logo: tienda.logo_url || undefined,
+            description:
+              "Joyería y accesorios al por mayor en Colombia.",
+            address: {
+              "@type": "PostalAddress",
+              addressLocality: "Villavicencio",
+              addressRegion: "Meta",
+              addressCountry: "CO",
+            },
+          }),
+        }}
+      />
+    )}
+
+    <TiendaCliente
   tiendaId={tienda.id}
 
   tipoTienda={
