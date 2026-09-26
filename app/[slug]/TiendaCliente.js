@@ -3179,7 +3179,35 @@ setErroresCompra((actual) => ({
           </aside>
         </div>
       )}
+{/* INFORMACIÓN COMERCIAL - SOLO TIENDA RA */}
 
+{String(tipoTienda || "")
+  .trim()
+  .toUpperCase() === "RA" && (
+  <footer className="footer-ra">
+    <div className="footer-ra-contenido">
+      <strong className="footer-ra-marca">
+        RA ACCESORIOS
+      </strong>
+
+      <p>
+        Joyería y accesorios al por mayor en Colombia
+      </p>
+
+      <p>
+        Villavicencio, Meta · Colombia
+      </p>
+
+      <p className="footer-ra-web">
+        MAYORISTASRA.COM
+      </p>
+
+      <p className="footer-ra-copyright">
+        © 2026 RA Accesorios. Todos los derechos reservados.
+      </p>
+    </div>
+  </footer>
+)}
         <style jsx global>{`
  :root {
   --color-principal: ${colorPrincipal};
