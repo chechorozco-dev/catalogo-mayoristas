@@ -34,19 +34,33 @@ export async function generateMetadata({ params }) {
     const nombreTienda =
       tienda.nombre_tienda || "Catálogo digital";
 
-    const descripcion =
-      tienda.mensaje_portada ||
-      `Descubre los productos de ${nombreTienda}`;
+  const esRA =
+  String(tienda.slug || "")
+    .trim()
+    .toLowerCase() === "mayoristas-ra";
 
-    const urlCatalogo =
-      `https://mi-catalogo-accesorios.vercel.app/${encodeURIComponent(
-        tienda.slug
-      )}`;
+const descripcion = esRA
+  ? "RA Accesorios | Joyería y accesorios al por mayor en Colombia. Sitio web oficial: MAYORISTASRA.COM."
+  : tienda.mensaje_portada ||
+    `Descubre los productos de ${nombreTienda}`;
+
+   const esTiendaRA =
+  String(tienda.slug || "")
+    .trim()
+    .toLowerCase() === "mayoristas-ra";
+
+const urlCatalogo = esTiendaRA
+  ? "https://www.mayoristasra.com/mayoristas-ra"
+  : `https://mi-catalogo-accesorios.vercel.app/${encodeURIComponent(
+      tienda.slug
+    )}`;
 
     const imagen = tienda.logo_url || null;
 
     return {
-      title: nombreTienda,
+    title: esRA
+  ? "RA Accesorios | Joyería y accesorios al por mayor"
+  : nombreTienda,
 
       description: descripcion,
 
@@ -55,10 +69,10 @@ export async function generateMetadata({ params }) {
       },
 
       openGraph: {
-        title: nombreTienda,
+      title: esRA ? "RA Accesorios" : nombreTienda,
         description: descripcion,
         url: urlCatalogo,
-        siteName: nombreTienda,
+        siteName: esRA ? "RA Accesorios" : nombreTienda,
         type: "website",
         locale: "es_CO",
 
@@ -79,7 +93,7 @@ export async function generateMetadata({ params }) {
           ? "summary_large_image"
           : "summary",
 
-        title: nombreTienda,
+        title: esRA ? "RA Accesorios" : nombreTienda,
         description: descripcion,
 
         ...(imagen
