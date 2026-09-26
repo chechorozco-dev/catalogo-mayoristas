@@ -1445,7 +1445,33 @@ ciudad:
   );
 }
 
-// El pedido sí fue confirmado correctamente.
+// El pedido sí fue confirmado correctamente
+    // ==========================================
+// META PIXEL - COMPRA CONFIRMADA
+// ==========================================
+if (typeof window !== "undefined" && typeof window.fbq === "function") {
+  window.fbq("track", "Purchase", {
+    value: Number(totalPedido) || 0,
+    currency: "COP",
+    content_ids: carrito
+      .filter((item) => Number(item.cantidad || 0) > 0)
+      .map((item) =>
+        String(
+          item.referencia ||
+          item.codigo ||
+          item.sku ||
+          item.id ||
+          ""
+        )
+      )
+      .filter(Boolean),
+    content_type: "product",
+    num_items: carrito.reduce(
+      (total, item) => total + Number(item.cantidad || 0),
+      0
+    ),
+  });
+}
 setPedidoEnviado(true);
 
 setCarrito([]);
