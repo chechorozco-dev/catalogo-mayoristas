@@ -3199,6 +3199,8 @@ setErroresCompra((actual) => ({
         position: "relative",
       }}
     >
+      {!ciudadSeleccionada && (
+  <>
       <input
         type="text"
         value={busquedaCiudad}
@@ -3304,38 +3306,172 @@ setErroresCompra((actual) => ({
       )}
     </div>
 
-    {ciudadSeleccionada && (
+  </>
+)}
+
+{ciudadSeleccionada && (
+  <>
+    {/* CIUDAD Y ENVÍO */}
+    <div
+      style={{
+        marginTop: "8px",
+        padding: "8px 10px",
+        borderRadius: "8px",
+        background: "#edf8ef",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: "8px",
+        fontSize: "12px",
+      }}
+    >
+      <div style={{ minWidth: 0 }}>
+        <div
+          style={{
+            fontWeight: "700",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          🚚 {ciudadSeleccionada.ciudad_departamento}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            setCiudadSeleccionada(null);
+            setBusquedaCiudad("");
+            setSelectorCiudadAbierto(true);
+          }}
+          style={{
+            border: "none",
+            background: "transparent",
+            padding: "2px 0 0",
+            fontSize: "10px",
+            textDecoration: "underline",
+            cursor: "pointer",
+            color: "#666",
+          }}
+        >
+          Cambiar ciudad
+        </button>
+      </div>
+
+      <strong style={{ whiteSpace: "nowrap" }}>
+        {tieneEnvioGratis
+          ? "GRATIS 🎁"
+          : formatoPrecio(costoEnvioFinal || 0)}
+      </strong>
+    </div>
+
+    {/* COMPARACIÓN DE FORMAS DE PAGO */}
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: "7px",
+        marginTop: "8px",
+      }}
+    >
+      {/* CONTRAENTREGA */}
       <div
         style={{
-          marginTop: "7px",
-          padding: "8px 10px",
-          borderRadius: "8px",
-          background: "#edf8ef",
-          fontSize: "13px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: "10px",
+          border: "1px solid #e2e2e2",
+          borderRadius: "9px",
+          padding: "8px",
+          background: "#fff",
+          minWidth: 0,
         }}
       >
-        <span>Envío</span>
+        <div
+          style={{
+            fontSize: "11px",
+            fontWeight: "800",
+            marginBottom: "6px",
+          }}
+        >
+          📦 CONTRAENTREGA
+        </div>
 
-        <strong>
-          {tieneEnvioGratis
-            ? "GRATIS 🎁"
-            : formatoPrecio(costoEnvioNormal || 0)}
-        </strong>
+        <div className="mini-total-fila">
+          <span>Mercancía</span>
+          <span>{formatoPrecio(totalCarrito)}</span>
+        </div>
+
+        <div className="mini-total-fila">
+          <span>Envío</span>
+          <span>
+            {tieneEnvioGratis
+              ? "GRATIS"
+              : formatoPrecio(costoEnvioFinal || 0)}
+          </span>
+        </div>
+
+        <div className="mini-total-final">
+          <span>Total</span>
+          <strong>
+            {formatoPrecio(totalContraEntrega)}
+          </strong>
+        </div>
       </div>
-    )}
+
+      {/* TRANSFERENCIA */}
+      <div
+        style={{
+          border: "1px solid #d8c8f3",
+          borderRadius: "9px",
+          padding: "8px",
+          background: "#faf7ff",
+          minWidth: 0,
+        }}
+      >
+        <div
+          style={{
+            fontSize: "11px",
+            fontWeight: "800",
+            marginBottom: "6px",
+          }}
+        >
+          💳 TRANSFERENCIA
+        </div>
+
+        <div className="mini-total-fila">
+          <span>Mercancía</span>
+          <span>{formatoPrecio(totalCarrito)}</span>
+        </div>
+
+        <div className="mini-total-fila">
+          <span>Descuento</span>
+          <span>
+            -{formatoPrecio(
+              descuentoTransferenciaVista
+            )}
+          </span>
+        </div>
+
+        <div className="mini-total-fila">
+          <span>Envío</span>
+          <span>
+            {tieneEnvioGratis
+              ? "GRATIS"
+              : formatoPrecio(costoEnvioFinal || 0)}
+          </span>
+        </div>
+
+        <div className="mini-total-final transferencia">
+          <span>Total</span>
+          <strong>
+            {formatoPrecio(totalTransferencia)}
+          </strong>
+        </div>
+      </div>
+    </div>
+  </>
+)}
   </div>
 )}
-                <div className="total-carrito">
-                  <span>Total</span>
-
-                  <strong>
-                    {formatoPrecio(totalCarrito)}
-                  </strong>
-                </div>
+              
 
                 {String(tipoTienda || "")
   .trim()
@@ -3429,6 +3565,44 @@ setErroresCompra((actual) => ({
   --color-fondo: ${colorFondo};
   --texto-principal: ${colorTextoPrincipal};
   --texto-fondo: ${colorTextoFondo};
+}
+.mini-total-fila {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  line-height: 1.5;
+  color: #555;
+}
+
+.mini-total-fila span:first-child {
+  min-width: 0;
+}
+
+.mini-total-fila span:last-child {
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.mini-total-final {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+  border-top: 1px solid #ececec;
+  margin-top: 5px;
+  padding-top: 5px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.mini-total-final strong {
+  white-space: nowrap;
+}
+
+.mini-total-final.transferencia {
+  color: #8059b8;
 }
 .footer-ra {
   margin-top: 70px;
