@@ -391,6 +391,8 @@ const [ciudadSeleccionada, setCiudadSeleccionada] =
   useState(null);
 
 const [busquedaCiudad, setBusquedaCiudad] = useState("");
+  const [selectorCiudadAbierto, setSelectorCiudadAbierto] =
+  useState(false);
 const [cargandoCiudades, setCargandoCiudades] =
   useState(false);
 
@@ -3168,114 +3170,131 @@ setErroresCompra((actual) => ({
 
             {carrito.length > 0 && (
               <div className="carrito-pie">
-              {String(tipoTienda || "")
+            {String(tipoTienda || "")
   .trim()
   .toUpperCase() === "RA" && (
   <div
     style={{
-      marginBottom: "18px",
-      padding: "15px",
-      borderRadius: "12px",
+      marginBottom: "12px",
+      padding: "10px 12px",
+      borderRadius: "11px",
       background: "#f8f5ff",
       border: "1px solid #e6dcf7",
+      position: "relative",
     }}
   >
     <div
       style={{
-        fontSize: "16px",
+        fontSize: "14px",
         fontWeight: "800",
-        marginBottom: "5px",
+        marginBottom: "7px",
         color: "#222",
       }}
     >
-      🚚 ¿Quieres saber cuánto cuesta el envío?
+      🚚 Calcula tu envío
     </div>
 
     <div
       style={{
-        fontSize: "13px",
-        color: "#666",
-        lineHeight: "1.45",
-        marginBottom: "12px",
+        position: "relative",
       }}
     >
-      Selecciona tu ciudad y te mostramos el valor
-      del envío de este pedido.
-    </div>
+      <input
+        type="text"
+        value={busquedaCiudad}
+        onFocus={() => {
+          setSelectorCiudadAbierto(true);
+        }}
+        onClick={() => {
+          setSelectorCiudadAbierto(true);
+        }}
+        onChange={(e) => {
+          setBusquedaCiudad(e.target.value);
+          setCiudadSeleccionada(null);
+          setSelectorCiudadAbierto(true);
+        }}
+        placeholder="Busca tu ciudad..."
+        autoComplete="off"
+        style={{
+          width: "100%",
+          boxSizing: "border-box",
+          border: "1px solid #d8d8d8",
+          borderRadius: "9px",
+          padding: "9px 34px 9px 11px",
+          fontSize: "14px",
+          background: "white",
+          outline: "none",
+          height: "40px",
+        }}
+      />
 
-    <div
-      style={{
-        fontSize: "13px",
-        fontWeight: "700",
-        marginBottom: "6px",
-      }}
-    >
-      Ciudad y departamento
-    </div>
+      <span
+        style={{
+          position: "absolute",
+          right: "11px",
+          top: "50%",
+          transform: "translateY(-50%)",
+          pointerEvents: "none",
+          fontSize: "12px",
+          color: "#777",
+        }}
+      >
+        {selectorCiudadAbierto ? "▲" : "▼"}
+      </span>
 
-    <input
-      type="text"
-      value={busquedaCiudad}
-      onChange={(e) => {
-        setBusquedaCiudad(e.target.value);
-        setCiudadSeleccionada(null);
-      }}
-      placeholder="Buscar ciudad o departamento..."
-      autoComplete="off"
-      style={{
-        width: "100%",
-        boxSizing: "border-box",
-        border: "1px solid #ddd",
-        borderRadius: "10px",
-        padding: "12px",
-        fontSize: "15px",
-        background: "white",
-      }}
-    />
-
-    {busquedaCiudad.trim() &&
-      !ciudadSeleccionada && (
+      {selectorCiudadAbierto && !ciudadSeleccionada && (
         <div
           style={{
-            marginTop: "6px",
+            position: "absolute",
+            top: "44px",
+            left: "0",
+            right: "0",
+            zIndex: 100,
             border: "1px solid #ddd",
-            borderRadius: "10px",
+            borderRadius: "9px",
             overflow: "hidden",
-            maxHeight: "200px",
+            maxHeight: "180px",
             overflowY: "auto",
             background: "white",
+            boxShadow: "0 8px 20px rgba(0,0,0,0.12)",
           }}
         >
           {ciudadesEnvio
-            .filter((ciudad) =>
-              limpiarTexto(
+            .filter((ciudad) => {
+              const texto = limpiarTexto(busquedaCiudad);
+
+              if (!texto) return true;
+
+              return limpiarTexto(
                 ciudad.ciudad_departamento
-              ).includes(
-                limpiarTexto(busquedaCiudad)
-              )
-            )
-            .slice(0, 15)
+              ).includes(texto);
+            })
+            .slice(0, 20)
             .map((ciudad) => (
               <button
                 key={ciudad.ciudad_id}
                 type="button"
-                onClick={() => {
+                onMouseDown={(e) => {
+                  e.preventDefault();
+
                   setCiudadSeleccionada(ciudad);
 
                   setBusquedaCiudad(
                     ciudad.ciudad_departamento
                   );
+
+                  setSelectorCiudadAbierto(false);
                 }}
                 style={{
                   width: "100%",
                   border: "none",
-                  borderBottom:
-                    "1px solid #eee",
+                  borderBottom: "1px solid #eee",
                   background: "white",
-                  padding: "11px 12px",
+                  padding: "10px 11px",
                   textAlign: "left",
                   cursor: "pointer",
-                  fontSize: "14px",
+                  fontSize: "13px",
+                  color: "#222",
                 }}
               >
                 📍 {ciudad.ciudad_departamento}
@@ -3283,48 +3302,29 @@ setErroresCompra((actual) => ({
             ))}
         </div>
       )}
+    </div>
 
     {ciudadSeleccionada && (
       <div
         style={{
-          marginTop: "10px",
-          padding: "10px 12px",
-          borderRadius: "9px",
+          marginTop: "7px",
+          padding: "8px 10px",
+          borderRadius: "8px",
           background: "#edf8ef",
-          fontSize: "14px",
+          fontSize: "13px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: "10px",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            gap: "15px",
-          }}
-        >
-          <span>Valor del envío</span>
+        <span>Envío</span>
 
-          <strong>
-            {tieneEnvioGratis
-              ? "GRATIS 🎁"
-              : formatoPrecio(
-                  costoEnvioNormal || 0
-                )}
-          </strong>
-        </div>
-
-        {tieneEnvioGratis && (
-          <div
-            style={{
-              marginTop: "6px",
-              color: "#18763b",
-              fontWeight: "700",
-              fontSize: "12px",
-            }}
-          >
-            Tu compra supera $400.000 y cumple
-            las condiciones de envío gratis.
-          </div>
-        )}
+        <strong>
+          {tieneEnvioGratis
+            ? "GRATIS 🎁"
+            : formatoPrecio(costoEnvioNormal || 0)}
+        </strong>
       </div>
     )}
   </div>
