@@ -3344,7 +3344,7 @@ setErroresCompra((actual) => ({
             textOverflow: "ellipsis",
           }}
         >
-          🚚 {ciudadSeleccionada.ciudad_departamento}
+         🚚 Envío a {ciudadSeleccionada.ciudad_departamento}
         </div>
 
         <button
@@ -3396,7 +3396,7 @@ setErroresCompra((actual) => ({
       >
         <div
           style={{
-            fontSize: "11px",
+            fontSize: "10.5px",
             fontWeight: "800",
             marginBottom: "6px",
           }}
@@ -3438,7 +3438,7 @@ setErroresCompra((actual) => ({
       >
         <div
           style={{
-            fontSize: "11px",
+            fontSize: "10.5px",
             fontWeight: "800",
             marginBottom: "6px",
           }}
@@ -3451,14 +3451,14 @@ setErroresCompra((actual) => ({
           <span>{formatoPrecio(totalCarrito)}</span>
         </div>
 
-        <div className="mini-total-fila">
-          <span>Descuento</span>
-          <span>
-            -{formatoPrecio(
-              descuentoTransferenciaVista
-            )}
-          </span>
-        </div>
+       <div className="mini-total-fila ahorro-transferencia">
+  <span>Ahorras</span>
+  <span>
+    {formatoPrecio(
+      descuentoTransferenciaVista
+    )}
+  </span>
+</div>
 
         <div className="mini-total-fila">
           <span>Envío</span>
@@ -3475,6 +3475,9 @@ setErroresCompra((actual) => ({
             {formatoPrecio(totalTransferencia)}
           </strong>
         </div>
+            <div className="mini-ahorro">
+  Ahorras {formatoPrecio(descuentoTransferenciaVista)}
+</div>
       </div>
     </div>
   </>
@@ -3639,6 +3642,31 @@ setErroresCompra((actual) => ({
   margin: 5px 0;
   font-size: 14px;
   line-height: 1.5;
+}
+.ahorro-transferencia {
+  color: #18763b;
+}
+
+.ahorro-transferencia span:last-child {
+  font-weight: 800;
+}
+
+.mini-ahorro {
+  margin-top: 5px;
+  text-align: center;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #18763b;
+}
+
+@media (max-width: 420px) {
+  .mini-total-fila {
+    font-size: 9.5px;
+  }
+
+  .mini-total-final {
+    font-size: 11px;
+  }
 }
 
 .footer-ra-web {
