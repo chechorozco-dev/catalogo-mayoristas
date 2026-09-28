@@ -549,17 +549,22 @@ useEffect(() => {
             "Content-Type": "application/json",
           },
 
-          body: JSON.stringify({
-            sesion_id: sesionCarrito,
+      body: JSON.stringify({
+  sesion_id: sesionCarrito,
 
-            // Por ahora enviamos la ruta de la tienda.
-            // En el siguiente paso conectaremos el ID real.
-            tienda_id: tiendaId,
+  tienda_id: tiendaId,
 
-            estado: "EN_PROCESO",
+  estado: "EN_PROCESO",
 
-            productos: carrito,
-          }),
+  productos: carrito,
+
+  telefono_cliente:
+    telefonoCliente.trim(),
+
+  ciudad:
+    ciudadSeleccionada
+      ?.ciudad_departamento || "",
+}),
         });
       } catch (error) {
         console.error(
@@ -570,11 +575,13 @@ useEffect(() => {
     }, 800);
 
     return () => clearTimeout(temporizador);
-  }, [
+}, [
   carrito,
   carritoCargado,
   sesionCarrito,
   tiendaId,
+  telefonoCliente,
+  ciudadSeleccionada,
   pedidoEnviado,
 ]);
 // ========================================
@@ -3161,6 +3168,167 @@ setErroresCompra((actual) => ({
 
             {carrito.length > 0 && (
               <div className="carrito-pie">
+              {String(tipoTienda || "")
+  .trim()
+  .toUpperCase() === "RA" && (
+  <div
+    style={{
+      marginBottom: "18px",
+      padding: "15px",
+      borderRadius: "12px",
+      background: "#f8f5ff",
+      border: "1px solid #e6dcf7",
+    }}
+  >
+    <div
+      style={{
+        fontSize: "16px",
+        fontWeight: "800",
+        marginBottom: "5px",
+        color: "#222",
+      }}
+    >
+      🚚 ¿Quieres saber cuánto cuesta el envío?
+    </div>
+
+    <div
+      style={{
+        fontSize: "13px",
+        color: "#666",
+        lineHeight: "1.45",
+        marginBottom: "12px",
+      }}
+    >
+      Selecciona tu ciudad y te mostramos el valor
+      del envío de este pedido.
+    </div>
+
+    <div
+      style={{
+        fontSize: "13px",
+        fontWeight: "700",
+        marginBottom: "6px",
+      }}
+    >
+      Ciudad y departamento
+    </div>
+
+    <input
+      type="text"
+      value={busquedaCiudad}
+      onChange={(e) => {
+        setBusquedaCiudad(e.target.value);
+        setCiudadSeleccionada(null);
+      }}
+      placeholder="Buscar ciudad o departamento..."
+      autoComplete="off"
+      style={{
+        width: "100%",
+        boxSizing: "border-box",
+        border: "1px solid #ddd",
+        borderRadius: "10px",
+        padding: "12px",
+        fontSize: "15px",
+        background: "white",
+      }}
+    />
+
+    {busquedaCiudad.trim() &&
+      !ciudadSeleccionada && (
+        <div
+          style={{
+            marginTop: "6px",
+            border: "1px solid #ddd",
+            borderRadius: "10px",
+            overflow: "hidden",
+            maxHeight: "200px",
+            overflowY: "auto",
+            background: "white",
+          }}
+        >
+          {ciudadesEnvio
+            .filter((ciudad) =>
+              limpiarTexto(
+                ciudad.ciudad_departamento
+              ).includes(
+                limpiarTexto(busquedaCiudad)
+              )
+            )
+            .slice(0, 15)
+            .map((ciudad) => (
+              <button
+                key={ciudad.ciudad_id}
+                type="button"
+                onClick={() => {
+                  setCiudadSeleccionada(ciudad);
+
+                  setBusquedaCiudad(
+                    ciudad.ciudad_departamento
+                  );
+                }}
+                style={{
+                  width: "100%",
+                  border: "none",
+                  borderBottom:
+                    "1px solid #eee",
+                  background: "white",
+                  padding: "11px 12px",
+                  textAlign: "left",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                }}
+              >
+                📍 {ciudad.ciudad_departamento}
+              </button>
+            ))}
+        </div>
+      )}
+
+    {ciudadSeleccionada && (
+      <div
+        style={{
+          marginTop: "10px",
+          padding: "10px 12px",
+          borderRadius: "9px",
+          background: "#edf8ef",
+          fontSize: "14px",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: "15px",
+          }}
+        >
+          <span>Valor del envío</span>
+
+          <strong>
+            {tieneEnvioGratis
+              ? "GRATIS 🎁"
+              : formatoPrecio(
+                  costoEnvioNormal || 0
+                )}
+          </strong>
+        </div>
+
+        {tieneEnvioGratis && (
+          <div
+            style={{
+              marginTop: "6px",
+              color: "#18763b",
+              fontWeight: "700",
+              fontSize: "12px",
+            }}
+          >
+            Tu compra supera $400.000 y cumple
+            las condiciones de envío gratis.
+          </div>
+        )}
+      </div>
+    )}
+  </div>
+)}
                 <div className="total-carrito">
                   <span>Total</span>
 
