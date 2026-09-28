@@ -916,6 +916,19 @@ const totalPedido =
   totalCarrito -
   descuentoTransferencia +
   (costoEnvioFinal || 0);
+  // TOTAL SI PAGA CONTRAENTREGA
+const totalContraEntrega =
+  totalCarrito + (costoEnvioFinal || 0);
+
+// DESCUENTO PARA MOSTRAR EN EL CARRITO
+const descuentoTransferenciaVista =
+  Math.round(totalCarrito * 0.06);
+
+// TOTAL SI PAGA POR TRANSFERENCIA
+const totalTransferencia =
+  totalCarrito -
+  descuentoTransferenciaVista +
+  (costoEnvioFinal || 0);
 
 function fotosProducto(producto) {
     if (!producto) return [];
@@ -3194,11 +3207,117 @@ setErroresCompra((actual) => ({
       🚚 Calcula tu envío
     </div>
 
-    <div
+  {!ciudadSeleccionada && (
+  <div
+    style={{
+      position: "relative",
+    }}
+  >
+    <input
+      type="text"
+      value={busquedaCiudad}
+      onFocus={() => {
+        setSelectorCiudadAbierto(true);
+      }}
+      onClick={() => {
+        setSelectorCiudadAbierto(true);
+      }}
+      onChange={(e) => {
+        setBusquedaCiudad(e.target.value);
+        setCiudadSeleccionada(null);
+        setSelectorCiudadAbierto(true);
+      }}
+      placeholder="Busca tu ciudad..."
+      autoComplete="off"
       style={{
-        position: "relative",
+        width: "100%",
+        boxSizing: "border-box",
+        border: "1px solid #d8d8d8",
+        borderRadius: "9px",
+        padding: "9px 34px 9px 11px",
+        fontSize: "14px",
+        background: "white",
+        outline: "none",
+        height: "40px",
+      }}
+    />
+
+    <span
+      style={{
+        position: "absolute",
+        right: "11px",
+        top: "20px",
+        transform: "translateY(-50%)",
+        pointerEvents: "none",
+        fontSize: "12px",
+        color: "#777",
       }}
     >
+      {selectorCiudadAbierto ? "▲" : "▼"}
+    </span>
+
+    {selectorCiudadAbierto && (
+      <div
+        style={{
+          position: "absolute",
+          top: "44px",
+          left: "0",
+          right: "0",
+          zIndex: 100,
+          border: "1px solid #ddd",
+          borderRadius: "9px",
+          overflow: "hidden",
+          maxHeight: "180px",
+          overflowY: "auto",
+          background: "white",
+          boxShadow: "0 8px 20px rgba(0,0,0,0.12)",
+        }}
+      >
+        {ciudadesEnvio
+          .filter((ciudad) => {
+            const texto = limpiarTexto(busquedaCiudad);
+
+            if (!texto) return true;
+
+            return limpiarTexto(
+              ciudad.ciudad_departamento
+            ).includes(texto);
+          })
+          .slice(0, 20)
+          .map((ciudad) => (
+            <button
+              key={ciudad.ciudad_id}
+              type="button"
+              onMouseDown={(e) => {
+                e.preventDefault();
+
+                setCiudadSeleccionada(ciudad);
+
+                setBusquedaCiudad(
+                  ciudad.ciudad_departamento
+                );
+
+                setSelectorCiudadAbierto(false);
+              }}
+              style={{
+                width: "100%",
+                border: "none",
+                borderBottom: "1px solid #eee",
+                background: "white",
+                padding: "10px 11px",
+                textAlign: "left",
+                cursor: "pointer",
+                fontSize: "13px",
+                color: "#222",
+              }}
+            >
+              📍 {ciudad.ciudad_departamento}
+            </button>
+          ))}
+      </div>
+    )}
+  </div>
+)}
       {!ciudadSeleccionada && (
   <>
       <input
