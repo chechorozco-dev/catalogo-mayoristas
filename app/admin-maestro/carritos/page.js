@@ -13,6 +13,7 @@ export default function CarritosMaestroPage() {
 const [editando, setEditando] = useState(null);
 const [carritoEditado, setCarritoEditado] = useState(null);
 const [guardandoCambios, setGuardandoCambios] = useState(false);
+const [eliminandoCarrito, setEliminandoCarrito] = useState(null);
 const [ciudadesEnvio, setCiudadesEnvio] = useState([]);
 const [busquedaCiudadEditar, setBusquedaCiudadEditar] =
   useState("");
@@ -253,6 +254,85 @@ function cancelarEdicion() {
     );
   } finally {
     setGuardandoCambios(false);
+  }
+}
+async function eliminarCarrito(carrito) {
+  if (eliminandoCarrito) return;
+
+  const confirmar = window.confirm(
+    `🗑️ ¿ELIMINAR ESTE CARRITO?\n\n` +
+    `Cliente: ${carrito.nombre_cliente || "Sin identificar"}\n` +
+    `Valor: ${dinero(carrito.subtotal)}\n` +
+    `Estado: ${estadoVisual(carrito.estado).texto}\n\n` +
+    `Esta acción eliminará el carrito y sus productos registrados.\n\n` +
+    `¿Confirmas que deseas eliminarlo definitivamente?`
+  );
+
+  if (!confirmar) return;
+
+  try {
+    setEliminandoCarrito(carrito.id);
+    setMensaje("");
+
+    const response = await fetch(
+      "/api/admin-maestro/eliminar-carrito",
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          carrito_id: carrito.id,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      throw new Error(
+        data.error ||
+        "No se pudo eliminar el carrito."
+      );
+    }
+
+    // Actualizar la lista inmediatamente
+    setCarritos((actuales) =>
+      actuales.filter(
+        (c) => c.id !== carrito.id
+      )
+    );
+
+    // Cerrar los detalles
+    setAbierto(null);
+
+    // Cerrar edición si estaba abierta
+    if (editando === carrito.id) {
+      cancelarEdicion();
+    }
+
+    window.alert(
+      "✅ Carrito eliminado correctamente."
+    );
+
+    await cargarCarritos(false);
+
+  } catch (error) {
+    console.error(
+      "Error eliminando carrito:",
+      error
+    );
+
+    window.alert(
+      `❌ No se pudo eliminar el carrito.\n\n${
+        error.message || "Error desconocido."
+      }`
+    );
+
+  } finally {
+    setEliminandoCarrito(null);
   }
 }
 async function reenviarAMake(carrito) {
@@ -979,6 +1059,35 @@ const estaEditando =
                       <h3>
                         Productos
                       </h3>
+                      <button
+  type="button"
+  onClick={() => eliminarCarrito(carrito)}
+  disabled={eliminandoCarrito !== null}
+  style={{
+    width: "100%",
+    border: "1px solid #fecaca",
+    background: "#fff1f2",
+    color: "#be123c",
+    padding: "14px 16px",
+    borderRadius: "11px",
+    fontSize: "15px",
+    fontWeight: "800",
+    cursor:
+      eliminandoCarrito !== null
+        ? "not-allowed"
+        : "pointer",
+    marginTop: "12px",
+    marginBottom: "12px",
+    opacity:
+      eliminandoCarrito !== null
+        ? 0.6
+        : 1,
+  }}
+>
+  {eliminandoCarrito === carrito.id
+    ? "⏳ Eliminando carrito..."
+    : "🗑️ Eliminar carrito"}
+</button>
 <button
   type="button"
   onClick={() => reenviarAMake(carrito)}
