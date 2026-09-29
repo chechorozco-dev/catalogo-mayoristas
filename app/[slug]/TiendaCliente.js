@@ -405,6 +405,7 @@ const [carritoAbierto, setCarritoAbierto] = useState(false);
 // ========================================
 
 const [sesionCarrito, setSesionCarrito] = useState("");
+const [visitanteId, setVisitanteId] = useState("");
 
 useEffect(() => {
   try {
@@ -432,6 +433,38 @@ useEffect(() => {
     );
   }
 }, []);
+// ========================================
+// IDENTIFICADOR PERSISTENTE DEL VISITANTE
+// ========================================
+
+useEffect(() => {
+  if (!tiendaId) return;
+
+  try {
+    const claveVisitante =
+      `ra_visitante_${tiendaId}`;
+
+    let identificador =
+      localStorage.getItem(claveVisitante);
+
+    if (!identificador) {
+      identificador = crypto.randomUUID();
+
+      localStorage.setItem(
+        claveVisitante,
+        identificador
+      );
+    }
+
+    setVisitanteId(identificador);
+
+  } catch (error) {
+    console.error(
+      "Error identificando visitante:",
+      error
+    );
+  }
+}, [tiendaId]);
 
   const [productoModal, setProductoModal] = useState(null);
   const [varianteSeleccionadaId, setVarianteSeleccionadaId] =
@@ -536,6 +569,8 @@ useEffect(() => {
   if (!carritoCargado) return;
   if (!sesionCarrito) return;
   if (!tiendaId) return;
+  if (!visitanteId) return;
+  if (formularioCompraAbierto) return;
   if (pedidoEnviado) return;
 
   // No creamos seguimiento mientras
@@ -553,6 +588,7 @@ useEffect(() => {
 
       body: JSON.stringify({
   sesion_id: sesionCarrito,
+  visitante_id: visitanteId,
 
   tienda_id: tiendaId,
 
@@ -595,6 +631,7 @@ useEffect(() => {
   if (!carritoCargado) return;
   if (!sesionCarrito) return;
   if (!tiendaId) return;
+  if (!visitanteId) return;
   if (!carrito.length) return;
   if (pedidoEnviado) return;
 
@@ -609,6 +646,7 @@ useEffect(() => {
 
         body: JSON.stringify({
           sesion_id: sesionCarrito,
+          visitante_id: visitanteId,
           tienda_id: tiendaId,
           estado: "CHECKOUT",
 
@@ -1429,6 +1467,7 @@ try {
 
     body: JSON.stringify({
       sesion_id: sesionCarrito,
+      visitante_id: visitanteId,
       tienda_id: tiendaId,
       estado: "COMPLETADO",
 
@@ -3505,6 +3544,7 @@ setErroresCompra((actual) => ({
 
         body: JSON.stringify({
           sesion_id: sesionCarrito,
+          visitante_id: visitanteId,
           tienda_id: tiendaId,
           estado: "CHECKOUT",
           productos: carrito,
