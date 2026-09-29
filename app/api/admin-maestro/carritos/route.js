@@ -149,7 +149,7 @@ export async function GET() {
     // ========================================
 
     const respuesta = await fetch(
-      `${supabaseUrl}/rest/v1/carritos_web?select=id,sesion_id,tienda_id,nombre_cliente,cedula_cliente,telefono_cliente,correo_cliente,direccion_cliente,estado,productos,cantidad_productos,subtotal,ciudad,forma_pago,creado_en,ultima_actividad,completado_en&order=ultima_actividad.desc&limit=200`,
+      `${supabaseUrl}/rest/v1/carritos_web?select=id,sesion_id,visitante_id,tienda_id,nombre_cliente,cedula_cliente,telefono_cliente,correo_cliente,direccion_cliente,estado,productos,cantidad_productos,subtotal,ciudad,forma_pago,creado_en,ultima_actividad,completado_en&order=ultima_actividad.desc&limit=200`,
       {
         method: "GET",
 
