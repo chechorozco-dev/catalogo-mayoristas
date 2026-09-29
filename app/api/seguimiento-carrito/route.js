@@ -7,6 +7,7 @@ export async function POST(request) {
     const {
   sesion_id,
   tienda_id,
+  visitante_id = "",
   estado = "EN_PROCESO",
   productos = [],
   nombre_cliente = "",
@@ -34,7 +35,23 @@ export async function POST(request) {
         }
       );
     }
+const visitanteLimpio =
+  String(visitante_id || "").trim();
 
+if (
+  visitanteLimpio &&
+  !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    visitanteLimpio
+  )
+) {
+  return Response.json(
+    {
+      ok: false,
+      error: "Identificador de visitante no válido.",
+    },
+    { status: 400 }
+  );
+}
     const estadosPermitidos = [
       "EN_PROCESO",
       "CHECKOUT",
@@ -153,7 +170,7 @@ export async function POST(request) {
     const urlBuscar =
       `${supabaseUrl}` +
       `/rest/v1/carritos_web` +
-      `?select=id,estado,nombre_cliente,cedula_cliente,telefono_cliente,correo_cliente,direccion_cliente,ciudad,forma_pago` +
+      `?select=id,estado,visitante_id,completado_en,nombre_cliente,cedula_cliente,telefono_cliente,correo_cliente,direccion_cliente,ciudad,forma_pago` +
       `&sesion_id=eq.${encodeURIComponent(
         sesion_id
       )}` +
@@ -201,12 +218,25 @@ export async function POST(request) {
     // ========================================
     // DATOS QUE GUARDAREMOS
     // ========================================
-
+if (
+  carritoExistente?.estado === "COMPLETADO"
+) {
+  return Response.json({
+    ok: true,
+    accion: "YA_COMPLETADO",
+    carrito: carritoExistente,
+  });
+}
     const datos = {
-      sesion_id:
-        String(sesion_id).slice(0, 200),
+  sesion_id:
+    String(sesion_id).slice(0, 200),
 
-      tienda_id,
+  visitante_id:
+    carritoExistente?.visitante_id ||
+    visitanteLimpio ||
+    null,
+
+  tienda_id,
 
       estado,
 
@@ -269,9 +299,9 @@ forma_pago:
       ultima_actividad: ahora,
 
       completado_en:
-        estado === "COMPLETADO"
-          ? ahora
-          : null,
+  estado === "COMPLETADO"
+    ? carritoExistente?.completado_en || ahora
+    : null,
     };
 
     // ========================================
