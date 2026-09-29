@@ -395,6 +395,63 @@ async function reenviarAMake(carrito) {
     .toLowerCase()
     .trim();
 }
+function normalizarTelefono(numero) {
+  let limpio = String(numero || "")
+    .replace(/\D/g, "");
+
+  if (limpio.startsWith("0057")) {
+    limpio = limpio.slice(2);
+  }
+
+  if (
+    limpio.length === 10 &&
+    limpio.startsWith("3")
+  ) {
+    limpio = `57${limpio}`;
+  }
+
+  return limpio;
+}
+
+function carritosRelacionados(carritoActual) {
+  const visitante =
+    String(carritoActual.visitante_id || "");
+
+  const telefono =
+    normalizarTelefono(
+      carritoActual.telefono_cliente
+    );
+
+  const telefonoValido =
+    /^573\d{9}$/.test(telefono);
+
+  return carritos.filter((otro) => {
+    if (otro.id === carritoActual.id) {
+      return false;
+    }
+
+    // Nunca mezclar tiendas diferentes.
+    if (
+      String(otro.tienda_id) !==
+      String(carritoActual.tienda_id)
+    ) {
+      return false;
+    }
+
+    const mismoVisitante =
+      Boolean(visitante) &&
+      String(otro.visitante_id || "") ===
+        visitante;
+
+    const mismoTelefono =
+      telefonoValido &&
+      normalizarTelefono(
+        otro.telefono_cliente
+      ) === telefono;
+
+    return mismoVisitante || mismoTelefono;
+  });
+}
   function dinero(valor) {
     return new Intl.NumberFormat("es-CO", {
       style: "currency",
@@ -563,6 +620,7 @@ const estaEditando =
               return (
                 <article
                   key={carrito.id}
+                  id={`carrito-${carrito.id}`}
                   style={tarjeta}
                 >
                   <div style={filaSuperior}>
@@ -602,7 +660,125 @@ const estaEditando =
                       {dinero(carrito.subtotal)}
                     </div>
                   </div>
+{(() => {
+  const relacionados =
+    carritosRelacionados(carrito);
 
+  if (!relacionados.length) return null;
+
+  const mismoNavegador =
+    relacionados.filter(
+      (otro) =>
+        carrito.visitante_id &&
+        otro.visitante_id ===
+          carrito.visitante_id
+    ).length;
+
+  const mismoTelefono =
+    relacionados.filter(
+      (otro) =>
+        /^573\d{9}$/.test(
+          normalizarTelefono(
+            carrito.telefono_cliente
+          )
+        ) &&
+        normalizarTelefono(
+          otro.telefono_cliente
+        ) ===
+          normalizarTelefono(
+            carrito.telefono_cliente
+          )
+    ).length;
+
+  return (
+    <div
+      style={{
+        marginTop: "14px",
+        padding: "12px",
+        background: "#f3f0ff",
+        border: "1px solid #e4dcff",
+        borderRadius: "12px",
+      }}
+    >
+      <strong
+        style={{
+          display: "block",
+          color: "#6335a5",
+          marginBottom: "7px",
+        }}
+      >
+        🔗 {relacionados.length} carritos relacionados
+      </strong>
+
+      {mismoNavegador > 0 && (
+        <div style={{ fontSize: "13px" }}>
+          📱 Mismo navegador: {mismoNavegador}
+        </div>
+      )}
+
+      {mismoTelefono > 0 && (
+        <div style={{ fontSize: "13px" }}>
+          📞 Mismo WhatsApp: {mismoTelefono}
+        </div>
+      )}
+
+      <div
+        style={{
+          marginTop: "9px",
+          display: "grid",
+          gap: "7px",
+        }}
+      >
+        {relacionados.map((otro) => (
+          <button
+            key={otro.id}
+            type="button"
+            onClick={() => {
+              setAbierto(otro.id);
+
+              setTimeout(() => {
+                document
+                  .getElementById(
+                    `carrito-${otro.id}`
+                  )
+                  ?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center",
+                  });
+              }, 100);
+            }}
+            style={{
+              padding: "9px",
+              background: "white",
+              border: "1px solid #e4dcff",
+              borderRadius: "8px",
+              textAlign: "left",
+              cursor: "pointer",
+              fontSize: "13px",
+            }}
+          >
+            🛒 {otro.nombre_cliente || "Sin identificar"}
+            {" · "}
+            {dinero(otro.subtotal)}
+            {" · "}
+            {estadoVisual(otro.estado).texto}
+          </button>
+        ))}
+      </div>
+
+      <div
+        style={{
+          fontSize: "11px",
+          color: "#777",
+          marginTop: "8px",
+        }}
+      >
+        Coincidencias por navegador o teléfono.
+        No constituye identidad verificada.
+      </div>
+    </div>
+  );
+})()}
                   <div style={info}>
                     <span>
                       🛍️{" "}
