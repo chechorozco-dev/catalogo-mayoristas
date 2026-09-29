@@ -7,6 +7,7 @@ export default function CarritosMaestroPage() {
   const router = useRouter();
 
   const [carritos, setCarritos] = useState([]);
+  const [filtroEstado, setFiltroEstado] = useState("TODOS");
   const [cargando, setCargando] = useState(true);
   const [mensaje, setMensaje] = useState("");
   const [abierto, setAbierto] = useState(null);
@@ -473,7 +474,17 @@ function carritosRelacionados(carritoActual) {
       return valor;
     }
   }
+// ========================================
+// FILTRAR CARRITOS POR ESTADO
+// ========================================
 
+const carritosFiltrados =
+  filtroEstado === "TODOS"
+    ? carritos
+    : carritos.filter(
+        (carrito) =>
+          carrito.estado === filtroEstado
+      );
   function estadoVisual(estado) {
     if (estado === "COMPLETADO") {
       return {
@@ -558,34 +569,141 @@ function carritosRelacionados(carritoActual) {
           </div>
         )}
 
-        <div style={resumen}>
-          <div style={resumenCaja}>
-            <strong style={numeroResumen}>
-              {carritos.filter(
-                (c) => c.estado === "EN_PROCESO"
-              ).length}
-            </strong>
-            <span>Armando carrito</span>
-          </div>
+       <div style={resumen}>
 
-          <div style={resumenCaja}>
-            <strong style={numeroResumen}>
-              {carritos.filter(
-                (c) => c.estado === "CHECKOUT"
-              ).length}
-            </strong>
-            <span>Llenando datos</span>
-          </div>
+  {/* ARMANDO CARRITO */}
 
-          <div style={resumenCaja}>
-            <strong style={numeroResumen}>
-              {carritos.filter(
-                (c) => c.estado === "COMPLETADO"
-              ).length}
-            </strong>
-            <span>Completados</span>
-          </div>
-        </div>
+  <button
+    type="button"
+    onClick={() =>
+      setFiltroEstado(
+        filtroEstado === "EN_PROCESO"
+          ? "TODOS"
+          : "EN_PROCESO"
+      )
+    }
+    style={{
+      ...resumenCaja,
+      border:
+        filtroEstado === "EN_PROCESO"
+          ? "2px solid #1769aa"
+          : "2px solid transparent",
+
+      background:
+        filtroEstado === "EN_PROCESO"
+          ? "#eef6ff"
+          : "white",
+
+      cursor: "pointer",
+      textAlign: "left",
+    }}
+  >
+    <strong style={numeroResumen}>
+      {
+        carritos.filter(
+          (c) => c.estado === "EN_PROCESO"
+        ).length
+      }
+    </strong>
+
+    <span>🛒 Armando carrito</span>
+
+    {filtroEstado === "EN_PROCESO" && (
+      <small style={{ color: "#1769aa" }}>
+        ✓ Filtro activo
+      </small>
+    )}
+  </button>
+
+  {/* LLENANDO DATOS */}
+
+  <button
+    type="button"
+    onClick={() =>
+      setFiltroEstado(
+        filtroEstado === "CHECKOUT"
+          ? "TODOS"
+          : "CHECKOUT"
+      )
+    }
+    style={{
+      ...resumenCaja,
+      border:
+        filtroEstado === "CHECKOUT"
+          ? "2px solid #8059b8"
+          : "2px solid transparent",
+
+      background:
+        filtroEstado === "CHECKOUT"
+          ? "#f2edff"
+          : "white",
+
+      cursor: "pointer",
+      textAlign: "left",
+    }}
+  >
+    <strong style={numeroResumen}>
+      {
+        carritos.filter(
+          (c) => c.estado === "CHECKOUT"
+        ).length
+      }
+    </strong>
+
+    <span>🟣 Llenando datos</span>
+
+    {filtroEstado === "CHECKOUT" && (
+      <small style={{ color: "#8059b8" }}>
+        ✓ Filtro activo
+      </small>
+    )}
+  </button>
+
+  {/* COMPLETADOS */}
+
+  <button
+    type="button"
+    onClick={() =>
+      setFiltroEstado(
+        filtroEstado === "COMPLETADO"
+          ? "TODOS"
+          : "COMPLETADO"
+      )
+    }
+    style={{
+      ...resumenCaja,
+      border:
+        filtroEstado === "COMPLETADO"
+          ? "2px solid #18763b"
+          : "2px solid transparent",
+
+      background:
+        filtroEstado === "COMPLETADO"
+          ? "#e8f8ee"
+          : "white",
+
+      cursor: "pointer",
+      textAlign: "left",
+    }}
+  >
+    <strong style={numeroResumen}>
+      {
+        carritos.filter(
+          (c) => c.estado === "COMPLETADO"
+        ).length
+      }
+    </strong>
+
+    <span>✅ Completados</span>
+
+    {filtroEstado === "COMPLETADO" && (
+      <small style={{ color: "#18763b" }}>
+        ✓ Filtro activo
+      </small>
+    )}
+  </button>
+
+</div>
 
         {carritos.length === 0 ? (
           <div style={vacio}>
@@ -602,7 +720,7 @@ function carritosRelacionados(carritoActual) {
           </div>
         ) : (
           <div style={lista}>
-            {carritos.map((carrito) => {
+           {carritosFiltrados.map((carrito) => {
               const visual = estadoVisual(
                 carrito.estado
               );
