@@ -181,25 +181,119 @@ export async function GET() {
 
     let carritos = [];
 
-    try {
-      carritos = texto ? JSON.parse(texto) : [];
-    } catch {
-      carritos = [];
+try {
+  carritos = texto ? JSON.parse(texto) : [];
+} catch {
+  carritos = [];
+}
+
+// ========================================
+// 6. CONSULTAR LAS TIENDAS DE LOS CARRITOS
+// ========================================
+
+const idsTiendas = [
+  ...new Set(
+    carritos
+      .map((carrito) => carrito.tienda_id)
+      .filter(Boolean)
+  ),
+];
+
+let tiendas = [];
+
+if (idsTiendas.length > 0) {
+  const filtroIds = idsTiendas
+    .map((id) => encodeURIComponent(id))
+    .join(",");
+
+  const respuestaTiendas = await fetch(
+    `${supabaseUrl}/rest/v1/tiendas?select=id,nombre_tienda,tipo_tienda&id=in.(${filtroIds})`,
+    {
+      method: "GET",
+
+      headers: {
+        apikey: supabaseSecret,
+        Accept: "application/json",
+      },
+
+      cache: "no-store",
     }
+  );
 
-    // ========================================
-    // 6. DEVOLVER INFORMACIÓN
-    // ========================================
+  const textoTiendas =
+    await respuestaTiendas.text();
 
-    return NextResponse.json({
-      ok: true,
-      carritos: Array.isArray(carritos)
-        ? carritos
-        : [],
-      total: Array.isArray(carritos)
-        ? carritos.length
-        : 0,
-    });
+  if (!respuestaTiendas.ok) {
+    console.error(
+      "Error consultando tiendas:",
+      textoTiendas
+    );
+  } else {
+    try {
+      tiendas =
+        textoTiendas
+          ? JSON.parse(textoTiendas)
+          : [];
+    } catch {
+      tiendas = [];
+    }
+  }
+}
+
+// ========================================
+// 7. RELACIONAR CADA CARRITO CON SU TIENDA
+// ========================================
+
+const tiendasPorId = new Map(
+  tiendas.map((tienda) => [
+    String(tienda.id),
+
+    {
+      nombre:
+        tienda.nombre_tienda || "",
+
+      tipo:
+        String(
+          tienda.tipo_tienda || ""
+        )
+          .trim()
+          .toUpperCase(),
+    },
+  ])
+);
+
+const carritosConTienda =
+  carritos.map((carrito) => {
+    const tienda =
+      tiendasPorId.get(
+        String(carrito.tienda_id || "")
+      );
+
+    return {
+      ...carrito,
+
+      tienda_nombre:
+        tienda?.nombre ||
+        "Tienda no encontrada",
+
+      tienda_tipo:
+        tienda?.tipo || "",
+    };
+  });
+
+// ========================================
+// 8. DEVOLVER INFORMACIÓN
+// ========================================
+
+return NextResponse.json({
+  ok: true,
+
+  carritos:
+    carritosConTienda,
+
+  total:
+    carritosConTienda.length,
+});
   } catch (error) {
     console.error(
       "Error cargando carritos maestro:",
