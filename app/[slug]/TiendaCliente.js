@@ -11,6 +11,8 @@ const CATEGORIAS_PRINCIPALES = [
    "Tobilleras",
   "Earcuff",
    "Camándulas y denarios",
+  "Collares y cadenas",
+  "Dijes",
 ];
 
 const CATEGORIAS_MENU = [
@@ -24,6 +26,7 @@ const CATEGORIAS_MENU = [
   "Earcuff",
   "Collares",
   "Camándulas y denarios",
+  "Collares y cadenas",
 
 ];
 
@@ -733,7 +736,38 @@ ciudad:
       return texto.includes("rodio");
     });
   }
+  if (
+  categoriaActiva === "Collares y cadenas"
+) {
+  lista = lista.filter((producto) => {
+    const nombre = normalizar(
+      producto.nombre || ""
+    );
 
+    const esCollarOCadena =
+      nombre.includes("collar") ||
+      nombre.includes("cadena");
+
+    const tieneDije =
+      nombre.includes("dije");
+
+    return (
+      esCollarOCadena &&
+      !tieneDije
+    );
+  });
+}
+if (
+  categoriaActiva === "Dijes"
+) {
+  lista = lista.filter((producto) => {
+    const nombre = normalizar(
+      producto.nombre || ""
+    );
+
+    return nombre.includes("dije");
+  });
+}
   if (lineaActiva === "Acero") {
     lista = lista.filter((producto) => {
       const texto = limpiarTexto(
