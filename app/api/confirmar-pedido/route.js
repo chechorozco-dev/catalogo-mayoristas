@@ -25,148 +25,225 @@ export async function POST(request) {
     }
 
     // ========================================
-    // 2. COMPLETAR PRODUCTOS CON INFOIMAGEN
-    //    DIRECTAMENTE DESDE SUPABASE
-    // ========================================
+// 2. COMPLETAR PRODUCTOS CON INFOIMAGEN
+//    SIN BLOQUEAR EL PEDIDO SI EL PRODUCTO
+//    YA FUE RETIRADO O ELIMINADO
+// ========================================
 
-    const productosCompletos = [];
+const productosCompletos = [];
 
-    for (const item of productosRecibidos) {
-      const productoId = Number(item?.producto_id);
+for (const item of productosRecibidos) {
+  const productoId = Number(item?.producto_id);
 
-      const varianteId =
-        item?.variante_id !== null &&
-        item?.variante_id !== undefined &&
-        item?.variante_id !== ""
-          ? Number(item.variante_id)
-          : null;
+  const varianteId =
+    item?.variante_id !== null &&
+    item?.variante_id !== undefined &&
+    item?.variante_id !== ""
+      ? Number(item.variante_id)
+      : null;
 
-      if (
-        !Number.isInteger(productoId) ||
-        productoId <= 0
-      ) {
-        throw new Error(
-          "Uno de los productos no tiene un producto_id válido."
-        );
+  const productoIdValido =
+    Number.isInteger(productoId) &&
+    productoId > 0;
+
+  const varianteIdValido =
+    varianteId === null ||
+    (
+      Number.isInteger(varianteId) &&
+      varianteId > 0
+    );
+
+  // Si ya venía alguna información de imagen,
+  // la conservamos como respaldo.
+  let infoimagen =
+    item?.infoimagen || "";
+
+  let productoDisponible = false;
+
+  let varianteDisponible =
+    varianteId !== null
+      ? false
+      : null;
+
+  // ========================================
+  // SI EL ID YA NO ES VÁLIDO
+  // NO DETENEMOS EL PEDIDO
+  // ========================================
+
+  if (!productoIdValido) {
+    console.warn(
+      "Producto del carrito sin producto_id válido. Se enviará igualmente:",
+      item?.referencia || item?.nombre || item
+    );
+
+    productosCompletos.push({
+      ...item,
+
+      infoimagen,
+
+      producto_disponible: false,
+
+      variante_disponible:
+        varianteId !== null
+          ? false
+          : null,
+
+      producto_retirado: true,
+    });
+
+    continue;
+  }
+
+  // ========================================
+  // CONSULTAR PRODUCTO PADRE
+  // ========================================
+
+  try {
+    const respuestaProducto = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/productos?select=id,infoimagen&id=eq.${encodeURIComponent(
+        productoId
+      )}&limit=1`,
+      {
+        method: "GET",
+
+        headers: {
+          apikey:
+            process.env.SUPABASE_SECRET_KEY,
+
+          Accept: "application/json",
+        },
+
+        cache: "no-store",
       }
+    );
 
-      // ----------------------------------------
-      // CONSULTAR PRODUCTO PADRE
-      // ----------------------------------------
-
-      const respuestaProducto = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/productos?select=id,infoimagen&id=eq.${encodeURIComponent(
-          productoId
-        )}&limit=1`,
-        {
-          method: "GET",
-          headers: {
-            apikey:
-              process.env.SUPABASE_SECRET_KEY,
-            Accept: "application/json",
-          },
-          cache: "no-store",
-        }
-      );
-
-      if (!respuestaProducto.ok) {
-        const errorProducto =
-          await respuestaProducto.text();
-
-        console.error(
-          "Error consultando producto:",
-          errorProducto
-        );
-
-        throw new Error(
-          `No se pudo consultar el producto ${productoId}.`
-        );
-      }
-
+    if (respuestaProducto.ok) {
       const productosEncontrados =
         await respuestaProducto.json();
 
       const productoSupabase =
         productosEncontrados?.[0];
 
-      if (!productoSupabase) {
-        throw new Error(
-          `No encontramos el producto ${productoId}.`
-        );
-      }
+      if (productoSupabase) {
+        productoDisponible = true;
 
-      let infoimagen =
-        productoSupabase.infoimagen || "";
-
-      // ----------------------------------------
-      // SI TIENE VARIANTE:
-      // PRIMERO USAMOS INFOIMAGEN DE LA VARIANTE
-      // ----------------------------------------
-
-      if (varianteId) {
-        const respuestaVariante = await fetch(
-          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/producto_variantes?select=id,producto_id,infoimagen&id=eq.${encodeURIComponent(
-            varianteId
-          )}&producto_id=eq.${encodeURIComponent(
-            productoId
-          )}&limit=1`,
-          {
-            method: "GET",
-            headers: {
-              apikey:
-                process.env.SUPABASE_SECRET_KEY,
-              Accept: "application/json",
-            },
-            cache: "no-store",
-          }
-        );
-
-        if (!respuestaVariante.ok) {
-          const errorVariante =
-            await respuestaVariante.text();
-
-          console.error(
-            "Error consultando variante:",
-            errorVariante
-          );
-
-          throw new Error(
-            `No se pudo consultar la variante ${varianteId}.`
-          );
-        }
-
-        const variantesEncontradas =
-          await respuestaVariante.json();
-
-        const varianteSupabase =
-          variantesEncontradas?.[0];
-
-        if (!varianteSupabase) {
-          throw new Error(
-            `No encontramos la variante ${varianteId} del producto ${productoId}.`
-          );
-        }
-
-        // La variante manda.
-        // Si no tiene infoimagen,
-        // usamos el del producto padre.
         infoimagen =
-          varianteSupabase.infoimagen ||
           productoSupabase.infoimagen ||
+          infoimagen ||
           "";
+
+        // ========================================
+        // CONSULTAR VARIANTE
+        // ========================================
+
+        if (
+          varianteId !== null &&
+          varianteIdValido
+        ) {
+          try {
+            const respuestaVariante =
+              await fetch(
+                `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/producto_variantes?select=id,producto_id,infoimagen&id=eq.${encodeURIComponent(
+                  varianteId
+                )}&producto_id=eq.${encodeURIComponent(
+                  productoId
+                )}&limit=1`,
+                {
+                  method: "GET",
+
+                  headers: {
+                    apikey:
+                      process.env.SUPABASE_SECRET_KEY,
+
+                    Accept:
+                      "application/json",
+                  },
+
+                  cache: "no-store",
+                }
+              );
+
+            if (respuestaVariante.ok) {
+              const variantesEncontradas =
+                await respuestaVariante.json();
+
+              const varianteSupabase =
+                variantesEncontradas?.[0];
+
+              if (varianteSupabase) {
+                varianteDisponible = true;
+
+                // La variante manda.
+                // Si no tiene infoimagen,
+                // usamos la del producto padre.
+                infoimagen =
+                  varianteSupabase.infoimagen ||
+                  productoSupabase.infoimagen ||
+                  infoimagen ||
+                  "";
+              } else {
+                console.warn(
+                  `La variante ${varianteId} ya no existe. El pedido continuará.`
+                );
+              }
+            } else {
+              const errorVariante =
+                await respuestaVariante.text();
+
+              console.error(
+                `No se pudo consultar la variante ${varianteId}, pero el pedido continuará:`,
+                errorVariante
+              );
+            }
+          } catch (errorVariante) {
+            console.error(
+              `Error consultando variante ${varianteId}. El pedido continuará:`,
+              errorVariante
+            );
+          }
+        }
+      } else {
+        console.warn(
+          `El producto ${productoId} ya no existe en Supabase. El pedido continuará con los datos guardados en el carrito.`
+        );
       }
+    } else {
+      const errorProducto =
+        await respuestaProducto.text();
 
-      // ----------------------------------------
-      // CONSERVAMOS TODO LO QUE YA ENVÍA
-      // LA PÁGINA Y SOLO AGREGAMOS INFOIMAGEN
-      // ----------------------------------------
-
-      productosCompletos.push({
-        ...item,
-        infoimagen,
-      });
+      console.error(
+        `No se pudo consultar el producto ${productoId}, pero el pedido continuará:`,
+        errorProducto
+      );
     }
+  } catch (errorProducto) {
+    console.error(
+      `Error consultando producto ${productoId}. El pedido continuará:`,
+      errorProducto
+    );
+  }
 
+  // ========================================
+  // SI EL PRODUCTO O VARIANTE YA NO EXISTEN,
+  // CONSERVAMOS LOS DATOS QUE VENÍAN
+  // DEL CARRITO
+  // ========================================
+
+  productosCompletos.push({
+    ...item,
+
+    infoimagen,
+
+    producto_disponible:
+      productoDisponible,
+
+    variante_disponible:
+      varianteDisponible,
+
+    producto_retirado:
+      !productoDisponible,
+  });
+}
     // ========================================
     // 3. CREAR NÚMERO ÚNICO DEL PEDIDO
     // ========================================
