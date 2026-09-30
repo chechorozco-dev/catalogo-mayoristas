@@ -12,6 +12,8 @@ export default function CarritosMaestroPage() {
   const [mensaje, setMensaje] = useState("");
   const [abierto, setAbierto] = useState(null);
 const [editando, setEditando] = useState(null);
+const [filtroTienda, setFiltroTienda] =
+  useState("TODAS");
 const [carritoEditado, setCarritoEditado] = useState(null);
 const [guardandoCambios, setGuardandoCambios] = useState(false);
 const [eliminandoCarrito, setEliminandoCarrito] = useState(null);
@@ -37,6 +39,7 @@ async function cargarCiudades() {
         cache: "no-store",
       }
     );
+    
 
     const data = await response.json();
 
@@ -477,14 +480,54 @@ function carritosRelacionados(carritoActual) {
 // ========================================
 // FILTRAR CARRITOS POR ESTADO
 // ========================================
+const carritosTiendaPrincipal =
+  carritos.filter((carrito) => {
+    const tipo =
+      String(carrito.tienda_tipo || "")
+        .trim()
+        .toUpperCase();
 
+    return tipo === "RA";
+  });
+
+const carritosTiendasClientes =
+  carritos.filter((carrito) => {
+    const tipo =
+      String(carrito.tienda_tipo || "")
+        .trim()
+        .toUpperCase();
+
+    return tipo === "CLIENTE";
+  });
 const carritosFiltrados =
-  filtroEstado === "TODOS"
-    ? carritos
-    : carritos.filter(
-        (carrito) =>
-          carrito.estado === filtroEstado
+  carritos.filter((carrito) => {
+    const cumpleEstado =
+      filtroEstado === "TODOS" ||
+      carrito.estado === filtroEstado;
+
+    const tipoTienda =
+      String(
+        carrito.tienda_tipo || ""
+      )
+        .trim()
+        .toUpperCase();
+
+    const cumpleTienda =
+      filtroTienda === "TODAS" ||
+      (
+        filtroTienda === "RA" &&
+        tipoTienda === "RA"
+      ) ||
+      (
+        filtroTienda === "CLIENTES" &&
+        tipoTienda !== "RA"
       );
+
+    return (
+      cumpleEstado &&
+      cumpleTienda
+    );
+  });
   function estadoVisual(estado) {
     if (estado === "COMPLETADO") {
       return {
@@ -704,7 +747,109 @@ const carritosFiltrados =
   </button>
 
 </div>
+<div
+  style={{
+    marginTop: "18px",
+    marginBottom: "7px",
+    fontWeight: "800",
+    fontSize: "14px",
+    color: "#555",
+  }}
+>
+  POR TIENDA
+</div>
 
+<div style={resumen}>
+  <button
+    type="button"
+    onClick={() =>
+      setFiltroTienda(
+        filtroTienda === "RA"
+          ? "TODAS"
+          : "RA"
+      )
+    }
+    style={{
+      ...resumenCaja,
+
+      border:
+        filtroTienda === "RA"
+          ? "2px solid #111"
+          : "2px solid transparent",
+
+      background:
+        filtroTienda === "RA"
+          ? "#f4f4f4"
+          : "white",
+
+      cursor: "pointer",
+      textAlign: "left",
+    }}
+  >
+    <strong style={numeroResumen}>
+      {carritosTiendaPrincipal.length}
+    </strong>
+
+    <span>
+      🏪 Mi tienda principal
+    </span>
+
+    {filtroTienda === "RA" && (
+      <small
+        style={{
+          color: "#111",
+        }}
+      >
+        ✓ Filtro activo
+      </small>
+    )}
+  </button>
+
+  <button
+    type="button"
+    onClick={() =>
+      setFiltroTienda(
+        filtroTienda === "CLIENTES"
+          ? "TODAS"
+          : "CLIENTES"
+      )
+    }
+    style={{
+      ...resumenCaja,
+
+      border:
+        filtroTienda === "CLIENTES"
+          ? "2px solid #8059b8"
+          : "2px solid transparent",
+
+      background:
+        filtroTienda === "CLIENTES"
+          ? "#f4efff"
+          : "white",
+
+      cursor: "pointer",
+      textAlign: "left",
+    }}
+  >
+    <strong style={numeroResumen}>
+      {carritosTiendasClientes.length}
+    </strong>
+
+    <span>
+      🛍️ Tiendas de clientes
+    </span>
+
+    {filtroTienda === "CLIENTES" && (
+      <small
+        style={{
+          color: "#8059b8",
+        }}
+      >
+        ✓ Filtro activo
+      </small>
+    )}
+  </button>
+</div>
         {carritos.length === 0 ? (
           <div style={vacio}>
             <div style={{ fontSize: "42px" }}>
@@ -752,7 +897,43 @@ const estaEditando =
                       >
                         {visual.texto}
                       </span>
+<div
+  style={{
+    display: "flex",
+width: "fit-content",
+    alignItems: "center",
+    gap: "6px",
+    marginTop: "8px",
+    padding: "5px 9px",
+    borderRadius: "999px",
 
+    background:
+      String(
+        carrito.tienda_tipo || ""
+      ).toUpperCase() === "RA"
+        ? "#111"
+        : "#f2edff",
+
+    color:
+      String(
+        carrito.tienda_tipo || ""
+      ).toUpperCase() === "RA"
+        ? "#fff"
+        : "#6335a5",
+
+    fontSize: "12px",
+    fontWeight: "800",
+  }}
+>
+  {String(
+    carrito.tienda_tipo || ""
+  ).toUpperCase() === "RA"
+    ? "🏪"
+    : "🛍️"}
+
+  {carrito.tienda_nombre ||
+    `Tienda ${carrito.tienda_id}`}
+</div>
                       <h2 style={nombre}>
                         {carrito.nombre_cliente ||
                           "Cliente todavía sin identificar"}
