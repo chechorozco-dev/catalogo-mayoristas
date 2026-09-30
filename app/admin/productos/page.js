@@ -1736,6 +1736,7 @@ const categorias = [
   "Nuevos",
   "Aretes",
   "Candongas",
+  "Juegos",
   "Collares",
   "Pulseras",
   "Tobilleras",
@@ -2311,6 +2312,19 @@ temporizadorResumenRef.current =
             ).includes("candonga")
         );
       }
+      if (
+  categoriaActiva === "Juegos"
+) {
+  lista = lista.filter(
+    (producto) => {
+      const nombre = normalizar(
+        producto.nombre
+      );
+
+      return nombre.includes("juego");
+    }
+  );
+}
 
       if (
         categoriaActiva === "Collares"
