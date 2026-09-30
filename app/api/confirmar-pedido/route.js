@@ -294,16 +294,16 @@ for (const item of productosRecibidos) {
     // ========================================
 
     const pedidoCompleto = {
-      pedido_id: pedidoCreado.id,
-      numero_pedido:
-        pedidoCreado.numero_pedido,
+  ...pedido,
 
-      ...pedido,
+  pedido_id: pedidoCreado.id,
 
-      // Reemplazamos productos por la versión
-      // enriquecida desde Supabase.
-      productos: productosCompletos,
-    };
+  numero_pedido:
+    pedidoCreado.numero_pedido,
+
+  productos:
+    productosCompletos,
+};
 
     // ========================================
     // 5. ENVIAR PEDIDO A MAKE
