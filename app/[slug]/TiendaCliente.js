@@ -22,14 +22,12 @@ const CATEGORIAS_MENU = [
   "Juegos",
   "Anillos",
   "Pulseras",
-   "Tobilleras",
+  "Tobilleras",
   "Earcuff",
-  "Collares",
   "Camándulas y denarios",
   "Collares y cadenas",
-
+  "Dijes",
 ];
-
 function limpiarTexto(valor = "") {
   return String(valor)
     .normalize("NFD")
@@ -153,9 +151,23 @@ if (categoria === "Tobilleras") {
   );
 }
 
-  if (categoria === "Collares") {
-    return texto.includes("collar") || texto.includes("cadena");
-  }
+  if (categoria === "Collares y cadenas") {
+  const esCollarOCadena =
+    texto.includes("collar") ||
+    texto.includes("cadena");
+
+  const contieneDije =
+    texto.includes("dije");
+
+  return (
+    esCollarOCadena &&
+    !contieneDije
+  );
+}
+
+if (categoria === "Dijes") {
+  return texto.includes("dije");
+}
 
   if (categoria === "Accesorios en Rodio") {
     return texto.includes("rodio");
@@ -194,13 +206,23 @@ function obtenerTipoProducto(producto) {
     return "pulseras";
   }
 
-  if (texto.includes("earcuff") || texto.includes("ear cuff")) {
-    return "earcuff";
-  }
+  if (
+  texto.includes("earcuff") ||
+  texto.includes("ear cuff")
+) {
+  return "earcuff";
+}
 
-  if (texto.includes("collar") || texto.includes("cadena")) {
-    return "collares";
-  }
+if (texto.includes("dije")) {
+  return "dijes";
+}
+
+if (
+  texto.includes("collar") ||
+  texto.includes("cadena")
+) {
+  return "collares";
+}
 
   return limpiarTexto(producto?.categoria || "");
 }
@@ -736,38 +758,7 @@ ciudad:
       return texto.includes("rodio");
     });
   }
-  if (
-  categoriaActiva === "Collares y cadenas"
-) {
-  lista = lista.filter((producto) => {
-    const nombre = normalizar(
-      producto.nombre || ""
-    );
-
-    const esCollarOCadena =
-      nombre.includes("collar") ||
-      nombre.includes("cadena");
-
-    const tieneDije =
-      nombre.includes("dije");
-
-    return (
-      esCollarOCadena &&
-      !tieneDije
-    );
-  });
-}
-if (
-  categoriaActiva === "Dijes"
-) {
-  lista = lista.filter((producto) => {
-    const nombre = normalizar(
-      producto.nombre || ""
-    );
-
-    return nombre.includes("dije");
-  });
-}
+  
   if (lineaActiva === "Acero") {
     lista = lista.filter((producto) => {
       const texto = limpiarTexto(
