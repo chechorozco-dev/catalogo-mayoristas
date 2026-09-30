@@ -1404,28 +1404,37 @@ if (Object.keys(nuevosErrores).length > 0) {
     },
 
     productos: carrito.map((item) => ({
-      producto_id:
-        item.id_producto || item.id || null,
+  producto_id:
+    item.id_producto || item.id || null,
 
-      variante_id:
-        item.variante_id || null,
+  variante_id:
+    item.variante_id || null,
 
-      nombre: item.nombre || "",
+  nombre:
+    item.nombre || "",
 
-      referencia: item.referencia || "",
+  referencia:
+    item.referencia || "",
 
-      variante: item.variante_nombre || "",
+  variante:
+    item.variante_nombre || "",
 
-      cantidad: Number(item.cantidad || 0),
+  cantidad:
+    Number(item.cantidad || 0),
 
-      precio_unitario: Number(
-        item.precio || 0
-      ),
+  precio_unitario:
+    Number(item.precio || 0),
 
-      subtotal:
-        Number(item.precio || 0) *
-        Number(item.cantidad || 0),
-    })),
+  subtotal:
+    Number(item.precio || 0) *
+    Number(item.cantidad || 0),
+
+  foto_url:
+    item.foto_url || "",
+
+  foto_url_2:
+    item.foto_url_2 || "",
+})),
   };
 
   try {
