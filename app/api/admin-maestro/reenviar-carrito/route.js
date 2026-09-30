@@ -221,31 +221,84 @@ export async function POST(request) {
     }
 
     // ========================================
-    // 5. COMPLETAR PRODUCTOS CON INFOIMAGEN
-    // ========================================
+// 5. COMPLETAR PRODUCTOS CON INFOIMAGEN
+//    SIN BLOQUEAR EL REENVÍO SI EL PRODUCTO
+//    O LA VARIANTE YA NO EXISTEN
+// ========================================
 
-    const productosCompletos = [];
+const productosCompletos = [];
 
-    for (const item of productosCarrito) {
-      const productoId =
-        Number(item?.producto_id);
+for (const item of productosCarrito) {
+  // El carrito puede venir de distintas versiones
+  // de la tienda, por eso aceptamos:
+  // producto_id, id_producto o id.
+  const productoIdOriginal =
+    item?.producto_id ??
+    item?.id_producto ??
+    item?.id ??
+    null;
 
-      const varianteId =
-        item?.variante_id !== null &&
-        item?.variante_id !== undefined &&
-        item?.variante_id !== ""
-          ? Number(item.variante_id)
-          : null;
+  const productoId =
+    Number(productoIdOriginal);
 
-      if (
-        !Number.isInteger(productoId) ||
-        productoId <= 0
-      ) {
-        throw new Error(
-          "Uno de los productos del carrito no tiene un producto_id válido."
-        );
-      }
+  const productoIdValido =
+    Number.isInteger(productoId) &&
+    productoId > 0;
 
+  const varianteIdOriginal =
+    item?.variante_id !== null &&
+    item?.variante_id !== undefined &&
+    item?.variante_id !== ""
+      ? item.variante_id
+      : null;
+
+  const varianteId =
+    varianteIdOriginal !== null
+      ? Number(varianteIdOriginal)
+      : null;
+
+  const varianteIdValido =
+    varianteId === null ||
+    (
+      Number.isInteger(varianteId) &&
+      varianteId > 0
+    );
+
+  // ========================================
+  // DATOS GUARDADOS EN EL CARRITO
+  // ========================================
+
+  const cantidad =
+    Number(item?.cantidad || 0);
+
+  const precio =
+    Number(
+      item?.precio ??
+      item?.precio_unitario ??
+      0
+    );
+
+  // Si el producto fue borrado,
+  // intentamos conservar alguna imagen
+  // que haya quedado guardada en el carrito.
+  let infoimagen =
+    item?.infoimagen ||
+    item?.foto_url ||
+    "";
+
+  let productoDisponible = false;
+
+  let varianteDisponible =
+    varianteIdOriginal !== null
+      ? false
+      : null;
+
+  // ========================================
+  // CONSULTAR PRODUCTO SOLO SI EL ID ES VÁLIDO
+  // ========================================
+
+  if (productoIdValido) {
+    try {
       const respuestaProducto = await fetch(
         `${supabaseUrl}/rest/v1/productos?select=id,infoimagen&id=eq.${encodeURIComponent(
           productoId
@@ -260,101 +313,173 @@ export async function POST(request) {
         }
       );
 
-      if (!respuestaProducto.ok) {
-        throw new Error(
-          `No se pudo consultar el producto ${productoId}.`
-        );
-      }
+      if (respuestaProducto.ok) {
+        const productos =
+          await respuestaProducto.json();
 
-      const productos =
-        await respuestaProducto.json();
+        const productoSupabase =
+          productos?.[0];
 
-      const productoSupabase =
-        productos?.[0];
+        if (productoSupabase) {
+          productoDisponible = true;
 
-      if (!productoSupabase) {
-        throw new Error(
-          `No encontramos el producto ${productoId}.`
-        );
-      }
+          infoimagen =
+            productoSupabase.infoimagen ||
+            infoimagen ||
+            "";
 
-      let infoimagen =
-        productoSupabase.infoimagen || "";
+          // ========================================
+          // CONSULTAR VARIANTE
+          // ========================================
 
-      if (varianteId) {
-        const respuestaVariante = await fetch(
-          `${supabaseUrl}/rest/v1/producto_variantes?select=id,producto_id,infoimagen&id=eq.${encodeURIComponent(
-            varianteId
-          )}&producto_id=eq.${encodeURIComponent(
-            productoId
-          )}&limit=1`,
-          {
-            method: "GET",
-            headers: {
-              apikey: supabaseSecret,
-              Accept: "application/json",
-            },
-            cache: "no-store",
+          if (
+            varianteIdOriginal !== null &&
+            varianteIdValido
+          ) {
+            try {
+              const respuestaVariante =
+                await fetch(
+                  `${supabaseUrl}/rest/v1/producto_variantes?select=id,producto_id,infoimagen&id=eq.${encodeURIComponent(
+                    varianteId
+                  )}&producto_id=eq.${encodeURIComponent(
+                    productoId
+                  )}&limit=1`,
+                  {
+                    method: "GET",
+                    headers: {
+                      apikey: supabaseSecret,
+                      Accept: "application/json",
+                    },
+                    cache: "no-store",
+                  }
+                );
+
+              if (respuestaVariante.ok) {
+                const variantes =
+                  await respuestaVariante.json();
+
+                const variante =
+                  variantes?.[0];
+
+                if (variante) {
+                  varianteDisponible = true;
+
+                  infoimagen =
+                    variante.infoimagen ||
+                    productoSupabase.infoimagen ||
+                    infoimagen ||
+                    "";
+                } else {
+                  console.warn(
+                    `La variante ${varianteId} ya no existe. El pedido será reenviado igualmente.`
+                  );
+                }
+              } else {
+                const errorVariante =
+                  await respuestaVariante.text();
+
+                console.error(
+                  `No se pudo consultar la variante ${varianteId}, pero el pedido continuará:`,
+                  errorVariante
+                );
+              }
+            } catch (errorVariante) {
+              console.error(
+                `Error consultando variante ${varianteId}. El pedido continuará:`,
+                errorVariante
+              );
+            }
           }
+        } else {
+          console.warn(
+            `El producto ${productoId} ya no existe. El pedido será reenviado usando la información guardada en el carrito.`
+          );
+        }
+      } else {
+        const errorProducto =
+          await respuestaProducto.text();
+
+        console.error(
+          `No se pudo consultar el producto ${productoId}, pero el pedido continuará:`,
+          errorProducto
         );
-
-        if (!respuestaVariante.ok) {
-          throw new Error(
-            `No se pudo consultar la variante ${varianteId}.`
-          );
-        }
-
-        const variantes =
-          await respuestaVariante.json();
-
-        const variante =
-          variantes?.[0];
-
-        if (!variante) {
-          throw new Error(
-            `No encontramos la variante ${varianteId}.`
-          );
-        }
-
-        infoimagen =
-          variante.infoimagen ||
-          productoSupabase.infoimagen ||
-          "";
       }
-
-      const cantidad =
-        Number(item.cantidad || 0);
-
-      const precio =
-        Number(
-          item.precio ??
-            item.precio_unitario ??
-            0
-        );
-
-      productosCompletos.push({
-        producto_id: productoId,
-        variante_id: varianteId,
-
-        nombre:
-          item.nombre || "",
-
-        referencia:
-          item.referencia || "",
-
-        variante:
-          item.variante || "",
-
-        cantidad,
-
-        precio_unitario: precio,
-
-        subtotal:
-          precio * cantidad,
-
-        infoimagen,
-      });
+    } catch (errorProducto) {
+      console.error(
+        `Error consultando producto ${productoId}. El pedido continuará:`,
+        errorProducto
+      );
     }
+  } else {
+    console.warn(
+      "Producto del carrito sin producto_id válido. Se reenviará igualmente:",
+      item?.referencia ||
+      item?.nombre ||
+      productoIdOriginal
+    );
+  }
+
+  // ========================================
+  // NORMALIZAR PRODUCTO PARA MAKE
+  // ========================================
+
+  productosCompletos.push({
+    producto_id:
+      productoIdValido
+        ? productoId
+        : null,
+
+    // Conservamos lo que originalmente
+    // tenía el carrito por seguridad.
+    producto_id_original:
+      productoIdOriginal,
+
+    variante_id:
+      varianteId !== null &&
+      varianteIdValido
+        ? varianteId
+        : null,
+
+    variante_id_original:
+      varianteIdOriginal,
+
+    nombre:
+      item?.nombre || "",
+
+    referencia:
+      item?.referencia || "",
+
+    variante:
+      item?.variante ||
+      item?.variante_nombre ||
+      "",
+
+    cantidad,
+
+    precio_unitario:
+      precio,
+
+    subtotal:
+      precio * cantidad,
+
+    infoimagen,
+
+    foto_url:
+      item?.foto_url || "",
+
+    foto_url_2:
+      item?.foto_url_2 || "",
+
+    producto_disponible:
+      productoDisponible,
+
+    variante_disponible:
+      varianteDisponible,
+
+    producto_retirado:
+      !productoDisponible,
+  });
+}
 
     // ========================================
     // 6. CALCULAR VALORES
