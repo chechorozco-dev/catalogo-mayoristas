@@ -410,6 +410,8 @@ const [direccionCliente, setDireccionCliente] = useState("");
 // FORMA DE PAGO
 // "CONTRA_ENTREGA" o "TRANSFERENCIA"
 const [formaPago, setFormaPago] = useState("");
+const [checkoutMinimizado, setCheckoutMinimizado] =
+  useState(false);
 
 const [ciudadesEnvio, setCiudadesEnvio] = useState([]);
 const [ciudadSeleccionada, setCiudadSeleccionada] =
@@ -501,6 +503,7 @@ useEffect(() => {
 
   const carritoRef = useRef(null);
   const ciudadInputRef = useRef(null);
+  const checkoutTouchInicioY = useRef(null);
 const colorTextoPrincipal =
   obtenerColorTexto(colorPrincipal);
   const colorTextoFondo =
@@ -1316,6 +1319,7 @@ if (
   }
   function abrirCheckoutConPago(metodo) {
   setFormaPago(metodo);
+  setCheckoutMinimizado(false);
 
   setErroresCompra((actual) => ({
     ...actual,
@@ -1330,6 +1334,29 @@ if (
         block: "nearest",
       });
   }, 150);
+}
+function iniciarDeslizamientoCheckout(e) {
+  checkoutTouchInicioY.current =
+    e.touches?.[0]?.clientY ?? null;
+}
+
+function terminarDeslizamientoCheckout(e) {
+  const inicio = checkoutTouchInicioY.current;
+
+  const final =
+    e.changedTouches?.[0]?.clientY ?? null;
+
+  if (
+    inicio !== null &&
+    final !== null &&
+    final - inicio > 45
+  ) {
+    document.activeElement?.blur();
+
+    setCheckoutMinimizado(true);
+  }
+
+  checkoutTouchInicioY.current = null;
 }
 async function confirmarPedido() {
   if (enviandoPedido) return;
@@ -3701,15 +3728,73 @@ setErroresCompra((actual) => ({
       >
         Volver a la tienda
       </button>
+      </div>
+
+) : checkoutMinimizado ? (
+
+  <button
+    type="button"
+    className="checkout-minimizado"
+    onClick={() => {
+      setCheckoutMinimizado(false);
+
+      setTimeout(() => {
+        document
+          .getElementById("checkout-inline")
+          ?.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+          });
+      }, 100);
+    }}
+  >
+    <div className="checkout-minimizado-izquierda">
+      <span className="checkout-minimizado-icono">
+        🧾
+      </span>
+
+      <div>
+        <strong>Completar pedido</strong>
+
+        <span>
+          {formaPago === "TRANSFERENCIA"
+            ? "Transferencia bancaria"
+            : "Pago contra entrega"}
+        </span>
+      </div>
     </div>
 
-  ) : (
+    <div className="checkout-minimizado-derecha">
+      <strong>
+        {formatoPrecio(
+          formaPago === "TRANSFERENCIA"
+            ? totalTransferencia
+            : totalContraEntrega
+        )}
+      </strong>
 
-    <div
-      id="checkout-inline"
-      className="checkout-inline"
-    >
+      <span>⌃</span>
+    </div>
+  </button>
 
+) : (
+
+  <div
+    id="checkout-inline"
+    className="checkout-inline"
+  >
+  <button
+    type="button"
+    className="checkout-arrastre"
+    onTouchStart={iniciarDeslizamientoCheckout}
+    onTouchEnd={terminarDeslizamientoCheckout}
+    onClick={() =>
+      setCheckoutMinimizado(true)
+    }
+    aria-label="Minimizar formulario"
+  >
+    <span />
+  </button>
       {/* CABECERA */}
 
       <div className="checkout-inline-cabecera">
@@ -7340,6 +7425,150 @@ color: var(--texto-principal);
   color: var(--texto-principal);
 
   font-size: 15px;
+  font-weight: 800;
+}
+/* ========================================
+   CHECKOUT PLEGABLE
+======================================== */
+
+.checkout-arrastre {
+  width: 100%;
+  height: 27px;
+
+  margin: -8px 0 7px;
+
+  padding: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+
+  background: transparent;
+
+  cursor: pointer;
+
+  touch-action: pan-y;
+}
+
+.checkout-arrastre span {
+  width: 46px;
+  height: 5px;
+
+  display: block;
+
+  border-radius: 999px;
+
+  background: #d5d5d5;
+}
+
+
+/* FORMULARIO MINIMIZADO */
+
+.checkout-minimizado {
+  width: 100%;
+
+  min-height: 64px;
+
+  margin-top: 12px;
+  padding: 10px 13px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+
+  border: 1px solid #dfd4ee;
+  border-radius: 13px;
+
+  background: #faf8fd;
+  color: #222222;
+
+  text-align: left;
+
+  box-shadow:
+    0 5px 16px rgba(0, 0, 0, 0.06);
+
+  cursor: pointer;
+}
+
+.checkout-minimizado-izquierda {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+}
+
+.checkout-minimizado-icono {
+  width: 37px;
+  height: 37px;
+
+  flex: 0 0 37px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 10px;
+
+  background: #f0e9f8;
+
+  font-size: 19px;
+}
+
+.checkout-minimizado-izquierda > div {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+.checkout-minimizado-izquierda strong {
+  color: #222222;
+
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.checkout-minimizado-izquierda span {
+  overflow: hidden;
+
+  color: #777777;
+
+  font-size: 11px;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.checkout-minimizado-derecha {
+  flex: 0 0 auto;
+
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+}
+
+.checkout-minimizado-derecha strong {
+  color: var(--color-principal);
+
+  font-size: 14px;
+  font-weight: 900;
+
+  white-space: nowrap;
+}
+
+.checkout-minimizado-derecha span {
+  color: var(--color-principal);
+
+  font-size: 19px;
   font-weight: 800;
 }
       `}</style>
