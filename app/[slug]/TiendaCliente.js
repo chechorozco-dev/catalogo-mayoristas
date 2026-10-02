@@ -2373,26 +2373,42 @@ try {
 
         {/* BARRA CARRITO */}
 
-        {cantidadTotal > 0 && (
-          <button
-            className="barra-carrito"
-            onClick={() => setCarritoAbierto(true)}
-          >
-            <span className="barra-carrito-izquierda">
-              🛍️
-              <strong>
-                {cantidadTotal}{" "}
-                {cantidadTotal === 1
-                  ? "producto"
-                  : "productos"}
-              </strong>
-            </span>
+       {cantidadTotal > 0 && (
+  <button
+    className="barra-carrito"
+    onClick={() => setCarritoAbierto(true)}
+  >
+    <div className="barra-carrito-izquierda">
+      <span className="barra-carrito-icono">
+        🛍️
+      </span>
 
-            <strong>
-              {formatoPrecio(totalCarrito)}
-            </strong>
-          </button>
-        )}
+      <div className="barra-carrito-textos">
+        <strong className="barra-carrito-titulo">
+          Ver pedido
+        </strong>
+
+        <span className="barra-carrito-subtexto">
+          {cantidadTotal}{" "}
+          {cantidadTotal === 1
+            ? "producto agregado"
+            : "productos agregados"}{" "}
+          · Toca aquí
+        </span>
+      </div>
+    </div>
+
+    <div className="barra-carrito-derecha">
+      <strong className="barra-carrito-total">
+        {formatoPrecio(totalCarrito)}
+      </strong>
+
+      <span className="barra-carrito-flecha">
+        ›
+      </span>
+    </div>
+  </button>
+)}
       </div>
       {/* WHATSAPP FLOTANTE */}
 
@@ -5477,31 +5493,110 @@ height: 60px;
         /* BARRA CARRITO */
 
         .barra-carrito {
-          position: fixed;
-          z-index: 500;
-          left: 50%;
-          bottom: 22px;
-          transform: translateX(-50%);
-          width: calc(100% - 40px);
-          max-width: 680px;
-          min-height: 68px;
-          padding: 0 25px;
-          border: none;
-          border-radius: 14px;
-          background: var(--color-principal);
-color: var(--texto-principal);
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          box-shadow: 0 12px 30px
-            rgba(0, 0, 0, 0.23);
-        }
+  position: fixed;
+  z-index: 500;
+  left: 50%;
+  bottom: 8px;
+  transform: translateX(-50%);
 
-        .barra-carrito-izquierda {
-          display: flex;
-          gap: 9px;
-          align-items: center;
-        }
+  width: calc(100% - 24px);
+  max-width: 680px;
+  min-height: 56px;
+
+  padding: 10px 16px;
+
+  border: none;
+  border-radius: 12px;
+
+  background: var(--color-principal);
+  color: var(--texto-principal);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 14px;
+
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.23);
+}
+
+.barra-carrito-izquierda {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.barra-carrito-icono {
+  font-size: 22px;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+.barra-carrito-textos {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.barra-carrito-titulo {
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.barra-carrito-subtexto {
+  font-size: 12px;
+  line-height: 1.2;
+  opacity: 0.9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.barra-carrito-derecha {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.barra-carrito-total {
+  font-size: 16px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.barra-carrito-flecha {
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 700;
+  opacity: 0.95;
+}
+@media (max-width: 650px) {
+  .barra-carrito {
+    min-height: 54px;
+    padding: 9px 14px;
+  }
+
+  .barra-carrito-titulo {
+    font-size: 15px;
+  }
+
+  .barra-carrito-subtexto {
+    font-size: 11px;
+  }
+
+  .barra-carrito-total {
+    font-size: 15px;
+  }
+
+  .barra-carrito-flecha {
+    font-size: 20px;
+  }
+}
 
         /* OVERLAY */
 
