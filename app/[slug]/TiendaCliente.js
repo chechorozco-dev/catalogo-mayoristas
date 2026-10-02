@@ -3449,110 +3449,97 @@ setErroresCompra((actual) => ({
     </div>
 
     {/* COMPARACIÓN DE FORMAS DE PAGO */}
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: "7px",
-        marginTop: "8px",
-      }}
-    >
-      {/* CONTRAENTREGA */}
-      <div
-        style={{
-          border: "1px solid #e2e2e2",
-          borderRadius: "9px",
-          padding: "8px",
-          background: "#fff",
-          minWidth: 0,
-        }}
-      >
-        <div
-          style={{
-            fontSize: "10.5px",
-            fontWeight: "800",
-            marginBottom: "6px",
-          }}
-        >
-          📦 CONTRAENTREGA
-        </div>
 
-        <div className="mini-total-fila">
-          <span>Mercancía</span>
-          <span>{formatoPrecio(totalCarrito)}</span>
-        </div>
+<div className="comparacion-pagos">
 
-        <div className="mini-total-fila">
-          <span>Envío</span>
-          <span>
-            {tieneEnvioGratis
-              ? "GRATIS"
-              : formatoPrecio(costoEnvioFinal || 0)}
-          </span>
-        </div>
-
-        <div className="mini-total-final">
-          <span>Total</span>
-          <strong>
-            {formatoPrecio(totalContraEntrega)}
-          </strong>
-        </div>
-      </div>
-
-      {/* TRANSFERENCIA */}
-      <div
-        style={{
-          border: "1px solid #d8c8f3",
-          borderRadius: "9px",
-          padding: "8px",
-          background: "#faf7ff",
-          minWidth: 0,
-        }}
-      >
-        <div
-          style={{
-            fontSize: "10.5px",
-            fontWeight: "800",
-            marginBottom: "6px",
-          }}
-        >
-          💳 TRANSFERENCIA
-        </div>
-
-        <div className="mini-total-fila">
-          <span>Mercancía</span>
-          <span>{formatoPrecio(totalCarrito)}</span>
-        </div>
-
-       <div className="mini-total-fila ahorro-transferencia">
-  <span>Ahorras</span>
-  <span>
-    {formatoPrecio(
-      descuentoTransferenciaVista
-    )}
-  </span>
-</div>
-
-        <div className="mini-total-fila">
-          <span>Envío</span>
-          <span>
-            {tieneEnvioGratis
-              ? "GRATIS"
-              : formatoPrecio(costoEnvioFinal || 0)}
-          </span>
-        </div>
-
-        <div className="mini-total-final transferencia">
-          <span>Total</span>
-          <strong>
-            {formatoPrecio(totalTransferencia)}
-          </strong>
-        </div>
-            <div className="mini-ahorro">
-  Ahorras {formatoPrecio(descuentoTransferenciaVista)}
-</div>
+  {/* CONTRAENTREGA */}
+  <div className="pago-resumen-card">
+    <div className="pago-resumen-cabecera">
+      <div>
+        <strong>📦 Pago contra entrega</strong>
+        <small>Pagas cuando recibes tu pedido</small>
       </div>
     </div>
+
+    <div className="pago-resumen-fila">
+      <span>Productos</span>
+      <span>
+        {formatoPrecio(totalCarrito)}
+      </span>
+    </div>
+
+    <div className="pago-resumen-fila">
+      <span>Envío</span>
+      <span>
+        {tieneEnvioGratis
+          ? "GRATIS"
+          : formatoPrecio(costoEnvioFinal || 0)}
+      </span>
+    </div>
+
+    <div className="pago-resumen-total">
+      <span>Total a pagar</span>
+      <strong>
+        {formatoPrecio(totalContraEntrega)}
+      </strong>
+    </div>
+  </div>
+
+
+  {/* TRANSFERENCIA */}
+  <div className="pago-resumen-card transferencia-card">
+
+    <div className="pago-resumen-cabecera">
+      <div>
+        <strong>🏦 Transferencia bancaria</strong>
+        <small>
+          6% de descuento en los productos
+        </small>
+      </div>
+
+      <span className="pago-descuento-badge">
+        -6%
+      </span>
+    </div>
+
+    <div className="pago-resumen-fila">
+      <span>Productos</span>
+      <span>
+        {formatoPrecio(totalCarrito)}
+      </span>
+    </div>
+
+    <div className="pago-resumen-fila fila-descuento">
+      <span>Descuento (6%)</span>
+      <strong>
+        −{formatoPrecio(
+          descuentoTransferenciaVista
+        )}
+      </strong>
+    </div>
+
+    <div className="pago-resumen-fila">
+      <span>Envío</span>
+      <span>
+        {tieneEnvioGratis
+          ? "GRATIS"
+          : formatoPrecio(costoEnvioFinal || 0)}
+      </span>
+    </div>
+
+    <div className="pago-resumen-total transferencia-total">
+      <span>Total a pagar</span>
+      <strong>
+        {formatoPrecio(totalTransferencia)}
+      </strong>
+    </div>
+  </div>
+
+</div>
+
+<div className="aviso-descuento-transferencia">
+  El 6% de descuento aplica únicamente al valor de los productos.
+</div>
   </>
 )}
   </div>
@@ -3652,6 +3639,165 @@ setErroresCompra((actual) => ({
   --color-fondo: ${colorFondo};
   --texto-principal: ${colorTextoPrincipal};
   --texto-fondo: ${colorTextoFondo};
+}
+/* ========================================
+   COMPARACIÓN FORMAS DE PAGO EN CARRITO
+======================================== */
+
+.comparacion-pagos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.pago-resumen-card {
+  min-width: 0;
+  padding: 11px;
+  border: 1px solid #e0e0e0;
+  border-radius: 11px;
+  background: #ffffff;
+  color: #222222;
+}
+
+.transferencia-card {
+  border-color: #d8c8f3;
+  background: #faf7ff;
+}
+
+.pago-resumen-cabecera {
+  min-height: 49px;
+  margin-bottom: 9px;
+
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.pago-resumen-cabecera > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pago-resumen-cabecera strong {
+  font-size: 11px;
+  line-height: 1.2;
+  font-weight: 800;
+}
+
+.pago-resumen-cabecera small {
+  font-size: 9.5px;
+  line-height: 1.25;
+  color: #777777;
+}
+
+.pago-descuento-badge {
+  flex: 0 0 auto;
+
+  padding: 3px 6px;
+
+  border-radius: 999px;
+
+  background: #eaf8ee;
+  color: #16823b;
+
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.pago-resumen-fila {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  gap: 5px;
+
+  padding: 2px 0;
+
+  color: #555555;
+
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.pago-resumen-fila > span:last-child,
+.pago-resumen-fila > strong:last-child {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.fila-descuento {
+  color: #16823b;
+}
+
+.fila-descuento strong {
+  font-weight: 800;
+}
+
+.pago-resumen-total {
+  margin-top: 7px;
+  padding-top: 7px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 5px;
+
+  border-top: 1px solid #e9e9e9;
+
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.pago-resumen-total strong {
+  flex-shrink: 0;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.transferencia-total {
+  color: #8059b8;
+}
+
+.aviso-descuento-transferencia {
+  margin-top: 8px;
+
+  color: #777777;
+
+  font-size: 9.5px;
+  line-height: 1.3;
+
+  text-align: center;
+}
+
+@media (max-width: 370px) {
+  .comparacion-pagos {
+    gap: 6px;
+  }
+
+  .pago-resumen-card {
+    padding: 8px;
+  }
+
+  .pago-resumen-cabecera strong {
+    font-size: 10px;
+  }
+
+  .pago-resumen-cabecera small {
+    font-size: 9px;
+  }
+
+  .pago-resumen-fila {
+    font-size: 9px;
+  }
+
+  .pago-resumen-total strong {
+    font-size: 12px;
+  }
 }
 .mini-total-fila {
   display: flex;
@@ -5553,29 +5699,7 @@ color: var(--texto-principal);
   opacity: 0.55;
   cursor: not-allowed;
 }
-  position: sticky;
-  bottom: 12px;
-  z-index: 100;
-
-  width: 100%;
-  height: 58px;
-
-  margin-top: 20px;
-
-  border: none;
-  border-radius: 10px;
-
-  background: var(--color-principal);
-  color: var(--texto-principal);
-
-  font-size: 16px;
-  font-weight: 700;
-
-  box-shadow:
-    0 8px 25px rgba(0, 0, 0, 0.20);
-
-  cursor: pointer;
-}
+  
 
 .confirmar-pedido-btn:disabled {
   opacity: 0.45;
