@@ -3405,7 +3405,23 @@ setErroresCompra((actual) => ({
     >
       {selectorCiudadAbierto ? "▲" : "▼"}
     </span>
-
+{busquedaCiudad.trim() &&
+  !ciudadSeleccionada?.ciudad_id && (
+    <div
+      style={{
+        marginTop: "7px",
+        padding: "7px 9px",
+        borderRadius: "7px",
+        background: "#fff8e8",
+        color: "#7a5a12",
+        fontSize: "11px",
+        fontWeight: "700",
+        lineHeight: "1.3",
+      }}
+    >
+      👆 Toca una ciudad de la lista para seleccionarla.
+    </div>
+  )}
     {selectorCiudadAbierto && (
      <div
   style={{
@@ -3437,34 +3453,57 @@ setErroresCompra((actual) => ({
           })
           .slice(0, 20)
           .map((ciudad) => (
-            <button
-              key={ciudad.ciudad_id}
-              type="button"
-              onClick={() => {
-  setCiudadSeleccionada(ciudad);
+           <button
+  key={ciudad.ciudad_id}
+  type="button"
+  onClick={() => {
+    setCiudadSeleccionada(ciudad);
 
-  setBusquedaCiudad(
-    ciudad.ciudad_departamento
-  );
+    setBusquedaCiudad(
+      ciudad.ciudad_departamento
+    );
 
-  setSelectorCiudadAbierto(false);
+    // Si estaba escogiendo otra ciudad,
+    // obligamos a elegir nuevamente el pago
+    setFormaPago("");
 
-  ciudadInputRef.current?.blur();
-}}
-              style={{
-                width: "100%",
-                border: "none",
-                borderBottom: "1px solid #eee",
-                background: "white",
-                padding: "10px 11px",
-                textAlign: "left",
-                cursor: "pointer",
-                fontSize: "13px",
-                color: "#222",
-              }}
-            >
-              📍 {ciudad.ciudad_departamento}
-            </button>
+    setSelectorCiudadAbierto(false);
+
+    ciudadInputRef.current?.blur();
+  }}
+  style={{
+    width: "100%",
+    border: "none",
+    borderBottom: "1px solid #eee",
+    background: "white",
+    padding: "12px 11px",
+
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "10px",
+
+    textAlign: "left",
+    cursor: "pointer",
+    fontSize: "13px",
+    color: "#222",
+  }}
+>
+  <span>
+    📍 {ciudad.ciudad_departamento}
+  </span>
+
+  <strong
+    style={{
+      color: "var(--color-principal)",
+      fontSize: "11px",
+      fontWeight: "800",
+      whiteSpace: "nowrap",
+    }}
+  >
+    Seleccionar ›
+  </strong>
+</button>
           ))}
       </div>
     )}
@@ -3501,11 +3540,21 @@ setErroresCompra((actual) => ({
 
         <button
           type="button"
-          onClick={() => {
-            setCiudadSeleccionada(null);
-            setBusquedaCiudad("");
-            setSelectorCiudadAbierto(true);
-          }}
+        onClick={() => {
+  setCiudadSeleccionada(null);
+  setBusquedaCiudad("");
+
+  // Al cambiar de ciudad debe elegir
+  // nuevamente la forma de pago
+  setFormaPago("");
+
+  setCheckoutMinimizado(false);
+  setSelectorCiudadAbierto(true);
+
+  setTimeout(() => {
+    ciudadInputRef.current?.focus();
+  }, 100);
+}}
           style={{
             border: "none",
             background: "transparent",
@@ -3767,6 +3816,18 @@ setErroresCompra((actual) => ({
       </div>
     </button>
 
+   ) : !ciudadSeleccionada?.ciudad_id ? (
+
+    <div className="continuar-pago-aviso aviso-ciudad-pendiente">
+      <strong>
+        📍 Selecciona tu ciudad
+      </strong>
+
+      <span>
+        Toca una ciudad de la lista de arriba para calcular el envío y continuar.
+      </span>
+    </div>
+
   ) : !formaPago ? (
 
     <div className="continuar-pago-aviso">
@@ -3775,7 +3836,7 @@ setErroresCompra((actual) => ({
       </strong>
 
       <span>
-        Toca una de las opciones de arriba para continuar.
+        Elige pago contra entrega o transferencia para continuar.
       </span>
     </div>
 
