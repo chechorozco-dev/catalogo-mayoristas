@@ -596,7 +596,7 @@ useEffect(() => {
   if (!sesionCarrito) return;
   if (!tiendaId) return;
   if (!visitanteId) return;
-  if (formularioCompraAbierto) return;
+  if (formularioCompraAbierto || formaPago) return;
   if (pedidoEnviado) return;
 
   // No creamos seguimiento mientras
@@ -3646,304 +3646,330 @@ setErroresCompra((actual) => ({
 )}
               
 
-               {String(tipoTienda || "")
+              {String(tipoTienda || "")
   .trim()
   .toUpperCase() === "RA" ? (
 
-  {!formaPago ? (
-  <div className="continuar-pago-aviso">
-    <strong>
-      Selecciona tu método de pago
-    </strong>
+  !formaPago ? (
 
-    <span>
-      Toca una de las opciones de arriba para continuar.
-    </span>
-  </div>
-) : pedidoEnviado ? (
-  <div
-    id="checkout-inline"
-    className="checkout-inline checkout-exito"
-  >
-    <div className="checkout-exito-icono">
-      ✓
+    <div className="continuar-pago-aviso">
+      <strong>
+        Selecciona tu método de pago
+      </strong>
+
+      <span>
+        Toca una de las opciones de arriba para continuar.
+      </span>
     </div>
 
-    <h3>¡Pedido recibido!</h3>
+  ) : pedidoEnviado ? (
 
-    <p>
-      Recibimos tu pedido correctamente.
-      En breve continuaremos el proceso por WhatsApp.
-    </p>
-
-    <button
-      type="button"
-      className="checkout-volver-btn"
-      onClick={() => {
-        setCarrito([]);
-        setPedidoEnviado(false);
-        setFormaPago("");
-
-        setNombreCliente("");
-        setCedulaCliente("");
-        setTelefonoCliente("");
-        setCorreoCliente("");
-        setDireccionCliente("");
-
-        setCiudadSeleccionada(null);
-        setBusquedaCiudad("");
-
-        setCarritoAbierto(false);
-      }}
+    <div
+      id="checkout-inline"
+      className="checkout-inline checkout-exito"
     >
-      Volver a la tienda
-    </button>
-  </div>
-) : (
-  <div
-    id="checkout-inline"
-    className="checkout-inline"
-  >
-
-    {/* CABECERA */}
-
-    <div className="checkout-inline-cabecera">
-      <div>
-        <strong>
-          Completa tus datos
-        </strong>
-
-        <span>
-          Para confirmar tu pedido
-        </span>
+      <div className="checkout-exito-icono">
+        ✓
       </div>
 
-      <div className="checkout-pago-elegido">
-        {formaPago === "TRANSFERENCIA"
-          ? "🏦 Transferencia"
-          : "📦 Contra entrega"}
-      </div>
+      <h3>¡Pedido recibido!</h3>
+
+      <p>
+        Recibimos tu pedido correctamente.
+        En breve continuaremos el proceso por WhatsApp.
+      </p>
+
+      <button
+        type="button"
+        className="checkout-volver-btn"
+        onClick={() => {
+          setCarrito([]);
+          setPedidoEnviado(false);
+          setFormaPago("");
+
+          setNombreCliente("");
+          setCedulaCliente("");
+          setTelefonoCliente("");
+          setCorreoCliente("");
+          setDireccionCliente("");
+
+          setCiudadSeleccionada(null);
+          setBusquedaCiudad("");
+
+          setCarritoAbierto(false);
+        }}
+      >
+        Volver a la tienda
+      </button>
     </div>
 
+  ) : (
 
-    {/* NOMBRE */}
-
-    <label
-      className="checkout-inline-campo"
-      id="campo-nombre"
+    <div
+      id="checkout-inline"
+      className="checkout-inline"
     >
-      <span>Nombre completo</span>
 
-      {erroresCompra.nombre && (
-        <small className="checkout-error">
-          ⚠️ {erroresCompra.nombre}
-        </small>
-      )}
+      {/* CABECERA */}
 
-      <input
-        type="text"
-        autoComplete="name"
-        value={nombreCliente}
-        onChange={(e) => {
-          setNombreCliente(e.target.value);
+      <div className="checkout-inline-cabecera">
+        <div>
+          <strong>
+            Completa tus datos
+          </strong>
 
-          setErroresCompra((actual) => ({
-            ...actual,
-            nombre: "",
-          }));
-        }}
-        placeholder="Ej. María Rodríguez"
-      />
-    </label>
+          <span>
+            Para confirmar tu pedido
+          </span>
+        </div>
 
-
-    {/* WHATSAPP */}
-
-    <label
-      className="checkout-inline-campo"
-      id="campo-telefono"
-    >
-      <span>WhatsApp</span>
-
-      {erroresCompra.telefono && (
-        <small className="checkout-error">
-          ⚠️ {erroresCompra.telefono}
-        </small>
-      )}
-
-      <input
-        type="tel"
-        inputMode="tel"
-        autoComplete="tel"
-        value={telefonoCliente}
-        onChange={(e) => {
-          setTelefonoCliente(
-            e.target.value.replace(/\D/g, "")
-          );
-
-          setErroresCompra((actual) => ({
-            ...actual,
-            telefono: "",
-          }));
-        }}
-        placeholder="Ej. 3101234567"
-      />
-    </label>
-
-
-    {/* CÉDULA */}
-
-    <label className="checkout-inline-campo">
-      <span>
-        Cédula
-        <small className="campo-opcional">
-          Opcional
-        </small>
-      </span>
-
-      <input
-        type="text"
-        inputMode="numeric"
-        value={cedulaCliente}
-        onChange={(e) =>
-          setCedulaCliente(
-            e.target.value.replace(/\D/g, "")
-          )
-        }
-        placeholder="Número de cédula"
-      />
-    </label>
-
-
-    {/* DIRECCIÓN */}
-
-    <label
-      className="checkout-inline-campo"
-      id="campo-direccion"
-    >
-      <span>Dirección de entrega</span>
-
-      {erroresCompra.direccion && (
-        <small className="checkout-error">
-          ⚠️ {erroresCompra.direccion}
-        </small>
-      )}
-
-      <input
-        type="text"
-        autoComplete="street-address"
-        value={direccionCliente}
-        onChange={(e) => {
-          setDireccionCliente(e.target.value);
-
-          setErroresCompra((actual) => ({
-            ...actual,
-            direccion: "",
-          }));
-        }}
-        placeholder="Ej. Calle 15 # 20-30"
-      />
-    </label>
-
-
-    {/* CORREO */}
-
-    <label className="checkout-inline-campo">
-      <span>
-        Correo electrónico
-        <small className="campo-opcional">
-          Opcional
-        </small>
-      </span>
-
-      <input
-        type="email"
-        inputMode="email"
-        autoComplete="email"
-        value={correoCliente}
-        onChange={(e) =>
-          setCorreoCliente(e.target.value)
-        }
-        placeholder="Ej. cliente@gmail.com"
-      />
-    </label>
-
-
-    {/* RESUMEN */}
-
-    <div className="checkout-inline-resumen">
-
-      <div>
-        <span>Envío a</span>
-
-        <strong>
-          {
-            ciudadSeleccionada
-              ?.ciudad_departamento
-          }
-        </strong>
-      </div>
-
-      <div>
-        <span>Forma de pago</span>
-
-        <strong>
+        <div className="checkout-pago-elegido">
           {formaPago === "TRANSFERENCIA"
-            ? "Transferencia"
-            : "Contra entrega"}
-        </strong>
+            ? "🏦 Transferencia"
+            : "📦 Contra entrega"}
+        </div>
       </div>
 
-      {formaPago === "TRANSFERENCIA" && (
-        <div className="checkout-inline-descuento">
-          <span>Descuento</span>
+
+      {/* NOMBRE */}
+
+      <label
+        className="checkout-inline-campo"
+        id="campo-nombre"
+      >
+        <span>Nombre completo</span>
+
+        {erroresCompra.nombre && (
+          <small className="checkout-error">
+            ⚠️ {erroresCompra.nombre}
+          </small>
+        )}
+
+        <input
+          type="text"
+          autoComplete="name"
+          value={nombreCliente}
+          onChange={(e) => {
+            setNombreCliente(e.target.value);
+
+            setErroresCompra((actual) => ({
+              ...actual,
+              nombre: "",
+            }));
+          }}
+          placeholder="Ej. María Rodríguez"
+        />
+      </label>
+
+
+      {/* WHATSAPP */}
+
+      <label
+        className="checkout-inline-campo"
+        id="campo-telefono"
+      >
+        <span>WhatsApp</span>
+
+        {erroresCompra.telefono && (
+          <small className="checkout-error">
+            ⚠️ {erroresCompra.telefono}
+          </small>
+        )}
+
+        <input
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          value={telefonoCliente}
+          onChange={(e) => {
+            setTelefonoCliente(
+              e.target.value.replace(/\D/g, "")
+            );
+
+            setErroresCompra((actual) => ({
+              ...actual,
+              telefono: "",
+            }));
+          }}
+          placeholder="Ej. 3101234567"
+        />
+      </label>
+
+
+      {/* CÉDULA */}
+
+      <label className="checkout-inline-campo">
+        <span>
+          Cédula
+
+          <small className="campo-opcional">
+            Opcional
+          </small>
+        </span>
+
+        <input
+          type="text"
+          inputMode="numeric"
+          value={cedulaCliente}
+          onChange={(e) =>
+            setCedulaCliente(
+              e.target.value.replace(/\D/g, "")
+            )
+          }
+          placeholder="Número de cédula"
+        />
+      </label>
+
+
+      {/* DIRECCIÓN */}
+
+      <label
+        className="checkout-inline-campo"
+        id="campo-direccion"
+      >
+        <span>Dirección de entrega</span>
+
+        {erroresCompra.direccion && (
+          <small className="checkout-error">
+            ⚠️ {erroresCompra.direccion}
+          </small>
+        )}
+
+        <input
+          type="text"
+          autoComplete="street-address"
+          value={direccionCliente}
+          onChange={(e) => {
+            setDireccionCliente(
+              e.target.value
+            );
+
+            setErroresCompra((actual) => ({
+              ...actual,
+              direccion: "",
+            }));
+          }}
+          placeholder="Ej. Calle 15 # 20-30"
+        />
+      </label>
+
+
+      {/* CORREO */}
+
+      <label className="checkout-inline-campo">
+        <span>
+          Correo electrónico
+
+          <small className="campo-opcional">
+            Opcional
+          </small>
+        </span>
+
+        <input
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          value={correoCliente}
+          onChange={(e) =>
+            setCorreoCliente(
+              e.target.value
+            )
+          }
+          placeholder="Ej. cliente@gmail.com"
+        />
+      </label>
+
+
+      {/* RESUMEN */}
+
+      <div className="checkout-inline-resumen">
+
+        <div>
+          <span>Envío a</span>
 
           <strong>
-            −{formatoPrecio(
-              descuentoTransferenciaVista
+            {ciudadSeleccionada
+              ?.ciudad_departamento}
+          </strong>
+        </div>
+
+        <div>
+          <span>Forma de pago</span>
+
+          <strong>
+            {formaPago === "TRANSFERENCIA"
+              ? "Transferencia"
+              : "Contra entrega"}
+          </strong>
+        </div>
+
+        {formaPago === "TRANSFERENCIA" && (
+          <div className="checkout-inline-descuento">
+            <span>
+              Descuento (6%)
+            </span>
+
+            <strong>
+              −{formatoPrecio(
+                descuentoTransferenciaVista
+              )}
+            </strong>
+          </div>
+        )}
+
+        <div>
+          <span>Envío</span>
+
+          <strong>
+            {tieneEnvioGratis
+              ? "GRATIS"
+              : formatoPrecio(
+                  costoEnvioFinal || 0
+                )}
+          </strong>
+        </div>
+
+        <div className="checkout-inline-total">
+          <span>Total a pagar</span>
+
+          <strong>
+            {formatoPrecio(
+              formaPago === "TRANSFERENCIA"
+                ? totalTransferencia
+                : totalContraEntrega
             )}
           </strong>
         </div>
-      )}
 
-      <div className="checkout-inline-total">
-        <span>Total a pagar</span>
-
-        <strong>
-          {formatoPrecio(
-            formaPago === "TRANSFERENCIA"
-              ? totalTransferencia
-              : totalContraEntrega
-          )}
-        </strong>
       </div>
+
+
+      {/* CONFIRMAR PEDIDO */}
+
+      <button
+        type="button"
+        className="checkout-confirmar-btn"
+        disabled={enviandoPedido}
+        onClick={confirmarPedido}
+      >
+        {enviandoPedido
+          ? "Confirmando pedido..."
+          : "Confirmar pedido"}
+      </button>
 
     </div>
 
-
-    {/* BOTÓN FINAL */}
-
-    <button
-      type="button"
-      className="checkout-confirmar-btn"
-      disabled={enviandoPedido}
-      onClick={confirmarPedido}
-    >
-      {enviandoPedido
-        ? "Confirmando pedido..."
-        : "Confirmar pedido"}
-    </button>
-
-  </div>
-)}
+  )
 
 ) : (
+
   <button
     className="whatsapp-btn"
     onClick={enviarPedidoWhatsapp}
   >
     Enviar pedido por WhatsApp
   </button>
+
 )}
               </div>
             )}
