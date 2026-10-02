@@ -1314,6 +1314,22 @@ if (
   function vaciarCarrito() {
     setCarrito([]);
   }
+  function abrirCheckoutConPago(metodo) {
+  // Guardamos la forma de pago elegida
+  setFormaPago(metodo);
+
+  // Quitamos cualquier error anterior de forma de pago
+  setErroresCompra((actual) => ({
+    ...actual,
+    pago: "",
+  }));
+
+  // Cerramos el carrito
+  setCarritoAbierto(false);
+
+  // Abrimos el formulario
+  setFormularioCompraAbierto(true);
+}
 async function confirmarPedido() {
   if (enviandoPedido) return;
 
@@ -3458,16 +3474,45 @@ setErroresCompra((actual) => ({
 <div className="comparacion-pagos">
 
   {/* CONTRAENTREGA */}
-  <div className="pago-resumen-card">
+
+  <button
+    type="button"
+    className={`pago-resumen-card pago-resumen-boton ${
+      formaPago === "CONTRA_ENTREGA"
+        ? "seleccionada"
+        : ""
+    }`}
+    onClick={() =>
+      abrirCheckoutConPago("CONTRA_ENTREGA")
+    }
+  >
     <div className="pago-resumen-cabecera">
       <div>
-        <strong>📦 Pago contra entrega</strong>
-        <small>Pagas cuando recibes tu pedido</small>
+        <strong>
+          📦 Pago contra entrega
+        </strong>
+
+        <small>
+          Pagas cuando recibes tu pedido
+        </small>
       </div>
+
+      <span
+        className={`pago-selector ${
+          formaPago === "CONTRA_ENTREGA"
+            ? "activo"
+            : ""
+        }`}
+      >
+        {formaPago === "CONTRA_ENTREGA"
+          ? "✓"
+          : ""}
+      </span>
     </div>
 
     <div className="pago-resumen-fila">
       <span>Productos</span>
+
       <span>
         {formatoPrecio(totalCarrito)}
       </span>
@@ -3475,40 +3520,79 @@ setErroresCompra((actual) => ({
 
     <div className="pago-resumen-fila">
       <span>Envío</span>
+
       <span>
         {tieneEnvioGratis
           ? "GRATIS"
-          : formatoPrecio(costoEnvioFinal || 0)}
+          : formatoPrecio(
+              costoEnvioFinal || 0
+            )}
       </span>
     </div>
 
     <div className="pago-resumen-total">
       <span>Total a pagar</span>
+
       <strong>
-        {formatoPrecio(totalContraEntrega)}
+        {formatoPrecio(
+          totalContraEntrega
+        )}
       </strong>
     </div>
-  </div>
+
+    <div className="pago-tocar">
+      Toca para elegir
+    </div>
+  </button>
 
 
   {/* TRANSFERENCIA */}
-  <div className="pago-resumen-card transferencia-card">
 
+  <button
+    type="button"
+    className={`pago-resumen-card pago-resumen-boton transferencia-card ${
+      formaPago === "TRANSFERENCIA"
+        ? "seleccionada"
+        : ""
+    }`}
+    onClick={() =>
+      abrirCheckoutConPago("TRANSFERENCIA")
+    }
+  >
     <div className="pago-resumen-cabecera">
+
       <div>
-        <strong>🏦 Transferencia bancaria</strong>
+        <strong>
+          🏦 Transferencia bancaria
+        </strong>
+
         <small>
           6% de descuento en los productos
         </small>
       </div>
 
-      <span className="pago-descuento-badge">
-        -6%
-      </span>
+      <div className="pago-cabecera-derecha">
+        <span className="pago-descuento-badge">
+          -6%
+        </span>
+
+        <span
+          className={`pago-selector ${
+            formaPago === "TRANSFERENCIA"
+              ? "activo"
+              : ""
+          }`}
+        >
+          {formaPago === "TRANSFERENCIA"
+            ? "✓"
+            : ""}
+        </span>
+      </div>
     </div>
 
     <div className="pago-resumen-fila">
       <span>Productos</span>
+
       <span>
         {formatoPrecio(totalCarrito)}
       </span>
@@ -3516,6 +3600,7 @@ setErroresCompra((actual) => ({
 
     <div className="pago-resumen-fila fila-descuento">
       <span>Descuento (6%)</span>
+
       <strong>
         −{formatoPrecio(
           descuentoTransferenciaVista
@@ -3525,20 +3610,30 @@ setErroresCompra((actual) => ({
 
     <div className="pago-resumen-fila">
       <span>Envío</span>
+
       <span>
         {tieneEnvioGratis
           ? "GRATIS"
-          : formatoPrecio(costoEnvioFinal || 0)}
+          : formatoPrecio(
+              costoEnvioFinal || 0
+            )}
       </span>
     </div>
 
-    <div className="pago-resumen-total transferencia-total">
+    <div className="pago-resumen-total">
       <span>Total a pagar</span>
+
       <strong>
-        {formatoPrecio(totalTransferencia)}
+        {formatoPrecio(
+          totalTransferencia
+        )}
       </strong>
     </div>
-  </div>
+
+    <div className="pago-tocar">
+      Toca para elegir
+    </div>
+  </button>
 
 </div>
 
@@ -3551,51 +3646,24 @@ setErroresCompra((actual) => ({
 )}
               
 
-                {String(tipoTienda || "")
+               {String(tipoTienda || "")
   .trim()
   .toUpperCase() === "RA" ? (
-  <button
-  className="confirmar-compra-btn"
-  onClick={async () => {
-    setCarritoAbierto(false);
-    setFormularioCompraAbierto(true);
 
-    try {
-      await fetch("/api/seguimiento-carrito", {
-        method: "POST",
+  <div className="continuar-pago-aviso">
+    <strong>
+      {ciudadSeleccionada
+        ? "Selecciona tu método de pago"
+        : "Selecciona tu ciudad para continuar"}
+    </strong>
 
-        headers: {
-          "Content-Type": "application/json",
-        },
+    <span>
+      {ciudadSeleccionada
+        ? "Toca una de las opciones de arriba para continuar con tu pedido."
+        : "Calcularemos el envío y podrás elegir cómo pagar."}
+    </span>
+  </div>
 
-        body: JSON.stringify({
-          sesion_id: sesionCarrito,
-          visitante_id: visitanteId,
-          tienda_id: tiendaId,
-          estado: "CHECKOUT",
-          productos: carrito,
-
-          nombre_cliente: nombreCliente,
-          telefono_cliente: telefonoCliente,
-          correo_cliente: correoCliente,
-
-          ciudad:
-            ciudadSeleccionada?.ciudad_departamento ||
-            "",
-
-          forma_pago: formaPago,
-        }),
-      });
-    } catch (error) {
-      console.error(
-        "Error registrando inicio del checkout:",
-        error
-      );
-    }
-  }}
->
-  Confirmar compra
-</button>
 ) : (
   <button
     className="whatsapp-btn"
@@ -6348,6 +6416,363 @@ color: var(--texto-principal);
 
   .whatsapp-flotante.con-carrito {
     bottom: 62px;
+  }
+}
+/* ========================================
+   FORMAS DE PAGO EN EL CARRITO
+======================================== */
+
+.comparacion-pagos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+
+  gap: 9px;
+
+  margin-top: 10px;
+}
+
+.pago-resumen-card {
+  width: 100%;
+  min-width: 0;
+
+  padding: 13px 12px 11px;
+
+  border: 1px solid #dddddd;
+  border-radius: 12px;
+
+  background: #ffffff;
+  color: #222222;
+}
+
+.pago-resumen-boton {
+  appearance: none;
+
+  font: inherit;
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.15s ease,
+    background 0.2s ease;
+}
+
+.pago-resumen-boton:active {
+  transform: scale(0.985);
+}
+
+
+/* SOLO SE MARCA CUANDO REALMENTE
+   EL CLIENTE LA SELECCIONÓ */
+
+.pago-resumen-card.seleccionada {
+  border: 2px solid var(--color-principal);
+
+  padding: 12px 11px 10px;
+
+  background: #fcfaff;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(128, 89, 184, 0.08);
+}
+
+.transferencia-card {
+  background: #ffffff;
+  border-color: #dddddd;
+}
+
+.transferencia-card.seleccionada {
+  background: #fcfaff;
+  border-color: var(--color-principal);
+}
+
+
+/* CABECERA */
+
+.pago-resumen-cabecera {
+  min-height: 62px;
+
+  margin-bottom: 11px;
+
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 7px;
+}
+
+.pago-resumen-cabecera > div:first-child {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+.pago-resumen-cabecera strong {
+  color: #222222;
+
+  font-size: 13px;
+  font-weight: 800;
+
+  line-height: 1.25;
+}
+
+.pago-resumen-cabecera small {
+  color: #777777;
+
+  font-size: 11.5px;
+
+  line-height: 1.3;
+}
+
+
+/* LADO DERECHO DE TRANSFERENCIA */
+
+.pago-cabecera-derecha {
+  flex: 0 0 auto;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+
+  gap: 7px;
+}
+
+
+/* -6% */
+
+.pago-descuento-badge {
+  padding: 4px 7px;
+
+  border-radius: 999px;
+
+  background: #eaf8ee;
+  color: #16823b;
+
+  font-size: 10.5px;
+  font-weight: 800;
+
+  line-height: 1;
+}
+
+
+/* CUADRITO PARA SELECCIONAR */
+
+.pago-selector {
+  width: 22px;
+  height: 22px;
+
+  flex: 0 0 22px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1.5px solid #bdbdbd;
+  border-radius: 6px;
+
+  background: #ffffff;
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.pago-selector.activo {
+  border-color: var(--color-principal);
+
+  background: var(--color-principal);
+  color: var(--texto-principal);
+}
+
+
+/* FILAS */
+
+.pago-resumen-fila {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 6px;
+
+  padding: 3px 0;
+
+  color: #555555;
+
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.pago-resumen-fila > span:last-child,
+.pago-resumen-fila > strong:last-child {
+  flex-shrink: 0;
+
+  white-space: nowrap;
+}
+
+.fila-descuento {
+  color: #16823b;
+}
+
+.fila-descuento strong {
+  font-weight: 800;
+}
+
+
+/* TOTAL */
+
+.pago-resumen-total {
+  width: 100%;
+
+  margin-top: 7px;
+  padding-top: 9px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 6px;
+
+  border-top: 1px solid #e8e8e8;
+
+  color: #222222;
+
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.pago-resumen-total strong {
+  flex-shrink: 0;
+
+  color: #222222;
+
+  font-size: 15px;
+  font-weight: 900;
+
+  white-space: nowrap;
+}
+
+
+/* AYUDA */
+
+.pago-tocar {
+  margin-top: 9px;
+
+  color: #777777;
+
+  font-size: 10.5px;
+  font-weight: 600;
+
+  text-align: center;
+}
+
+.pago-resumen-card.seleccionada .pago-tocar {
+  color: var(--color-principal);
+}
+
+.aviso-descuento-transferencia {
+  margin-top: 9px;
+
+  color: #777777;
+
+  font-size: 10.5px;
+  line-height: 1.35;
+
+  text-align: center;
+}
+
+
+/* TEXTO QUE REEMPLAZA
+   "CONFIRMAR COMPRA" */
+
+.continuar-pago-aviso {
+  width: 100%;
+
+  margin-top: 12px;
+  padding: 13px 15px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  gap: 4px;
+
+  border: 1px dashed
+    color-mix(
+      in srgb,
+      var(--color-principal) 45%,
+      #dddddd
+    );
+
+  border-radius: 10px;
+
+  background:
+    color-mix(
+      in srgb,
+      var(--color-principal) 5%,
+      white
+    );
+
+  text-align: center;
+}
+
+.continuar-pago-aviso strong {
+  color: #222222;
+
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.continuar-pago-aviso span {
+  max-width: 310px;
+
+  color: #777777;
+
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+
+/* CELULARES MUY PEQUEÑOS */
+
+@media (max-width: 370px) {
+  .comparacion-pagos {
+    gap: 6px;
+  }
+
+  .pago-resumen-card {
+    padding: 10px 8px;
+  }
+
+  .pago-resumen-card.seleccionada {
+    padding: 9px 7px;
+  }
+
+  .pago-resumen-cabecera strong {
+    font-size: 12px;
+  }
+
+  .pago-resumen-cabecera small {
+    font-size: 10.5px;
+  }
+
+  .pago-resumen-fila {
+    font-size: 11px;
+  }
+
+  .pago-resumen-total {
+    font-size: 12px;
+  }
+
+  .pago-resumen-total strong {
+    font-size: 14px;
   }
 }
       `}</style>
