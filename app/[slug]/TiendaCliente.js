@@ -500,6 +500,7 @@ useEffect(() => {
   const [fotosTarjetas, setFotosTarjetas] = useState({});
 
   const carritoRef = useRef(null);
+  const ciudadInputRef = useRef(null);
 const colorTextoPrincipal =
   obtenerColorTexto(colorPrincipal);
   const colorTextoFondo =
@@ -2864,6 +2865,7 @@ try {
 
   <span>Ciudad y departamento</span>
             <input
+            ref={ciudadInputRef}
               type="text"
               value={busquedaCiudad}
              onChange={(e) => {
@@ -3287,6 +3289,7 @@ setErroresCompra((actual) => ({
     }}
   >
     <input
+    ref={ciudadInputRef}
       type="text"
       value={busquedaCiudad}
       onFocus={() => {
@@ -3308,7 +3311,7 @@ setErroresCompra((actual) => ({
         border: "1px solid #d8d8d8",
         borderRadius: "9px",
         padding: "9px 34px 9px 11px",
-        fontSize: "14px",
+        fontSize: "16px",
         background: "white",
         outline: "none",
         height: "40px",
@@ -3372,9 +3375,7 @@ setErroresCompra((actual) => ({
 
   setSelectorCiudadAbierto(false);
 
-  if (typeof document !== "undefined") {
-    document.activeElement?.blur();
-  }
+  ciudadInputRef.current?.blur();
 }}
               style={{
                 width: "100%",
