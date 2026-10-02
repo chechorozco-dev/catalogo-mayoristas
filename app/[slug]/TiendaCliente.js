@@ -3330,22 +3330,24 @@ setErroresCompra((actual) => ({
     </span>
 
     {selectorCiudadAbierto && (
-      <div
-        style={{
-          position: "absolute",
-          top: "44px",
-          left: "0",
-          right: "0",
-          zIndex: 100,
-          border: "1px solid #ddd",
-          borderRadius: "9px",
-          overflow: "hidden",
-          maxHeight: "180px",
-          overflowY: "auto",
-          background: "white",
-          boxShadow: "0 8px 20px rgba(0,0,0,0.12)",
-        }}
-      >
+     <div
+  style={{
+    position: "relative",
+    width: "100%",
+    marginTop: "7px",
+
+    border: "1px solid #ddd",
+    borderRadius: "9px",
+
+    maxHeight: "170px",
+    overflowY: "auto",
+    WebkitOverflowScrolling: "touch",
+
+    background: "white",
+
+    boxShadow: "0 5px 14px rgba(0,0,0,0.08)",
+  }}
+>
         {ciudadesEnvio
           .filter((ciudad) => {
             const texto = limpiarTexto(busquedaCiudad);
@@ -3361,17 +3363,19 @@ setErroresCompra((actual) => ({
             <button
               key={ciudad.ciudad_id}
               type="button"
-              onMouseDown={(e) => {
-                e.preventDefault();
+              onClick={() => {
+  setCiudadSeleccionada(ciudad);
 
-                setCiudadSeleccionada(ciudad);
+  setBusquedaCiudad(
+    ciudad.ciudad_departamento
+  );
 
-                setBusquedaCiudad(
-                  ciudad.ciudad_departamento
-                );
+  setSelectorCiudadAbierto(false);
 
-                setSelectorCiudadAbierto(false);
-              }}
+  if (typeof document !== "undefined") {
+    document.activeElement?.blur();
+  }
+}}
               style={{
                 width: "100%",
                 border: "none",
@@ -5726,12 +5730,18 @@ color: var(--texto-principal);
         }
 
         .carrito-panel {
-          width: min(100%, 430px);
-          height: 100%;
-          background: white;
-          display: flex;
-          flex-direction: column;
-        }
+  width: min(100%, 430px);
+
+  height: 100vh;
+  height: 100dvh;
+
+  background: white;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+}
 
         .carrito-cabecera {
           display: flex;
@@ -5845,9 +5855,19 @@ color: var(--texto-principal);
         }
 
         .carrito-pie {
-          padding: 18px;
-          border-top: 1px solid #eee;
-        }
+  flex: 0 0 auto;
+
+  padding: 18px;
+
+  border-top: 1px solid #eee;
+
+  background: white;
+
+  max-height: 70dvh;
+  overflow-y: auto;
+
+  -webkit-overflow-scrolling: touch;
+}
 
         .total-carrito {
   display: flex;
