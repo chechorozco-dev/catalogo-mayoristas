@@ -3538,7 +3538,7 @@ setErroresCompra((actual) => ({
 </div>
 
 <div className="aviso-descuento-transferencia">
-  El 6% de descuento aplica únicamente al valor de los productos.
+  El descuento del 6% aplica únicamente a los productos, no al envío.
 </div>
   </>
 )}
@@ -3661,8 +3661,8 @@ setErroresCompra((actual) => ({
 }
 
 .transferencia-card {
-  border-color: #d8c8f3;
-  background: #faf7ff;
+  border-color: #e0e0e0;
+  background: #ffffff;
 }
 
 .pago-resumen-cabecera {
@@ -3760,7 +3760,7 @@ setErroresCompra((actual) => ({
 }
 
 .transferencia-total {
-  color: #8059b8;
+  color: #222222;
 }
 
 .aviso-descuento-transferencia {
