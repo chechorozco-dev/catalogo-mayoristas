@@ -3301,9 +3301,10 @@ setErroresCompra((actual) => ({
 
             {carrito.length > 0 && (
               <div className="carrito-pie">
-            {String(tipoTienda || "")
+           {String(tipoTienda || "")
   .trim()
-  .toUpperCase() === "RA" && (
+  .toUpperCase() === "RA" &&
+  !checkoutMinimizado && (
   <div
     style={{
       marginBottom: "12px",
@@ -3314,16 +3315,30 @@ setErroresCompra((actual) => ({
       position: "relative",
     }}
   >
-    <div
-      style={{
-        fontSize: "14px",
-        fontWeight: "800",
-        marginBottom: "7px",
-        color: "#222",
-      }}
-    >
-      🚚 Calcula tu envío
-    </div>
+  <div
+  className="checkout-bloque-cabecera"
+  onTouchStart={iniciarDeslizamientoCheckout}
+  onTouchEnd={terminarDeslizamientoCheckout}
+>
+  <button
+    type="button"
+    className="checkout-arrastre"
+    onClick={() =>
+      setCheckoutMinimizado(true)
+    }
+    aria-label="Minimizar proceso de compra"
+  >
+    <span />
+  </button>
+
+  <div className="checkout-bloque-titulo">
+    🚚 Calcula tu envío
+  </div>
+
+  <div className="checkout-bloque-ayuda">
+    Desliza hacia abajo para minimizar
+  </div>
+</div>
 
   {!ciudadSeleccionada && (
   <div
@@ -3673,11 +3688,70 @@ setErroresCompra((actual) => ({
 )}
               
 
-              {String(tipoTienda || "")
+             {String(tipoTienda || "")
   .trim()
   .toUpperCase() === "RA" ? (
 
-  !formaPago ? (
+  checkoutMinimizado ? (
+
+    <button
+      type="button"
+      className="checkout-minimizado"
+      onClick={() => {
+        setCheckoutMinimizado(false);
+
+        setTimeout(() => {
+          document
+            .querySelector(".checkout-bloque-cabecera")
+            ?.scrollIntoView({
+              behavior: "smooth",
+              block: "nearest",
+            });
+        }, 100);
+      }}
+    >
+      <div className="checkout-minimizado-izquierda">
+        <span className="checkout-minimizado-icono">
+          🛒
+        </span>
+
+        <div>
+          <strong>
+            Finalizar pedido
+          </strong>
+
+          <span>
+            {!ciudadSeleccionada
+              ? "Calcula tu envío"
+              : !formaPago
+                ? ciudadSeleccionada.ciudad_departamento
+                : `${ciudadSeleccionada.ciudad_departamento} · ${
+                    formaPago === "TRANSFERENCIA"
+                      ? "Transferencia"
+                      : "Contra entrega"
+                  }`
+            }
+          </span>
+        </div>
+      </div>
+
+      <div className="checkout-minimizado-derecha">
+
+        {ciudadSeleccionada && (
+          <strong>
+            {formatoPrecio(
+              formaPago === "TRANSFERENCIA"
+                ? totalTransferencia
+                : totalContraEntrega
+            )}
+          </strong>
+        )}
+
+        <span>⌃</span>
+      </div>
+    </button>
+
+  ) : !formaPago ? (
 
     <div className="continuar-pago-aviso">
       <strong>
@@ -3730,52 +3804,7 @@ setErroresCompra((actual) => ({
       </button>
       </div>
 
-) : checkoutMinimizado ? (
 
-  <button
-    type="button"
-    className="checkout-minimizado"
-    onClick={() => {
-      setCheckoutMinimizado(false);
-
-      setTimeout(() => {
-        document
-          .getElementById("checkout-inline")
-          ?.scrollIntoView({
-            behavior: "smooth",
-            block: "nearest",
-          });
-      }, 100);
-    }}
-  >
-    <div className="checkout-minimizado-izquierda">
-      <span className="checkout-minimizado-icono">
-        🧾
-      </span>
-
-      <div>
-        <strong>Completar pedido</strong>
-
-        <span>
-          {formaPago === "TRANSFERENCIA"
-            ? "Transferencia bancaria"
-            : "Pago contra entrega"}
-        </span>
-      </div>
-    </div>
-
-    <div className="checkout-minimizado-derecha">
-      <strong>
-        {formatoPrecio(
-          formaPago === "TRANSFERENCIA"
-            ? totalTransferencia
-            : totalContraEntrega
-        )}
-      </strong>
-
-      <span>⌃</span>
-    </div>
-  </button>
 
 ) : (
 
@@ -7462,7 +7491,34 @@ color: var(--texto-principal);
 
   background: #d5d5d5;
 }
+.checkout-bloque-cabecera {
+  margin-bottom: 9px;
 
+  touch-action: pan-y;
+}
+
+.checkout-bloque-cabecera .checkout-arrastre {
+  height: 18px;
+  margin: -5px 0 3px;
+}
+
+.checkout-bloque-titulo {
+  color: #222222;
+
+  font-size: 15px;
+  font-weight: 800;
+
+  line-height: 1.25;
+}
+
+.checkout-bloque-ayuda {
+  margin-top: 2px;
+
+  color: #999999;
+
+  font-size: 9.5px;
+  line-height: 1.2;
+}
 
 /* FORMULARIO MINIMIZADO */
 
