@@ -653,7 +653,7 @@ useEffect(() => {
 // ========================================
 
 useEffect(() => {
-  if (!formularioCompraAbierto) return;
+  if (!formularioCompraAbierto && !formaPago) return;
   if (!carritoCargado) return;
   if (!sesionCarrito) return;
   if (!tiendaId) return;
@@ -1315,20 +1315,21 @@ if (
     setCarrito([]);
   }
   function abrirCheckoutConPago(metodo) {
-  // Guardamos la forma de pago elegida
   setFormaPago(metodo);
 
-  // Quitamos cualquier error anterior de forma de pago
   setErroresCompra((actual) => ({
     ...actual,
     pago: "",
   }));
 
-  // Cerramos el carrito
-  setCarritoAbierto(false);
-
-  // Abrimos el formulario
-  setFormularioCompraAbierto(true);
+  setTimeout(() => {
+    document
+      .getElementById("checkout-inline")
+      ?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+  }, 150);
 }
 async function confirmarPedido() {
   if (enviandoPedido) return;
@@ -1586,7 +1587,6 @@ if (typeof window !== "undefined" && typeof window.fbq === "function") {
 }
 setPedidoEnviado(true);
 
-setCarrito([]);
 
 // ========================================
 // PREPARAR UNA NUEVA SESIÓN DE CARRITO
@@ -3650,19 +3650,292 @@ setErroresCompra((actual) => ({
   .trim()
   .toUpperCase() === "RA" ? (
 
+  {!formaPago ? (
   <div className="continuar-pago-aviso">
     <strong>
-      {ciudadSeleccionada
-        ? "Selecciona tu método de pago"
-        : "Selecciona tu ciudad para continuar"}
+      Selecciona tu método de pago
     </strong>
 
     <span>
-      {ciudadSeleccionada
-        ? "Toca una de las opciones de arriba para continuar con tu pedido."
-        : "Calcularemos el envío y podrás elegir cómo pagar."}
+      Toca una de las opciones de arriba para continuar.
     </span>
   </div>
+) : pedidoEnviado ? (
+  <div
+    id="checkout-inline"
+    className="checkout-inline checkout-exito"
+  >
+    <div className="checkout-exito-icono">
+      ✓
+    </div>
+
+    <h3>¡Pedido recibido!</h3>
+
+    <p>
+      Recibimos tu pedido correctamente.
+      En breve continuaremos el proceso por WhatsApp.
+    </p>
+
+    <button
+      type="button"
+      className="checkout-volver-btn"
+      onClick={() => {
+        setCarrito([]);
+        setPedidoEnviado(false);
+        setFormaPago("");
+
+        setNombreCliente("");
+        setCedulaCliente("");
+        setTelefonoCliente("");
+        setCorreoCliente("");
+        setDireccionCliente("");
+
+        setCiudadSeleccionada(null);
+        setBusquedaCiudad("");
+
+        setCarritoAbierto(false);
+      }}
+    >
+      Volver a la tienda
+    </button>
+  </div>
+) : (
+  <div
+    id="checkout-inline"
+    className="checkout-inline"
+  >
+
+    {/* CABECERA */}
+
+    <div className="checkout-inline-cabecera">
+      <div>
+        <strong>
+          Completa tus datos
+        </strong>
+
+        <span>
+          Para confirmar tu pedido
+        </span>
+      </div>
+
+      <div className="checkout-pago-elegido">
+        {formaPago === "TRANSFERENCIA"
+          ? "🏦 Transferencia"
+          : "📦 Contra entrega"}
+      </div>
+    </div>
+
+
+    {/* NOMBRE */}
+
+    <label
+      className="checkout-inline-campo"
+      id="campo-nombre"
+    >
+      <span>Nombre completo</span>
+
+      {erroresCompra.nombre && (
+        <small className="checkout-error">
+          ⚠️ {erroresCompra.nombre}
+        </small>
+      )}
+
+      <input
+        type="text"
+        autoComplete="name"
+        value={nombreCliente}
+        onChange={(e) => {
+          setNombreCliente(e.target.value);
+
+          setErroresCompra((actual) => ({
+            ...actual,
+            nombre: "",
+          }));
+        }}
+        placeholder="Ej. María Rodríguez"
+      />
+    </label>
+
+
+    {/* WHATSAPP */}
+
+    <label
+      className="checkout-inline-campo"
+      id="campo-telefono"
+    >
+      <span>WhatsApp</span>
+
+      {erroresCompra.telefono && (
+        <small className="checkout-error">
+          ⚠️ {erroresCompra.telefono}
+        </small>
+      )}
+
+      <input
+        type="tel"
+        inputMode="tel"
+        autoComplete="tel"
+        value={telefonoCliente}
+        onChange={(e) => {
+          setTelefonoCliente(
+            e.target.value.replace(/\D/g, "")
+          );
+
+          setErroresCompra((actual) => ({
+            ...actual,
+            telefono: "",
+          }));
+        }}
+        placeholder="Ej. 3101234567"
+      />
+    </label>
+
+
+    {/* CÉDULA */}
+
+    <label className="checkout-inline-campo">
+      <span>
+        Cédula
+        <small className="campo-opcional">
+          Opcional
+        </small>
+      </span>
+
+      <input
+        type="text"
+        inputMode="numeric"
+        value={cedulaCliente}
+        onChange={(e) =>
+          setCedulaCliente(
+            e.target.value.replace(/\D/g, "")
+          )
+        }
+        placeholder="Número de cédula"
+      />
+    </label>
+
+
+    {/* DIRECCIÓN */}
+
+    <label
+      className="checkout-inline-campo"
+      id="campo-direccion"
+    >
+      <span>Dirección de entrega</span>
+
+      {erroresCompra.direccion && (
+        <small className="checkout-error">
+          ⚠️ {erroresCompra.direccion}
+        </small>
+      )}
+
+      <input
+        type="text"
+        autoComplete="street-address"
+        value={direccionCliente}
+        onChange={(e) => {
+          setDireccionCliente(e.target.value);
+
+          setErroresCompra((actual) => ({
+            ...actual,
+            direccion: "",
+          }));
+        }}
+        placeholder="Ej. Calle 15 # 20-30"
+      />
+    </label>
+
+
+    {/* CORREO */}
+
+    <label className="checkout-inline-campo">
+      <span>
+        Correo electrónico
+        <small className="campo-opcional">
+          Opcional
+        </small>
+      </span>
+
+      <input
+        type="email"
+        inputMode="email"
+        autoComplete="email"
+        value={correoCliente}
+        onChange={(e) =>
+          setCorreoCliente(e.target.value)
+        }
+        placeholder="Ej. cliente@gmail.com"
+      />
+    </label>
+
+
+    {/* RESUMEN */}
+
+    <div className="checkout-inline-resumen">
+
+      <div>
+        <span>Envío a</span>
+
+        <strong>
+          {
+            ciudadSeleccionada
+              ?.ciudad_departamento
+          }
+        </strong>
+      </div>
+
+      <div>
+        <span>Forma de pago</span>
+
+        <strong>
+          {formaPago === "TRANSFERENCIA"
+            ? "Transferencia"
+            : "Contra entrega"}
+        </strong>
+      </div>
+
+      {formaPago === "TRANSFERENCIA" && (
+        <div className="checkout-inline-descuento">
+          <span>Descuento</span>
+
+          <strong>
+            −{formatoPrecio(
+              descuentoTransferenciaVista
+            )}
+          </strong>
+        </div>
+      )}
+
+      <div className="checkout-inline-total">
+        <span>Total a pagar</span>
+
+        <strong>
+          {formatoPrecio(
+            formaPago === "TRANSFERENCIA"
+              ? totalTransferencia
+              : totalContraEntrega
+          )}
+        </strong>
+      </div>
+
+    </div>
+
+
+    {/* BOTÓN FINAL */}
+
+    <button
+      type="button"
+      className="checkout-confirmar-btn"
+      disabled={enviandoPedido}
+      onClick={confirmarPedido}
+    >
+      {enviandoPedido
+        ? "Confirmando pedido..."
+        : "Confirmar pedido"}
+    </button>
+
+  </div>
+)}
 
 ) : (
   <button
@@ -6774,6 +7047,274 @@ color: var(--texto-principal);
   .pago-resumen-total strong {
     font-size: 14px;
   }
+}
+/* ========================================
+   CHECKOUT DENTRO DEL CARRITO
+======================================== */
+
+.checkout-inline {
+  width: 100%;
+
+  margin-top: 13px;
+  padding: 17px 15px;
+
+  border: 1px solid #e2d9ef;
+  border-radius: 14px;
+
+  background: #ffffff;
+  color: #222222;
+}
+
+.checkout-inline-cabecera {
+  margin-bottom: 17px;
+
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 10px;
+}
+
+.checkout-inline-cabecera > div:first-child {
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+.checkout-inline-cabecera strong {
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.checkout-inline-cabecera span {
+  color: #777777;
+
+  font-size: 12px;
+}
+
+.checkout-pago-elegido {
+  flex: 0 0 auto;
+
+  padding: 6px 9px;
+
+  border-radius: 999px;
+
+  background: #f3eef9;
+  color: var(--color-principal);
+
+  font-size: 10.5px;
+  font-weight: 800;
+}
+
+
+/* CAMPOS */
+
+.checkout-inline-campo {
+  display: flex;
+  flex-direction: column;
+
+  gap: 6px;
+
+  margin-bottom: 13px;
+}
+
+.checkout-inline-campo > span {
+  color: #333333;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.campo-opcional {
+  margin-left: 5px;
+
+  color: #999999;
+
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.checkout-inline-campo input {
+  width: 100%;
+  height: 48px;
+
+  padding: 0 13px;
+
+  border: 1px solid #d8d8d8;
+  border-radius: 9px;
+
+  background: #ffffff;
+  color: #222222;
+
+  outline: none;
+
+  /* IMPORTANTE PARA EVITAR
+     EL ZOOM AUTOMÁTICO EN IPHONE */
+  font-size: 16px;
+}
+
+.checkout-inline-campo input:focus {
+  border-color: var(--color-principal);
+
+  box-shadow:
+    0 0 0 3px
+    rgba(128, 89, 184, 0.08);
+}
+
+.checkout-error {
+  color: #c62828;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+
+/* RESUMEN */
+
+.checkout-inline-resumen {
+  margin-top: 18px;
+  padding: 13px;
+
+  border-radius: 10px;
+
+  background: #f8f8f8;
+}
+
+.checkout-inline-resumen > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+
+  padding: 4px 0;
+
+  font-size: 12px;
+}
+
+.checkout-inline-resumen span {
+  color: #666666;
+}
+
+.checkout-inline-resumen strong {
+  text-align: right;
+
+  font-size: 12px;
+}
+
+.checkout-inline-descuento {
+  color: #16823b;
+}
+
+.checkout-inline-descuento span,
+.checkout-inline-descuento strong {
+  color: #16823b;
+}
+
+.checkout-inline-total {
+  margin-top: 7px;
+  padding-top: 10px !important;
+
+  border-top: 1px solid #dddddd;
+
+  font-size: 15px !important;
+  font-weight: 800;
+}
+
+.checkout-inline-total span {
+  color: #222222;
+}
+
+.checkout-inline-total strong {
+  color: var(--color-principal);
+
+  font-size: 17px;
+}
+
+
+/* CONFIRMAR */
+
+.checkout-confirmar-btn {
+  width: 100%;
+  height: 54px;
+
+  margin-top: 14px;
+
+  border: none;
+  border-radius: 10px;
+
+  background: var(--color-principal);
+  color: var(--texto-principal);
+
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.checkout-confirmar-btn:disabled {
+  opacity: 0.55;
+}
+
+
+/* PEDIDO EXITOSO */
+
+.checkout-exito {
+  padding-top: 25px;
+  padding-bottom: 25px;
+
+  text-align: center;
+}
+
+.checkout-exito-icono {
+  width: 58px;
+  height: 58px;
+
+  margin: 0 auto 13px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #eaf7ed;
+  color: #258341;
+
+  font-size: 29px;
+  font-weight: 900;
+}
+
+.checkout-exito h3 {
+  margin: 0 0 8px;
+
+  font-size: 20px;
+}
+
+.checkout-exito p {
+  margin: 0 auto;
+
+  max-width: 330px;
+
+  color: #666666;
+
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.checkout-volver-btn {
+  width: 100%;
+  height: 50px;
+
+  margin-top: 19px;
+
+  border: none;
+  border-radius: 9px;
+
+  background: var(--color-principal);
+  color: var(--texto-principal);
+
+  font-size: 15px;
+  font-weight: 800;
 }
       `}</style>
     </>
