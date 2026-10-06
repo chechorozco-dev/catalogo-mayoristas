@@ -295,6 +295,27 @@ export default function TiendaCliente({
     enlaceFacebook ||
     enlaceTiktok;
     // ========================================
+// PRODUCTOS PERMITIDOS SEGÚN TIPO DE TIENDA
+// ========================================
+
+const esTiendaRA =
+  String(tipoTienda || "")
+    .trim()
+    .toUpperCase() === "RA";
+
+const productosPermitidos = useMemo(() => {
+  // La tienda principal RA ve TODOS los productos
+  if (esTiendaRA) {
+    return productos;
+  }
+
+  // Las tiendas de clientes NO ven
+  // los productos marcados como solo_ra
+  return productos.filter(
+    (producto) => producto?.solo_ra !== true
+  );
+}, [productos, esTiendaRA]);
+    // ========================================
 // IMÁGENES DE LAS CATEGORÍAS
 // ========================================
 
@@ -303,7 +324,7 @@ const imagenesCategorias = useMemo(() => {
 
   CATEGORIAS_PRINCIPALES.forEach((categoria) => {
     if (categoria === "Todos") {
-      const primerProductoConFoto = productos.find(
+      const primerProductoConFoto = productosPermitidos.find(
         (producto) => producto?.foto_url
       );
 
@@ -313,7 +334,7 @@ const imagenesCategorias = useMemo(() => {
       return;
     }
 
-    const productoCategoria = productos.find(
+    const productoCategoria = productosPermitidos.find(
       (producto) =>
         producto?.foto_url &&
         productoPerteneceCategoria(
@@ -327,7 +348,7 @@ const imagenesCategorias = useMemo(() => {
   });
 
   return resultado;
-}, [productos]);
+}, [productosPermitidos]);
 
   const [categoriaActiva, setCategoriaActiva] = useState("Todos");
   const [lineaActiva, setLineaActiva] = useState("Todos");
@@ -730,7 +751,7 @@ ciudad:
   // ========================================
 
   const productosFiltrados = useMemo(() => {
-  let lista = [...productos];
+  let lista = [...productosPermitidos];
 
   // FILTRO POR CATEGORÍA PRINCIPAL
 
@@ -802,7 +823,7 @@ ciudad:
 
   return lista;
 }, [
-  productos,
+  productosPermitidos,
   categoriaActiva,
   lineaActiva,
   busqueda,
@@ -862,7 +883,7 @@ useEffect(() => {
     const tipoActual = obtenerTipoProducto(productoModal);
     const categoriaActual = limpiarTexto(productoModal.categoria || "");
 
-    const similares = productos
+    const similares = productosPermitidos
       .filter(
         (producto) =>
           String(producto.id) !== String(productoModal.id)
@@ -915,7 +936,7 @@ useEffect(() => {
         similares.map((producto) => String(producto.id))
       );
 
-      const extras = productos
+      const extras = productosPermitidos
         .filter(
           (producto) =>
             String(producto.id) !== String(productoModal.id) &&
@@ -927,7 +948,7 @@ useEffect(() => {
     }
 
     return similares;
-  }, [productoModal, productos]);
+  }, [productoModal, productosPermitidos]);
 
   // ========================================
   // TOTALES CARRITO
