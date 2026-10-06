@@ -1805,13 +1805,56 @@ const categorias = [
         return;
       }
 
-    setProductos(
-  productosData.productos || []
-);
+    const tienda =
+  productosData.tienda || null;
 
-setTiendaActual(
-  productosData.tienda || null
-);
+const listaProductos =
+  Array.isArray(productosData.productos)
+    ? productosData.productos
+    : [];
+
+const esTiendaRA =
+  String(tienda?.tipo_tienda || "")
+    .trim()
+    .toUpperCase() === "RA";
+
+/*
+  IMPORTANTE:
+
+  - RA ve TODOS los productos.
+  - Los clientes ven todos MENOS
+    los que tengan solo_ra = true.
+  - Los productos antiguos que no tengan
+    solo_ra también continúan apareciendo.
+*/
+
+const productosPermitidos =
+  esTiendaRA
+    ? listaProductos
+    : listaProductos.filter(
+        (producto) =>
+          producto?.solo_ra !== true
+      );
+
+setProductos(productosPermitidos);
+
+setTiendaActual(tienda);
+if (!esTiendaRA) {
+  const idsPermitidos = new Set(
+    productosPermitidos.map(
+      (producto) =>
+        String(producto.id)
+    )
+  );
+
+  setCarrito((actual) =>
+    actual.filter((item) =>
+      idsPermitidos.has(
+        String(item.producto_id)
+      )
+    )
+  );
+}
 
 setCargando(false);
     } catch (error) {
