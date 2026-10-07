@@ -328,10 +328,17 @@ async function buscarClienteAutorizado(datosSesion) {
 
 async function obtenerProducto(productoId) {
   const resultado = await supabaseGet(
-    `productos?select=id,referencia,nombre,costo,precio_detal,infoimagen,foto_url,activo,tiene_variantes&id=eq.${encodeURIComponent(
+    `productos?select=id,referencia,nombre,costo,precio_detal,infoimagen,foto_url,activo,solo_ra,tiene_variantes&id=eq.${encodeURIComponent(
       productoId
     )}&limit=1`
   );
+
+  if (!Array.isArray(resultado) || !resultado.length) {
+    return null;
+  }
+
+  return resultado[0];
+}
 
   if (!Array.isArray(resultado) || !resultado.length) {
     return null;
@@ -496,19 +503,67 @@ export async function POST(request) {
     }
 
     if (cliente.activo !== true) {
-      return responder(
-        {
-          ok: false,
-          mensaje:
-            "Tu cuenta no está activa para realizar pedidos.",
-        },
-        403
-      );
-    }
+  return responder(
+    {
+      ok: false,
+      mensaje:
+        "Tu cuenta no está activa para realizar pedidos.",
+    },
+    403
+  );
+}
 
-    const telefonoCliente = normalizarTelefono(
-      cliente.telefono || datosSesion.telefono
-    );
+/* -----------------------------------------------------
+   4.1 VERIFICAR TIPO DE TIENDA
+----------------------------------------------------- */
+
+const tiendaId =
+  cliente.tienda_id ||
+  datosSesion.tiendaId ||
+  null;
+
+if (!tiendaId) {
+  return responder(
+    {
+      ok: false,
+      mensaje:
+        "No pudimos identificar tu tienda.",
+    },
+    403
+  );
+}
+
+const tiendas = await supabaseGet(
+  `tiendas?select=id,tipo_tienda&id=eq.${encodeURIComponent(
+    tiendaId
+  )}&limit=1`
+);
+
+const tienda =
+  Array.isArray(tiendas) &&
+  tiendas.length > 0
+    ? tiendas[0]
+    : null;
+
+if (!tienda) {
+  return responder(
+    {
+      ok: false,
+      mensaje:
+        "No pudimos encontrar tu tienda.",
+    },
+    404
+  );
+}
+
+const esTiendaRA =
+  String(tienda.tipo_tienda || "")
+    .trim()
+    .toUpperCase() === "RA";
+
+const telefonoCliente = normalizarTelefono(
+  cliente.telefono || datosSesion.telefono
+);
 
     if (!telefonoCliente) {
       return responder(
@@ -589,7 +644,23 @@ export async function POST(request) {
           400
         );
       }
+/* ---------------------------------------------------
+   BLOQUEAR PRODUCTOS EXCLUSIVOS DE RA
+--------------------------------------------------- */
 
+if (
+  !esTiendaRA &&
+  producto.solo_ra === true
+) {
+  return responder(
+    {
+      ok: false,
+      mensaje:
+        "Uno de los productos de tu pedido está disponible únicamente en Mayoristas RA.",
+    },
+    403
+  );
+}
       /* ---------------------------------------------------
          PRODUCTO CON VARIANTE
       --------------------------------------------------- */
