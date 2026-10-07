@@ -376,28 +376,46 @@ if (!tienda) {
         `productos` +
           `?select=` +
           [
-            "id",
-            "referencia",
-            "nombre",
-            "categoria",
-            "descripcion",
-            "foto_url",
-            "foto_url_2",
-            "costo",
-            "precio_detal",
-            "precio_minimo",
-            "activo",
-            "created_at",
-            "tiene_variantes",
-          ].join(",") +
+  "id",
+  "referencia",
+  "nombre",
+  "categoria",
+  "descripcion",
+  "foto_url",
+  "foto_url_2",
+  "costo",
+  "precio_detal",
+  "precio_minimo",
+  "activo",
+  "solo_ra",
+  "created_at",
+  "tiene_variantes",
+].join(",") +
           `&activo=eq.true` +
           `&order=created_at.desc`
       );
 
-    const productosBase =
-      Array.isArray(productosData)
-        ? productosData
-        : [];
+    const productosBaseSinFiltrar =
+  Array.isArray(productosData)
+    ? productosData
+    : [];
+
+// =====================================
+// PRODUCTOS EXCLUSIVOS DE RA
+// =====================================
+
+const esTiendaRA =
+  String(tienda?.tipo_tienda || "")
+    .trim()
+    .toUpperCase() === "RA";
+
+const productosBase =
+  esTiendaRA
+    ? productosBaseSinFiltrar
+    : productosBaseSinFiltrar.filter(
+        (producto) =>
+          producto?.solo_ra !== true
+      );
 // =====================================
 // VISIBILIDAD DE PRODUCTOS DE LA TIENDA
 // =====================================
@@ -558,20 +576,23 @@ if (Array.isArray(visibilidadData)) {
               );
 
           return {
-            id:
-              producto.id,
+  id:
+    producto.id,
 
-           referencia:
-  producto.referencia,
+  referencia:
+    producto.referencia,
 
-visible:
-  mapaVisibilidad.has(
-    String(producto.id)
-  )
-    ? mapaVisibilidad.get(
-        String(producto.id)
-      )
-    : true,
+  solo_ra:
+    producto.solo_ra === true,
+
+  visible:
+    mapaVisibilidad.has(
+      String(producto.id)
+    )
+      ? mapaVisibilidad.get(
+          String(producto.id)
+        )
+      : true,
 
 publicar_anticipadamente:
   mapaPublicacionAnticipada.has(
