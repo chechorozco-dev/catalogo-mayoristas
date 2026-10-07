@@ -340,13 +340,6 @@ async function obtenerProducto(productoId) {
   return resultado[0];
 }
 
-  if (!Array.isArray(resultado) || !resultado.length) {
-    return null;
-  }
-
-  return resultado[0];
-}
-
 /* =========================================================
    OBTENER VARIANTE
 ========================================================= */
