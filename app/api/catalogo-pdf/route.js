@@ -1298,7 +1298,7 @@ export async function POST(request) {
 
 const tiendaResponse =
   await supabaseFetch(
-    `tiendas?id=eq.${tiendaId}&select=id,nombre_tienda,whatsapp,logo_url,color_principal,color_fondo,instagram,facebook,tiktok&limit=1`
+    `tiendas?id=eq.${tiendaId}&select=id,nombre_tienda,whatsapp,logo_url,color_principal,color_fondo,instagram,facebook,tiktok,tipo_tienda&limit=1`
   );
 
 const tiendas =
@@ -1319,6 +1319,14 @@ if (!tienda) {
     }
   );
 }
+/* ===============================================
+   IDENTIFICAR SI ES TIENDA RA
+=============================================== */
+
+const esTiendaRA =
+  String(tienda?.tipo_tienda || "")
+    .trim()
+    .toUpperCase() === "RA";
     /* ===============================================
        3. PRODUCTOS GLOBALES
     =============================================== */
@@ -1329,16 +1337,17 @@ if (!tienda) {
           "productos",
           "?activo=eq.true",
           "&select=",
-          [
-            "id",
-            "referencia",
-            "nombre",
-            "categoria",
-            "foto_url",
-            "foto_url_2",
-            "precio_detal",
-            "tiene_variantes",
-          ].join(","),
+        [
+  "id",
+  "referencia",
+  "nombre",
+  "categoria",
+  "foto_url",
+  "foto_url_2",
+  "precio_detal",
+  "solo_ra",
+  "tiene_variantes",
+].join(","),
           "&order=id.desc",
         ].join("")
       );
@@ -1416,7 +1425,22 @@ if (!tienda) {
 
 let productosFiltrados = (productos || []).filter(
   (producto) => {
-    // Primero respetamos la visibilidad de la tienda.
+
+    // =====================================
+    // PRODUCTOS EXCLUSIVOS DE RA
+    // =====================================
+
+    if (
+      !esTiendaRA &&
+      producto?.solo_ra === true
+    ) {
+      return false;
+    }
+
+    // =====================================
+    // VISIBILIDAD DE ESTA TIENDA
+    // =====================================
+
     if (
       mapaVisibilidad.has(String(producto.id)) &&
       mapaVisibilidad.get(String(producto.id)) === false
