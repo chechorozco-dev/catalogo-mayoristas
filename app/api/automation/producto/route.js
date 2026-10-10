@@ -425,6 +425,8 @@ function limpiarProducto(body) {
         body,
         "referencia",
         "REFERENCIA",
+        "codigo",
+        "CODIGO",
         "ref",
         "REF"
       ) ?? ""
@@ -446,7 +448,10 @@ function limpiarProducto(body) {
       "PRECIO_DETAL",
       "precioDetal",
       "PRECIO DETAL",
-      "PRECIO SUGERIDO"
+      "PRECIO SUGERIDO",
+      "precio SUGERIDO",
+      "precio_sugerido",
+      "PRECIO_SUGERIDO"
     );
 
   const payload = {
@@ -461,8 +466,8 @@ function limpiarProducto(body) {
   const camposTexto = [
     ["categoria", ["categoria", "CATEGORIA"]],
     ["descripcion", ["descripcion", "DESCRIPCION"]],
-    ["foto_url", ["foto_url", "FOTO_URL", "IMAG URL", "imagen", "IMAGEN"]],
-    ["foto_url_2", ["foto_url_2", "FOTO_URL_2", "IMAG URL 2", "imagen_2", "IMAGEN_2"]],
+    ["foto_url", ["foto_url", "FOTO_URL", "IMAG URL", "imagen", "IMAGEN", "url_1", "URL_1"]],
+    ["foto_url_2", ["foto_url_2", "FOTO_URL_2", "IMAG URL 2", "imagen_2", "IMAGEN_2", "url_2", "URL_2"]],
     ["infoimagen", ["infoimagen", "INFOIMAGEN", "INFO IMAGEN"]],
   ];
 
@@ -480,8 +485,8 @@ function limpiarProducto(body) {
   }
 
   const camposNumero = [
-    ["costo", ["costo", "COSTO"]],
-    ["precio_detal", ["precio_detal", "PRECIO_DETAL", "precioDetal", "PRECIO DETAL", "PRECIO SUGERIDO"]],
+    ["costo", ["costo", "COSTO", "precio", "PRECIO"]],
+    ["precio_detal", ["precio_detal", "PRECIO_DETAL", "precioDetal", "PRECIO DETAL", "PRECIO SUGERIDO", "precio SUGERIDO", "precio_sugerido", "PRECIO_SUGERIDO"]],
     ["precio_minimo", ["precio_minimo", "PRECIO_MINIMO", "precioMinimo", "PRECIO MINIMO"]],
   ];
 
