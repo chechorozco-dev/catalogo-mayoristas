@@ -33,7 +33,8 @@ function decodePart(value) {
 }
 
 async function verificarOidcVercel(
-  request
+  request,
+  tokenOverride = ""
 ) {
   /*
   | Mantener una llave manual como respaldo opcional.
@@ -62,9 +63,14 @@ async function verificarOidcVercel(
   }
 
   const authorization =
-    request.headers.get(
-      "authorization"
-    ) || "";
+    tokenOverride
+      ? "Bearer " +
+        tokenOverride
+      : (
+          request.headers.get(
+            "authorization"
+          ) || ""
+        );
 
   if (
     !authorization.startsWith(
@@ -580,9 +586,19 @@ export async function GET() {
 
 export async function POST(request) {
   try {
+    const body =
+      await request.json();
+
+    const internalToken =
+      String(
+        body?.__ra_oidc ||
+          ""
+      ).trim();
+
     const auth =
       await verificarOidcVercel(
-        request
+        request,
+        internalToken
       );
 
     if (!auth.ok) {
@@ -598,6 +614,8 @@ export async function POST(request) {
         }
       );
     }
+
+    delete body.__ra_oidc;
 
     const supabaseUrl =
       process.env
@@ -615,9 +633,6 @@ export async function POST(request) {
         "Falta configuración de Supabase."
       );
     }
-
-    const body =
-      await request.json();
 
     const {
       referencia,
