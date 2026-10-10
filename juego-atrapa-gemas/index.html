@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#120e2c">
+  <meta name="description" content="Atrapa Gemas: un minijuego arcade para celular y computador. Recoge joyas, esquiva bombas y supera tu récord.">
+  <title>Atrapa Gemas ✦ Juego arcade</title>
+  <style>
+    :root { color-scheme: dark; --ink:#f9f7ff; --muted:#b6aecf; --violet:#a894ff; --mint:#74f5dc; --gold:#ffd577; }
+    * {box-sizing:border-box}
+    html { min-height:100%; background:#0d0920; }
+    body {margin:0; min-height:100dvh; font-family:ui-rounded,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:var(--ink); background:radial-gradient(ellipse 800px 520px at 15% -14%,#51317c88,transparent),radial-gradient(ellipse 700px 600px at 90% 20%,#135f7880,transparent),#100c27; overflow-x:hidden;}
+    button {font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+    button:focus-visible {outline:3px solid #fff;outline-offset:4px}
+    .page {width:min(100% - 28px,900px);margin:0 auto;padding:20px 0 max(28px,env(safe-area-inset-bottom))}
+    .nav {display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:21px}
+    .brand {display:flex;align-items:center;gap:10px;font-size:16px;font-weight:900;letter-spacing:.08em}
+    .logo {width:38px;height:38px;display:grid;place-items:center;border-radius:13px;background:linear-gradient(145deg,#ad88ff,#6c59e2);box-shadow:0 6px 22px #8f60f866;font-size:21px}
+    .tag {border:1px solid #b6a1e13d;background:#ffffff10;border-radius:99px;padding:9px 12px;color:#d9d1f8;font-size:11px;font-weight:800;letter-spacing:.14em;white-space:nowrap}
+    .intro {text-align:center;margin:2px 0 17px}
+    h1 {font-size:clamp(31px,6vw,52px);line-height:1.04;letter-spacing:-.055em;margin:0 0 8px;font-weight:950}
+    h1 span {background:linear-gradient(95deg,#fbd4fc 5%,#b5a1ff 40%,#71f4d7 95%);background-clip:text;-webkit-background-clip:text;color:transparent}
+    .intro p {color:var(--muted);font-size:clamp(12px,2.7vw,15px);margin:0}
+    .game-shell {border:1px solid #ffffff20;background:#151032;border-radius:29px;padding:8px;box-shadow:0 25px 70px #02011466,0 0 0 1px #9c77c10c}
+    .arena {height:min(64dvh,610px);min-height:405px;position:relative;border-radius:23px;overflow:hidden;isolation:isolate;background:radial-gradient(ellipse 55% 48% at 50% 84%,#7443b044,transparent),radial-gradient(ellipse 65% 66% at 100% 0,#216d8240,transparent),linear-gradient(180deg,#12132e 0%,#141334 64%,#221643 100%)}
+    .arena:before {content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(#ffffff08 1px,transparent 1px),linear-gradient(90deg,#ffffff08 1px,transparent 1px);background-size:43px 43px;mask-image:linear-gradient(to bottom,transparent 6%,#000b 100%)}
+    canvas {display:block;position:absolute;inset:0;width:100%;height:100%;touch-action:none;z-index:1}
+    .hud {position:absolute;top:14px;left:14px;right:14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;z-index:3;pointer-events:none}
+    .stat {min-width:0;text-align:center;padding:10px 7px;border-radius:14px;border:1px solid #e4d5ff24;background:#09091fac;backdrop-filter:blur(12px);box-shadow:0 5px 20px #05051033}
+    .stat small {display:block;text-transform:uppercase;color:#ada6d1;font-size:10px;letter-spacing:.13em;font-weight:850;margin-bottom:3px}
+    .stat strong {display:block;font-size:clamp(17px,3.5vw,24px);font-variant-numeric:tabular-nums;line-height:1.12}
+    #lifeValue {color:#ffa6c6;letter-spacing:.10em;white-space:nowrap}
+    #timeValue {color:#f5d7a4}
+    .actions {position:absolute;right:14px;top:91px;z-index:4;display:flex;gap:7px}
+    .icon-btn {min-width:39px;height:39px;padding:0 9px;border-radius:12px;color:#eee9ff;border:1px solid #ffffff30;background:#100b29aa;backdrop-filter:blur(8px);font-size:17px;transition:transform .15s,background .15s}
+    .icon-btn:active {transform:scale(.94)}
+    .icon-btn:disabled {opacity:.4;cursor:not-allowed}
+    .level {position:absolute;bottom:15px;left:17px;color:#eee4ff9e;font-size:11px;font-weight:750;z-index:2;letter-spacing:.1em;text-transform:uppercase;pointer-events:none}
+    .overlay {position:absolute;inset:0;z-index:8;display:grid;place-items:center;padding:18px;background:#0b0924ab;backdrop-filter:blur(10px);transition:opacity .24s,visibility .24s}
+    .overlay.is-hidden {opacity:0;visibility:hidden;pointer-events:none}
+    .dialog {width:min(100%,380px);max-height:100%;overflow:auto;text-align:center;padding:28px 23px 25px;border-radius:26px;border:1px solid #ffffff33;background:linear-gradient(155deg,#2e2356f5,#161231f8);box-shadow:0 22px 70px #050211a8}
+    .crown {height:68px;width:68px;margin:0 auto 10px;border-radius:22px;display:grid;place-items:center;background:linear-gradient(135deg,#b67aff,#7449d9);font-size:35px;box-shadow:0 10px 35px #a065ff44;transform:rotate(-8deg)}
+    .dialog h2 {font-size:clamp(24px,5vw,31px);letter-spacing:-.045em;margin:8px 0 8px}
+    .dialog p {color:#c5bdde;line-height:1.55;font-size:14px;margin:0 auto 14px}
+    .rules {display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin:15px auto 21px}
+    .rule {background:#ffffff12;border:1px solid #ffffff1e;padding:7px 10px;border-radius:9px;font-size:12px;font-weight:700}
+    .start-btn {display:block;width:100%;border:0;border-radius:15px;padding:15px 20px;background:linear-gradient(110deg,#c6a2ff,#8b8afc);color:#1b123c;font-weight:950;font-size:16px;box-shadow:0 10px 26px #927af24c;transition:transform .15s,filter .15s}
+    .start-btn:active {transform:scale(.97)}
+    .start-btn:hover {filter:brightness(1.07)}
+    #result {font-size:16px;font-weight:800;color:#91f8de;margin-bottom:16px}
+    .result-number {display:block;font-size:38px;color:#fff;line-height:1.15;margin:3px 0}
+    .controls {display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 10px 3px}
+    .help {display:flex;align-items:center;gap:8px;font-size:12px;color:#c1b9dd;font-weight:600}
+    .help b {color:#ffe99e}
+    .key {padding:5px 8px;background:#ffffff12;border:1px solid #ffffff25;border-radius:7px;color:#dfd8f7;font-size:12px}
+    .move-buttons {display:flex;gap:9px}
+    .move-btn {width:56px;height:44px;border-radius:13px;border:1px solid #b6a1e14a;background:#ffffff15;color:#e4ddff;font-size:20px;font-weight:900;touch-action:none;user-select:none}
+    .move-btn:active,.move-btn.active {background:#8c76f877}
+    .foot {text-align:center;color:#8880ac;font-size:11px;margin-top:12px;line-height:1.5}
+    @media (max-width:540px) {
+      .page {width:calc(100% - 18px);padding-top:12px}
+      .nav {margin-bottom:13px;padding:0 4px}
+      .brand {font-size:13px;gap:7px}
+      .logo {width:33px;height:33px;font-size:19px;border-radius:10px}
+      .tag {font-size:9px;padding:8px 9px}
+      .intro {margin-bottom:13px}
+      .arena {height:min(62dvh,565px);min-height:370px;border-radius:20px}
+      .game-shell {padding:6px;border-radius:25px}
+      .hud {top:10px;left:9px;right:9px;gap:6px}
+      .stat {padding:9px 4px;border-radius:11px}
+      .stat small {font-size:9px}
+      .actions {top:78px;right:9px}
+      .dialog {padding:23px 19px}
+      .controls {padding:10px 3px 0}
+      .help {font-size:11px}
+      .foot {margin-top:8px}
+    }
+    @media (max-height:690px) {
+      .arena {min-height:320px;height:55dvh}
+      .intro h1 {font-size:29px}
+      .dialog {padding:17px}
+      .crown {width:50px;height:50px;font-size:27px}
+    }
+    @media (prefers-reduced-motion:reduce) { .overlay,.start-btn,.icon-btn {transition:none} }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <nav class="nav" aria-label="Cabecera">
+      <div class="brand"><div class="logo" aria-hidden="true">💎</div> GEM RUSH</div>
+      <span class="tag">✦ MINI ARCADE · 60 S</span>
+    </nav>
+    <header class="intro">
+      <h1>Atrapa <span>las Gemas</span></h1>
+      <p>¡Recoge joyas, esquiva las bombas y supera tu récord!</p>
+    </header>
+    <section class="game-shell" aria-label="Área del juego">
+      <div class="arena" id="arena">
+        <canvas id="game" aria-label="Juego Atrapa Gemas: mueve la canasta para atrapar joyas"></canvas>
+        <div class="hud" aria-live="off">
+          <div class="stat"><small>✦ Puntos</small><strong id="scoreValue">0</strong></div>
+          <div class="stat"><small>⏱ Tiempo</small><strong id="timeValue">60 s</strong></div>
+          <div class="stat"><small>♥ Vidas</small><strong id="lifeValue">♥ ♥ ♥</strong></div>
+        </div>
+        <div class="actions">
+          <button id="soundBtn" class="icon-btn" type="button" aria-label="Activar sonido" title="Sonido">🔇</button>
+          <button id="pauseBtn" class="icon-btn" type="button" aria-label="Pausar" title="Pausar" disabled>⏸</button>
+        </div>
+        <div class="level" id="level">NIVEL 1 · PREPÁRATE</div>
+        <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="overlayTitle">
+          <div class="dialog">
+            <div class="crown" id="overlayIcon" aria-hidden="true">💎</div>
+            <h2 id="overlayTitle">¿Listo para brillar?</h2>
+            <p id="overlayText">Atrapa todas las joyas que puedas durante 60 segundos. ¡Pero mucho cuidado con las bombas!</p>
+            <div id="result" hidden></div>
+            <div class="rules" id="rules"><span class="rule">💎 +10 puntos</span><span class="rule">⭐ +30 puntos</span><span class="rule">💣 −1 vida</span></div>
+            <button type="button" class="start-btn" id="playBtn">¡EMPEZAR A JUGAR! →</button>
+          </div>
+        </div>
+      </div>
+      <div class="controls">
+        <div class="help"><span>📱 <b>Desliza</b> o usa <span class="key">←</span> <span class="key">→</span></span></div>
+        <div class="move-buttons">
+          <button class="move-btn" id="leftBtn" type="button" aria-label="Mover a la izquierda">←</button>
+          <button class="move-btn" id="rightBtn" type="button" aria-label="Mover a la derecha">→</button>
+        </div>
+      </div>
+    </section>
+    <p class="foot">Tu mejor puntuación se guarda en este dispositivo. Juega gratis, sin registros.</p>
+  </main>
+  <script>
+  (function () {
+    "use strict";
+    var canvas = document.getElementById("game");
+    var ctx = canvas.getContext("2d", {alpha:true});
+    var arena = document.getElementById("arena");
+    var overlay = document.getElementById("overlay");
+    var scoreEl = document.getElementById("scoreValue");
+    var timeEl = document.getElementById("timeValue");
+    var lifeEl = document.getElementById("lifeValue");
+    var levelEl = document.getElementById("level");
+    var playBtn = document.getElementById("playBtn");
+    var pauseBtn = document.getElementById("pauseBtn");
+    var soundBtn = document.getElementById("soundBtn");
+    var resultEl = document.getElementById("result");
+    var rulesEl = document.getElementById("rules");
+    var titleEl = document.getElementById("overlayTitle");
+    var textEl = document.getElementById("overlayText");
+    var iconEl = document.getElementById("overlayIcon");
+    var W = 500, H = 530, DPR = 1;
+    var mode = "ready", score = 0, lives = 3, elapsed = 0, lastTime = 0, spawnClock = 0;
+    var items = [], particles = [], stars = [], shake = 0, flash = 0, combo = 0;
+    var basket = {x:250,target:250,y:470,w:96};
+    var pointerDown = false, keys = {left:false,right:false}, held = 0, soundOn = false, audio = null;
+    var best = 0;
+    try { best = Math.max(0, Number(localStorage.getItem("gemrush-best-v1")) || 0); } catch(e) {}
+    function rnd(a,b) {return a + Math.random()*(b-a);}
+    function clamp(x,a,b) {return Math.max(a,Math.min(b,x));}
+    function initStars(){
+      stars=[];
+      for(var i=0;i<51;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:rnd(.5,2.15),phase:rnd(0,6.283),speed:rnd(.5,1.7)});
+    }
+    function resize(){
+      var r=arena.getBoundingClientRect();
+      var oldW=W;
+      W=Math.max(250,r.width);H=Math.max(310,r.height);
+      DPR=Math.min(window.devicePixelRatio||1,2);
+      canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);
+      ctx.setTransform(DPR,0,0,DPR,0,0);
+      basket.w=clamp(W*.21,79,112);
+      basket.x=oldW?clamp(basket.x*W/oldW,basket.w/2+9,W-basket.w/2-9):W/2;
+      basket.target=basket.x;
+      basket.y=H-65;
+      initStars();
+    }
+    function updateHUD(){
+      scoreEl.textContent=score.toLocaleString("es-CO");
+      timeEl.textContent=Math.ceil(Math.max(0,60-elapsed))+" s";
+      lifeEl.textContent=Array.from({length:3},function(_,i){return i<lives?"♥":"♡";}).join(" ");
+      levelEl.textContent="NIVEL "+(1+Math.floor(elapsed/15))+" · "+(mode==="running"?"¡SIGUE ASÍ!":mode==="paused"?"EN PAUSA":"ATRAPA Y GANA");
+    }
+    function beep(freq,duration,style){
+      if(!soundOn)return;
+      try {
+        var AC=window.AudioContext||window.webkitAudioContext;
+        if(!AC)return;
+        if(!audio)audio=new AC();
+        if(audio.state==="suspended")audio.resume();
+        var osc=audio.createOscillator(),gain=audio.createGain(),t=audio.currentTime;
+        osc.type=style||"sine";osc.frequency.setValueAtTime(freq,t);
+        osc.frequency.exponentialRampToValueAtTime(Math.max(70,freq*.7),t+duration);
+        gain.gain.setValueAtTime(.065,t);
+        gain.gain.exponentialRampToValueAtTime(.001,t+duration);
+        osc.connect(gain);gain.connect(audio.destination);
+        osc.start(t);osc.stop(t+duration);
+      } catch(e) {}
+    }
+    function showOverlay(title,description,button,icon,result){
+      titleEl.textContent=title;textEl.textContent=description;playBtn.textContent=button;
+      iconEl.textContent=icon;
+      resultEl.hidden=!result;
+      if(result)resultEl.innerHTML=result;
+      rulesEl.hidden=!!result;
+      overlay.classList.remove("is-hidden");
+    }
+    function startGame(){
+      score=0;lives=3;elapsed=0;combo=0;items=[];particles=[];flash=0;shake=0;spawnClock=.25;
+      basket.x=basket.target=W/2;mode="running";
+      overlay.classList.add("is-hidden");pauseBtn.disabled=false;pauseBtn.textContent="⏸";
+      pauseBtn.setAttribute("aria-label","Pausar");
+      updateHUD();lastTime=performance.now();beep(550,.1);
+    }
+    function togglePause(){
+      if(mode==="running"){
+        mode="paused";pauseBtn.textContent="▶";pauseBtn.setAttribute("aria-label","Reanudar");
+        showOverlay("¡Tiempo de respirar!","Tu partida está en pausa. Las gemas te esperan.","CONTINUAR →","⏸",null);
+      }else if(mode==="paused"){
+        mode="running";overlay.classList.add("is-hidden");pauseBtn.textContent="⏸";pauseBtn.setAttribute("aria-label","Pausar");lastTime=performance.now();
+      }
+      updateHUD();
+    }
+    function endGame(){
+      if(mode!=="running")return;
+      mode="over";pauseBtn.disabled=true;
+      var isRecord=score>best;
+      if(isRecord){best=score;try{localStorage.setItem("gemrush-best-v1",String(best));}catch(e){}}
+      var message=isRecord?"¡Nuevo récord! Eres una estrella.":"¡Buen intento! Cada partida es una nueva oportunidad.";
+      var result='<span class="result-number">'+score.toLocaleString("es-CO")+' puntos</span>🏆 Tu récord: '+best.toLocaleString("es-CO");
+      showOverlay(lives===0?"¡Se acabaron las vidas!":"¡Tiempo cumplido!",message,"VOLVER A JUGAR →",isRecord?"🏆":"✨",result);
+      beep(isRecord?780:320,.25);
+      updateHUD();
+    }
+    function spawn(){
+      var chance=Math.random(),kind=chance<.17?"bomb":chance<.29?"star":"gem";
+      var radius=kind==="bomb"?20:kind==="star"?21:18;
+      items.push({x:rnd(32,W-32),y:-35,r:radius,kind:kind,color:["cyan","pink","purple"][Math.floor(Math.random()*3)],vy:rnd(142,201)+elapsed*2.2+Math.min(H,650)*.075,spin:rnd(-1.5,1.5),a:0,sway:rnd(0,7),sv:rnd(.5,1.7)});
+    }
+    function burst(x,y,color,count){
+      for(var i=0;i<count;i++){
+        var a=rnd(0,Math.PI*2),v=rnd(40,180);
+        particles.push({x:x,y:y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-24,life:rnd(.38,.9),max:.9,r:rnd(2,5),color:color});
+      }
+    }
+    function collision(item){
+      var dx=Math.abs(item.x-basket.x);
+      return item.y+item.r>basket.y-6&&item.y-item.r<basket.y+23&&dx<basket.w*.45+item.r*.43;
+    }
+    function collect(item){
+      if(item.kind==="bomb"){
+        lives--;combo=0;shake=9;flash=.32;burst(item.x,item.y,"#ff6f99",19);beep(170,.3,"sawtooth");
+        if(lives<=0)endGame();
+      }else{
+        var points=item.kind==="star"?30:10;score+=points;combo++;
+        burst(item.x,item.y,item.kind==="star"?"#ffe28f":item.color==="cyan"?"#7cf7ee":item.color==="pink"?"#ff9cdb":"#bba1ff",15);
+        beep(item.kind==="star"?960:650+Math.min(combo,8)*38,.1);
+      }
+      updateHUD();
+    }
+    function update(dt){
+      if(mode!=="running")return;
+      elapsed+=dt;spawnClock-=dt;
+      if(spawnClock<=0){
+        spawn();
+        spawnClock=rnd(.54,.78)-Math.min(.24,elapsed*.004);
+      }
+      var horizontal=(keys.left?-1:0)+(keys.right?1:0)+held;
+      if(horizontal)basket.target+=horizontal*W*.94*dt;
+      basket.target=clamp(basket.target,basket.w/2+9,W-basket.w/2-9);
+      basket.x+=(basket.target-basket.x)*Math.min(1,dt*17);
+      for(var i=items.length-1;i>=0;i--){
+        var it=items[i];it.y+=it.vy*dt;it.a+=it.spin*dt;it.x+=Math.sin(elapsed*it.sv+it.sway)*9*dt;
+        if(collision(it)){collect(it);items.splice(i,1);}
+        else if(it.y>H+35)items.splice(i,1);
+      }
+      if(flash>0)flash-=dt;
+      if(shake>0)shake=Math.max(0,shake-dt*28);
+      if(elapsed>=60)endGame();
+      updateHUD();
+    }
+    function drawBackground(now){
+      for(var i=0;i<stars.length;i++){
+        var s=stars[i],alpha=.20+.33*(.5+.5*Math.sin(now*.001*s.speed+s.phase));
+        ctx.fillStyle="rgba(229,220,255,"+alpha+")";
+        ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fill();
+      }
+      ctx.save();
+      var grd=ctx.createRadialGradient(W/2,H*.88,4,W/2,H*.88,W*.62);
+      grd.addColorStop(0,"#8b56cb22");grd.addColorStop(1,"#8b56cb00");
+      ctx.fillStyle=grd;ctx.fillRect(0,0,W,H);ctx.restore();
+      ctx.strokeStyle="#b9a8ef18";ctx.lineWidth=2;
+      ctx.beginPath();ctx.ellipse(W/2,H-28,W*.42,21,0,0,Math.PI*2);ctx.stroke();
+    }
+    function drawGem(it){
+      var r=it.r;
+      ctx.save();ctx.translate(it.x,it.y);ctx.rotate(it.a);
+      ctx.shadowBlur=18;ctx.shadowColor=it.color==="cyan"?"#4df7edbb":it.color==="pink"?"#ff7bcdbb":"#ad8cffbb";
+      var colors=it.color==="cyan"?["#b7fff8","#2bd9cb","#1689bd"]:it.color==="pink"?["#fff2fc","#f683d4","#9e4ba6"]:["#efe7ff","#ad92ff","#6353da"];
+      var g=ctx.createLinearGradient(-r,-r,r,r);g.addColorStop(0,colors[0]);g.addColorStop(.5,colors[1]);g.addColorStop(1,colors[2]);
+      ctx.beginPath();ctx.moveTo(-r*.67,-r*.52);ctx.lineTo(r*.66,-r*.52);ctx.lineTo(r,-r*.08);ctx.lineTo(0,r);ctx.lineTo(-r,-r*.08);ctx.closePath();ctx.fillStyle=g;ctx.fill();
+      ctx.shadowBlur=0;ctx.lineWidth=1.5;ctx.strokeStyle="#ffffffb8";ctx.stroke();
+      ctx.beginPath();ctx.moveTo(-r*.67,-r*.52);ctx.lineTo(-r*.33,-r*.06);ctx.lineTo(0,r);ctx.lineTo(r*.33,-r*.06);ctx.lineTo(r*.66,-r*.52);
+      ctx.moveTo(-r,-r*.08);ctx.lineTo(-r*.33,-r*.06);ctx.lineTo(r*.33,-r*.06);ctx.lineTo(r,-r*.08);
+      ctx.strokeStyle="#ffffff88";ctx.lineWidth=1.3;ctx.stroke();
+      ctx.beginPath();ctx.moveTo(-r*.28,-r*.40);ctx.lineTo(-r*.43,-r*.13);ctx.lineTo(-r*.16,-r*.15);ctx.closePath();ctx.fillStyle="#ffffffbb";ctx.fill();
+      ctx.restore();
+    }
+    function drawStar(it){
+      var r=it.r;
+      ctx.save();ctx.translate(it.x,it.y);ctx.rotate(it.a);
+      ctx.shadowBlur=23;ctx.shadowColor="#ffd978";
+      ctx.beginPath();
+      for(var i=0;i<10;i++){var ang=-Math.PI/2+i*Math.PI/5,rad=i%2?r*.49:r;ctx.lineTo(Math.cos(ang)*rad,Math.sin(ang)*rad);}
+      ctx.closePath();var g=ctx.createLinearGradient(-r,-r,r,r);g.addColorStop(0,"#fff9c1");g.addColorStop(.48,"#ffc85c");g.addColorStop(1,"#ec8e40");ctx.fillStyle=g;ctx.fill();ctx.shadowBlur=0;ctx.lineWidth=2;ctx.strokeStyle="#fff3b3";ctx.stroke();
+      ctx.fillStyle="#ffffffd6";ctx.beginPath();ctx.arc(-r*.18,-r*.2,2.8,0,Math.PI*2);ctx.fill();ctx.restore();
+    }
+    function drawBomb(it){
+      var r=it.r;
+      ctx.save();ctx.translate(it.x,it.y);ctx.rotate(it.a*.25);
+      ctx.shadowBlur=18;ctx.shadowColor="#fa3d8580";
+      var g=ctx.createRadialGradient(-7,-7,2,0,0,r);g.addColorStop(0,"#6d6585");g.addColorStop(1,"#242337");
+      ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle="#d3b7ea9c";ctx.lineWidth=2;ctx.stroke();
+      ctx.strokeStyle="#d8a57e";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(7,-r+2);ctx.quadraticCurveTo(15,-r-9,11,-r-16);ctx.stroke();
+      ctx.fillStyle="#ff6274";ctx.beginPath();ctx.arc(11,-r-16,4.8+Math.sin(performance.now()*.02)*1.2,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle="#ff9fbb";ctx.lineWidth=2.8;ctx.beginPath();ctx.moveTo(-7,-3);ctx.lineTo(-2,2);ctx.moveTo(-2,-3);ctx.lineTo(-7,2);ctx.moveTo(5,-3);ctx.lineTo(10,2);ctx.moveTo(10,-3);ctx.lineTo(5,2);ctx.stroke();
+      ctx.beginPath();ctx.arc(1,8,6,Math.PI*1.2,Math.PI*1.8);ctx.strokeStyle="#ff9fbb";ctx.lineWidth=2;ctx.stroke();ctx.restore();
+    }
+    function drawBasket(now){
+      var x=basket.x,y=basket.y,w=basket.w;
+      ctx.save();ctx.translate(x,y);
+      ctx.shadowBlur=24;ctx.shadowColor="#bf88f766";
+      var g=ctx.createLinearGradient(0,-8,0,31);g.addColorStop(0,"#c7afff");g.addColorStop(.4,"#805ddb");g.addColorStop(1,"#49358e");
+      ctx.beginPath();ctx.roundRect(-w/2+4,-5,w-8,33,[8,8,20,20]);ctx.fillStyle=g;ctx.fill();
+      ctx.shadowBlur=0;ctx.strokeStyle="#dec6ff";ctx.lineWidth=2;ctx.stroke();
+      ctx.beginPath();ctx.roundRect(-w/2-3,-10,w+6,13,6);ctx.fillStyle="#e9d6ff";ctx.fill();
+      ctx.fillStyle="#9c7cea";ctx.beginPath();ctx.roundRect(-w/2+3,-6,w-6,6,3);ctx.fill();
+      ctx.fillStyle="#fff1be";ctx.beginPath();ctx.arc(0,12,6,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle="#ffffffb8";ctx.beginPath();ctx.arc(-1.5,10,2,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle="#eed6ff75";
+      for(var j=-1;j<=1;j+=2){ctx.beginPath();ctx.arc(j*(w*.28),17,2.5,0,Math.PI*2);ctx.fill();}
+      ctx.restore();
+    }
+    function drawParticles(dt){
+      for(var i=particles.length-1;i>=0;i--){
+        var p=particles[i];p.life-=dt;
+        if(p.life<=0){particles.splice(i,1);continue;}
+        p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=190*dt;
+        ctx.globalAlpha=clamp(p.life/p.max,0,1);
+        ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r*(p.life/p.max+.15),0,Math.PI*2);ctx.fill();
+      }
+      ctx.globalAlpha=1;
+    }
+    function render(now,dt){
+      ctx.clearRect(0,0,W,H);
+      ctx.save();
+      if(shake>0)ctx.translate(rnd(-shake,shake),rnd(-shake,shake));
+      drawBackground(now);
+      if(mode==="ready"){
+        for(var k=0;k<6;k++){
+          var a=k*1.047+now*.00021;
+          var item={x:W/2+Math.cos(a)*Math.min(W*.25,135),y:H*.53+Math.sin(a)*Math.min(H*.17,85)+Math.sin(now*.002+k)*7,r:18,kind:k===2?"star":"gem",color:["cyan","pink","purple"][k%3],a:Math.sin(now*.0007+k)*.24};
+          if(item.kind==="star")drawStar(item);else drawGem(item);
+        }
+      }
+      for(var j=0;j<items.length;j++){var it=items[j];if(it.kind==="bomb")drawBomb(it);else if(it.kind==="star")drawStar(it);else drawGem(it);}
+      drawBasket(now);
+      drawParticles(dt);
+      if(flash>0){ctx.fillStyle="rgba(255,73,127,"+Math.max(0,flash*.26)+")";ctx.fillRect(0,0,W,H);}
+      ctx.restore();
+    }
+    function loop(now){
+      var dt=Math.min((now-lastTime)/1000||0,.04);lastTime=now;
+      update(dt);render(now,mode==="running"?dt:0);requestAnimationFrame(loop);
+    }
+    function setPointer(e){
+      var rect=canvas.getBoundingClientRect();
+      basket.target=clamp(e.clientX-rect.left,basket.w/2+9,W-basket.w/2-9);
+    }
+    canvas.addEventListener("pointerdown",function(e){if(mode==="running"){pointerDown=true;setPointer(e);try{canvas.setPointerCapture(e.pointerId);}catch(err){}}});
+    canvas.addEventListener("pointermove",function(e){if(mode==="running"&&(pointerDown||e.pointerType==="mouse"))setPointer(e);});
+    canvas.addEventListener("pointerup",function(){pointerDown=false;});
+    canvas.addEventListener("pointercancel",function(){pointerDown=false;});
+    playBtn.addEventListener("click",function(){if(mode==="paused")togglePause();else startGame();});
+    pauseBtn.addEventListener("click",togglePause);
+    soundBtn.addEventListener("click",function(){soundOn=!soundOn;soundBtn.textContent=soundOn?"🔊":"🔇";soundBtn.setAttribute("aria-label",soundOn?"Desactivar sonido":"Activar sonido");beep(850,.08);});
+    function holdButton(id,dir){
+      var b=document.getElementById(id);
+      b.addEventListener("pointerdown",function(e){e.preventDefault();held=dir;b.classList.add("active");try{b.setPointerCapture(e.pointerId);}catch(err){}});
+      var release=function(){if(held===dir)held=0;b.classList.remove("active");};
+      b.addEventListener("pointerup",release);b.addEventListener("pointercancel",release);b.addEventListener("lostpointercapture",release);
+    }
+    holdButton("leftBtn",-1);holdButton("rightBtn",1);
+    document.addEventListener("keydown",function(e){
+      if(["ArrowLeft","ArrowRight"," ","Spacebar"].indexOf(e.key)!==-1)e.preventDefault();
+      if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a")keys.left=true;
+      if(e.key==="ArrowRight"||e.key.toLowerCase()==="d")keys.right=true;
+      if(e.key.toLowerCase()==="p"&&mode!=="ready"&&mode!=="over")togglePause();
+      if((e.key===" "||e.key==="Enter")&&(mode==="ready"||mode==="over"))startGame();
+      else if(e.key===" "&&mode==="paused")togglePause();
+    });
+    document.addEventListener("keyup",function(e){if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a")keys.left=false;if(e.key==="ArrowRight"||e.key.toLowerCase()==="d")keys.right=false;});
+    document.addEventListener("visibilitychange",function(){if(document.hidden&&mode==="running")togglePause();});
+    window.addEventListener("resize",resize);
+    resize();updateHUD();requestAnimationFrame(loop);
+  })();
+  </script>
+</body>
+</html>
