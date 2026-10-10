@@ -634,6 +634,21 @@ export async function POST(request) {
       );
     }
 
+    const accion =
+      String(
+        body?.accion ||
+          body?.action ||
+          ""
+      )
+        .trim()
+        .toUpperCase();
+
+    const eliminar =
+      accion ===
+        "ELIMINAR" ||
+      accion ===
+        "DELETE";
+
     const {
       referencia,
       nombre,
@@ -707,6 +722,93 @@ export async function POST(request) {
         ? encontrados[0] ||
           null
         : null;
+
+    if (eliminar) {
+      if (!existente) {
+        return NextResponse.json(
+          {
+            ok: false,
+            accion:
+              "NO_EXISTE",
+            mensaje:
+              "El producto no existe.",
+          },
+          {
+            status: 404,
+          }
+        );
+      }
+
+      const eliminarResponse =
+        await fetch(
+          supabaseUrl +
+            "/rest/v1/productos" +
+            "?id=eq." +
+            encodeURIComponent(
+              existente.id
+            ),
+          {
+            method:
+              "DELETE",
+
+            headers: {
+              ...headersSupabase,
+              Prefer:
+                "return=representation",
+            },
+          }
+        );
+
+      const eliminarTexto =
+        await eliminarResponse.text();
+
+      if (
+        !eliminarResponse.ok
+      ) {
+        throw new Error(
+          "Supabase no pudo eliminar el producto. " +
+            eliminarTexto
+        );
+      }
+
+      const eliminados =
+        eliminarTexto
+          ? JSON.parse(
+              eliminarTexto
+            )
+          : [];
+
+      if (
+        !Array.isArray(
+          eliminados
+        ) ||
+        eliminados.length ===
+          0
+      ) {
+        return NextResponse.json(
+          {
+            ok: false,
+            accion:
+              "NO_EXISTE",
+            mensaje:
+              "El producto no existe.",
+          },
+          {
+            status: 404,
+          }
+        );
+      }
+
+      return NextResponse.json({
+        ok: true,
+        accion:
+          "ELIMINADO",
+        mensaje:
+          "Producto eliminado correctamente.",
+        producto:
+          eliminados[0],
+      });
+    }
 
     if (!existente) {
       if (!nombre) {
