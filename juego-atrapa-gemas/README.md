@@ -1,24 +1,24 @@
-# Atrapa Gemas 💎
+# RA Accesorios — El reto mayorista 💍
 
-Minijuego arcade gratuito y adaptable a celular y computador.
+Juego promocional independiente, diseñado para celular y computador, inspirado en las colecciones y la operación mayorista de RA Accesorios de Villavicencio.
 
-## Jugar
+## 🎮 Jugar
+**https://juego-atrapa-gemas.vercel.app/**
 
-Abre https://juego-atrapa-gemas.vercel.app/
+- Atrapa candongas, topos florales, collares, pulseras, anillos y relojes para llenar cajas de pedidos RA.
+- Cada joya suma 10 puntos y cada caja VIP suma 30.
+- Cada 8 productos, un pedido queda listo: ¡60 puntos extra!
+- Evita las cajas averiadas: quitan una vida.
+- 60 segundos por partida; tres vidas; niveles de dificultad progresivos.
+- Controles por gesto, ratón, flechas o botones laterales.
+- Pausa, sonido opcional y récord guardado en este dispositivo.
 
-- Desliza el dedo sobre el área de juego, mueve el mouse o usa las flechas del teclado.
-- 💎 Gema = 10 puntos.
-- ⭐ Estrella = 30 puntos.
-- 💣 Bomba = pierde una vida.
-- Tienes 60 segundos y 3 vidas.
-- Pausa, sonido opcional y récord guardado localmente.
+El juego menciona categorías del catálogo real (rodio, acero, plata 925), envíos a Colombia y las condiciones de compra conocidas de la tienda. Incluye enlace al catálogo de RA Accesorios. **Es un juego promocional: los puntos no representan descuentos, dinero ni premios.**
 
-## Código fuente
+## 📁 Código
+El juego es HTML, CSS y JavaScript sin dependencias. Todo se encuentra en `index.html`.
 
-Este prototipo está aislado en la rama `juego-atrapa-gemas` del repositorio actual. **No modifica la rama principal** ni los sitios de RA Accesorios.
+Este código está en la rama `juego-atrapa-gemas` de `chechorozco-dev/catalogo-mayoristas`. **No se modificó la rama `main` del catálogo de RA Accesorios.**
 
-El juego es HTML, CSS y JavaScript puro sin dependencias. El archivo `index.html` contiene todo.
-
-## Publicación
-
-El primer despliegue se creó desde los archivos fuente en un proyecto Vercel **separado** llamado `juego-atrapa-gemas`. Cambiar este archivo en GitHub no actualiza automáticamente ese despliegue: para configurar sincronización automática en el futuro conviene migrar a un repositorio exclusivo del juego y enlazarlo con Vercel.
+## 🚀 Despliegue
+Publicado en el proyecto Vercel independiente `juego-atrapa-gemas` a partir de los archivos de esta rama. El repositorio no está enlazado para despliegues automáticos: las actualizaciones se publican en Vercel mediante un nuevo despliegue de archivos.
