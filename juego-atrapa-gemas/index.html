@@ -3,27 +3,27 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#120e2c">
-  <meta name="description" content="Atrapa Gemas: un minijuego arcade para celular y computador. Recoge joyas, esquiva bombas y supera tu récord.">
-  <title>Atrapa Gemas ✦ Juego arcade</title>
+  <meta name="theme-color" content="#281c28">
+  <meta name="description" content="RA Accesorios: Reto Mayorista. Atrapa candongas, topos, collares, anillos y relojes. ¡Completa pedidos y supera tu récord!">
+  <title>RA Accesorios ✦ El reto mayorista</title>
   <style>
-    :root { color-scheme: dark; --ink:#f9f7ff; --muted:#b6aecf; --violet:#a894ff; --mint:#74f5dc; --gold:#ffd577; }
+    :root { color-scheme: dark; --ink:#fff9f7; --muted:#dacacb; --violet:#d7a5bc; --mint:#a7dcc0; --gold:#f4cf91; }
     * {box-sizing:border-box}
-    html { min-height:100%; background:#0d0920; }
-    body {margin:0; min-height:100dvh; font-family:ui-rounded,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:var(--ink); background:radial-gradient(ellipse 800px 520px at 15% -14%,#51317c88,transparent),radial-gradient(ellipse 700px 600px at 90% 20%,#135f7880,transparent),#100c27; overflow-x:hidden;}
+    html { min-height:100%; background:#17101a; }
+    body {margin:0; min-height:100dvh; font-family:ui-rounded,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:var(--ink); background:radial-gradient(ellipse 800px 520px at 15% -14%,#94596955,transparent),radial-gradient(ellipse 700px 600px at 90% 20%,#66614745,transparent),#170f19; overflow-x:hidden;}
     button {font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
     button:focus-visible {outline:3px solid #fff;outline-offset:4px}
     .page {width:min(100% - 28px,900px);margin:0 auto;padding:20px 0 max(28px,env(safe-area-inset-bottom))}
     .nav {display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:21px}
     .brand {display:flex;align-items:center;gap:10px;font-size:16px;font-weight:900;letter-spacing:.08em}
-    .logo {width:38px;height:38px;display:grid;place-items:center;border-radius:13px;background:linear-gradient(145deg,#ad88ff,#6c59e2);box-shadow:0 6px 22px #8f60f866;font-size:21px}
+    .logo {width:38px;height:38px;display:grid;place-items:center;border-radius:13px;background:linear-gradient(145deg,#e6b2b9,#ab617a);box-shadow:0 6px 22px #ce8c9c44;font-size:21px}
     .tag {border:1px solid #b6a1e13d;background:#ffffff10;border-radius:99px;padding:9px 12px;color:#d9d1f8;font-size:11px;font-weight:800;letter-spacing:.14em;white-space:nowrap}
     .intro {text-align:center;margin:2px 0 17px}
     h1 {font-size:clamp(31px,6vw,52px);line-height:1.04;letter-spacing:-.055em;margin:0 0 8px;font-weight:950}
-    h1 span {background:linear-gradient(95deg,#fbd4fc 5%,#b5a1ff 40%,#71f4d7 95%);background-clip:text;-webkit-background-clip:text;color:transparent}
+    h1 span {background:linear-gradient(95deg,#fcead0 5%,#f9c7cd 55%,#eec58d 95%);background-clip:text;-webkit-background-clip:text;color:transparent}
     .intro p {color:var(--muted);font-size:clamp(12px,2.7vw,15px);margin:0}
-    .game-shell {border:1px solid #ffffff20;background:#151032;border-radius:29px;padding:8px;box-shadow:0 25px 70px #02011466,0 0 0 1px #9c77c10c}
-    .arena {height:min(64dvh,610px);min-height:405px;position:relative;border-radius:23px;overflow:hidden;isolation:isolate;background:radial-gradient(ellipse 55% 48% at 50% 84%,#7443b044,transparent),radial-gradient(ellipse 65% 66% at 100% 0,#216d8240,transparent),linear-gradient(180deg,#12132e 0%,#141334 64%,#221643 100%)}
+    .game-shell {border:1px solid #ffffff20;background:#241921;border-radius:29px;padding:8px;box-shadow:0 25px 70px #02011466,0 0 0 1px #9c77c10c}
+    .arena {height:min(64dvh,610px);min-height:405px;position:relative;border-radius:23px;overflow:hidden;isolation:isolate;background:radial-gradient(ellipse 55% 48% at 50% 84%,#9b5d7744,transparent),radial-gradient(ellipse 65% 66% at 100% 0,#99844d25,transparent),linear-gradient(180deg,#271824 0%,#251822 64%,#3b2433 100%)}
     .arena:before {content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(#ffffff08 1px,transparent 1px),linear-gradient(90deg,#ffffff08 1px,transparent 1px);background-size:43px 43px;mask-image:linear-gradient(to bottom,transparent 6%,#000b 100%)}
     canvas {display:block;position:absolute;inset:0;width:100%;height:100%;touch-action:none;z-index:1}
     .hud {position:absolute;top:14px;left:14px;right:14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;z-index:3;pointer-events:none}
@@ -33,19 +33,19 @@
     #lifeValue {color:#ffa6c6;letter-spacing:.10em;white-space:nowrap}
     #timeValue {color:#f5d7a4}
     .actions {position:absolute;right:14px;top:91px;z-index:4;display:flex;gap:7px}
-    .icon-btn {min-width:39px;height:39px;padding:0 9px;border-radius:12px;color:#eee9ff;border:1px solid #ffffff30;background:#100b29aa;backdrop-filter:blur(8px);font-size:17px;transition:transform .15s,background .15s}
+    .icon-btn {min-width:39px;height:39px;padding:0 9px;border-radius:12px;color:#eee9ff;border:1px solid #ffffff30;background:#30202ba9;backdrop-filter:blur(8px);font-size:17px;transition:transform .15s,background .15s}
     .icon-btn:active {transform:scale(.94)}
     .icon-btn:disabled {opacity:.4;cursor:not-allowed}
     .level {position:absolute;bottom:15px;left:17px;color:#eee4ff9e;font-size:11px;font-weight:750;z-index:2;letter-spacing:.1em;text-transform:uppercase;pointer-events:none}
     .overlay {position:absolute;inset:0;z-index:8;display:grid;place-items:center;padding:18px;background:#0b0924ab;backdrop-filter:blur(10px);transition:opacity .24s,visibility .24s}
     .overlay.is-hidden {opacity:0;visibility:hidden;pointer-events:none}
-    .dialog {width:min(100%,380px);max-height:100%;overflow:auto;text-align:center;padding:28px 23px 25px;border-radius:26px;border:1px solid #ffffff33;background:linear-gradient(155deg,#2e2356f5,#161231f8);box-shadow:0 22px 70px #050211a8}
-    .crown {height:68px;width:68px;margin:0 auto 10px;border-radius:22px;display:grid;place-items:center;background:linear-gradient(135deg,#b67aff,#7449d9);font-size:35px;box-shadow:0 10px 35px #a065ff44;transform:rotate(-8deg)}
+    .dialog {width:min(100%,380px);max-height:100%;overflow:auto;text-align:center;padding:28px 23px 25px;border-radius:26px;border:1px solid #ffffff33;background:linear-gradient(155deg,#573443f7,#291d2cf8);box-shadow:0 22px 70px #050211a8}
+    .crown {height:68px;width:68px;margin:0 auto 10px;border-radius:22px;display:grid;place-items:center;background:linear-gradient(135deg,#f3c6c2,#a86a82);font-size:35px;box-shadow:0 10px 35px #a065ff44;transform:rotate(-8deg)}
     .dialog h2 {font-size:clamp(24px,5vw,31px);letter-spacing:-.045em;margin:8px 0 8px}
     .dialog p {color:#c5bdde;line-height:1.55;font-size:14px;margin:0 auto 14px}
     .rules {display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin:15px auto 21px}
     .rule {background:#ffffff12;border:1px solid #ffffff1e;padding:7px 10px;border-radius:9px;font-size:12px;font-weight:700}
-    .start-btn {display:block;width:100%;border:0;border-radius:15px;padding:15px 20px;background:linear-gradient(110deg,#c6a2ff,#8b8afc);color:#1b123c;font-weight:950;font-size:16px;box-shadow:0 10px 26px #927af24c;transition:transform .15s,filter .15s}
+    .start-btn {display:block;width:100%;border:0;border-radius:15px;padding:15px 20px;background:linear-gradient(110deg,#fce3bd,#eba6b8);color:#421e30;font-weight:950;font-size:16px;box-shadow:0 10px 26px #927af24c;transition:transform .15s,filter .15s}
     .start-btn:active {transform:scale(.97)}
     .start-btn:hover {filter:brightness(1.07)}
     #result {font-size:16px;font-weight:800;color:#91f8de;margin-bottom:16px}
@@ -55,8 +55,8 @@
     .help b {color:#ffe99e}
     .key {padding:5px 8px;background:#ffffff12;border:1px solid #ffffff25;border-radius:7px;color:#dfd8f7;font-size:12px}
     .move-buttons {display:flex;gap:9px}
-    .move-btn {width:56px;height:44px;border-radius:13px;border:1px solid #b6a1e14a;background:#ffffff15;color:#e4ddff;font-size:20px;font-weight:900;touch-action:none;user-select:none}
-    .move-btn:active,.move-btn.active {background:#8c76f877}
+    .move-btn {width:56px;height:44px;border-radius:13px;border:1px solid #b6a1e14a;background:#ffdbd319;color:#e4ddff;font-size:20px;font-weight:900;touch-action:none;user-select:none}
+    .move-btn:active,.move-btn.active {background:#d892a477}
     .foot {text-align:center;color:#8880ac;font-size:11px;margin-top:12px;line-height:1.5}
     @media (max-width:540px) {
       .page {width:calc(100% - 18px);padding-top:12px}
@@ -83,39 +83,86 @@
       .crown {width:50px;height:50px;font-size:27px}
     }
     @media (prefers-reduced-motion:reduce) { .overlay,.start-btn,.icon-btn {transition:none} }
+
+    .brand-text{display:flex;flex-direction:column;gap:2px;line-height:1.08}
+    .brand-text span{font-size:10px;color:#e3c3c9;letter-spacing:.22em;font-weight:650}
+    .logo{font-family:Georgia,"Times New Roman",serif;font-size:21px;letter-spacing:-.12em;padding-right:5px}
+    .brand-text strong{letter-spacing:.15em}
+    .topnote{font-size:11px;color:#dcc9bd;font-weight:750;letter-spacing:.16em;text-transform:uppercase;margin:0 0 9px}
+    .intro h1{font-family:Georgia,"Times New Roman",serif;font-weight:800;letter-spacing:-.045em}
+    .chips{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:7px;margin-top:13px}
+    .chips span{font-size:10px;font-weight:800;letter-spacing:.045em;color:#fbe1de;background:#ffffff0b;border:1px solid #f6d3ce2d;border-radius:99px;padding:6px 10px}
+    .order-card{position:absolute;top:92px;left:14px;width:min(53%,225px);z-index:4;padding:10px 12px 11px;border:1px solid #f0d8c346;border-radius:13px;background:#221927c9;box-shadow:0 8px 23px #130a1580;backdrop-filter:blur(12px);pointer-events:none}
+    .order-top{display:flex;justify-content:space-between;align-items:center;gap:5px;margin-bottom:7px}
+    .order-top strong{font-size:11px;color:#fee5cb;letter-spacing:.07em}
+    .order-top span{color:#f6cbad;font-size:11px;font-weight:850}
+    .order-progress{height:6px;background:#ffffff22;border-radius:99px;overflow:hidden}
+    .order-progress span{display:block;height:100%;background:linear-gradient(90deg,#deb18a,#f0a2b7);width:0%;border-radius:99px;transition:width .16s}
+    .order-hint{font-size:9px;color:#ded0d8;margin-top:6px}
+    .game-toast{position:absolute;left:50%;top:39%;transform:translate(-50%,-14px);z-index:5;min-width:200px;max-width:88%;text-align:center;border:1px solid #fbe4ac80;border-radius:14px;background:#342434eb;box-shadow:0 10px 40px #130d19b3;padding:12px 16px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+    .game-toast.visible{opacity:1;transform:translate(-50%,0)}
+    .game-toast strong{display:block;color:#ffe5aa;font-size:15px}
+    .game-toast span{display:block;color:#f2e0dd;font-size:11px;margin-top:5px;line-height:1.3}
+    .shop-link{display:inline-flex;gap:7px;align-items:center;justify-content:center;color:#261625;background:linear-gradient(100deg,#fce5c3,#f3bcce);border-radius:12px;padding:11px 16px;text-decoration:none;font-size:12px;font-weight:900;letter-spacing:.02em;box-shadow:0 8px 25px #e9a6c02a}
+    .shop-link:hover{filter:brightness(1.06)}
+    .shop-line{text-align:center;margin-top:18px}
+    .shop-line p{color:#d0b4bd;font-size:12px;margin:0 0 12px}
+    .rules{gap:6px}
+    .rule{background:#f9d9d512;border-color:#f3dbd72a}
+    #result{color:#ffe6b2}
+    .tag{color:#f9dfcf}
+    .stat{background:#211723dc;border-color:#f0ceca29}
+    .stat small{color:#d3b2bb}
+    #lifeValue{color:#ffa5b6}
+    #timeValue{color:#ffe5bd}
+    .level{color:#f7d5cbb0}
+    .foot a{color:#efc8ba}
+    @media(max-width:540px){
+      .brand-text strong{font-size:12px}
+      .brand-text span{font-size:8px}
+      .topnote{font-size:10px}
+      .chips{margin-top:9px;gap:5px}
+      .chips span{font-size:9px;padding:5px 7px}
+      .order-card{top:78px;left:9px;padding:8px 9px 9px;width:min(53%,205px)}
+      .order-top strong,.order-top span{font-size:10px}
+    }
   </style>
 </head>
 <body>
   <main class="page">
     <nav class="nav" aria-label="Cabecera">
-      <div class="brand"><div class="logo" aria-hidden="true">💎</div> GEM RUSH</div>
-      <span class="tag">✦ MINI ARCADE · 60 S</span>
+      <div class="brand"><div class="logo" aria-hidden="true">RA</div><div class="brand-text"><strong>RA ACCESORIOS</strong><span>MAYORISTAS · VILLAVICENCIO</span></div></div>
+      <span class="tag">✦ RETO MAYORISTA</span>
     </nav>
     <header class="intro">
-      <h1>Atrapa <span>las Gemas</span></h1>
-      <p>¡Recoge joyas, esquiva las bombas y supera tu récord!</p>
+      <p class="topnote">✦ Bienvenido a nuestra tienda virtual ✦</p>
+      <h1>El reto <span>mayorista RA</span></h1>
+      <p>¡Atrapa las joyas, prepara pedidos y conviértete en el mejor vendedor!</p>
+      <div class="chips"><span>✨ RODIO</span><span>💎 ACERO</span><span>🤍 PLATA 925</span><span>🚚 ENVÍOS A COLOMBIA</span></div>
     </header>
-    <section class="game-shell" aria-label="Área del juego">
+    <section class="game-shell" aria-label="Juego RA Accesorios: el reto mayorista">
       <div class="arena" id="arena">
-        <canvas id="game" aria-label="Juego Atrapa Gemas: mueve la canasta para atrapar joyas"></canvas>
+        <canvas id="game" aria-label="Juego RA Accesorios: mueve la caja para recoger productos de joyería y preparar pedidos"></canvas>
         <div class="hud" aria-live="off">
           <div class="stat"><small>✦ Puntos</small><strong id="scoreValue">0</strong></div>
           <div class="stat"><small>⏱ Tiempo</small><strong id="timeValue">60 s</strong></div>
           <div class="stat"><small>♥ Vidas</small><strong id="lifeValue">♥ ♥ ♥</strong></div>
         </div>
+        <div class="order-card" aria-live="off"><div class="order-top"><strong id="orderName">PEDIDO RA-001</strong><span id="orderCount">0 / 8</span></div><div class="order-progress"><span id="orderBar"></span></div><div class="order-hint">Recoge 8 piezas para empacarlo 📦</div></div>
         <div class="actions">
           <button id="soundBtn" class="icon-btn" type="button" aria-label="Activar sonido" title="Sonido">🔇</button>
           <button id="pauseBtn" class="icon-btn" type="button" aria-label="Pausar" title="Pausar" disabled>⏸</button>
         </div>
-        <div class="level" id="level">NIVEL 1 · PREPÁRATE</div>
+        <div class="game-toast" id="gameToast" aria-live="polite"><strong id="toastTitle">¡Pedido listo!</strong><span id="toastDesc">RA Accesorios</span></div>
+        <div class="level" id="level">RETO MAYORISTA · PREPÁRATE</div>
         <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="overlayTitle">
           <div class="dialog">
-            <div class="crown" id="overlayIcon" aria-hidden="true">💎</div>
-            <h2 id="overlayTitle">¿Listo para brillar?</h2>
-            <p id="overlayText">Atrapa todas las joyas que puedas durante 60 segundos. ¡Pero mucho cuidado con las bombas!</p>
+            <div class="crown" id="overlayIcon" aria-hidden="true">💍</div>
+            <h2 id="overlayTitle">¡A preparar pedidos!</h2>
+            <p id="overlayText">Recoge candongas, topos, collares, pulseras y relojes. Cada 8 joyas completas un pedido mayorista de RA Accesorios.</p>
             <div id="result" hidden></div>
-            <div class="rules" id="rules"><span class="rule">💎 +10 puntos</span><span class="rule">⭐ +30 puntos</span><span class="rule">💣 −1 vida</span></div>
-            <button type="button" class="start-btn" id="playBtn">¡EMPEZAR A JUGAR! →</button>
+            <div class="rules" id="rules"><span class="rule">💎 Joya +10</span><span class="rule">🎁 Pedido VIP +30</span><span class="rule">📦 Avería −1 vida</span><span class="rule">✨ Pedido completo +60</span></div>
+            <button type="button" class="start-btn" id="playBtn">¡EMPEZAR EL RETO! →</button>
           </div>
         </div>
       </div>
@@ -127,9 +174,13 @@
         </div>
       </div>
     </section>
-    <p class="foot">Tu mejor puntuación se guarda en este dispositivo. Juega gratis, sin registros.</p>
+    <div class="shop-line">
+      <p>¿Quieres las joyas de verdad? Descubre el catálogo mayorista de RA Accesorios.</p>
+      <a class="shop-link" href="https://mayoristasra.com/" target="_blank" rel="noopener noreferrer">🛍️ CONOCER NUESTRO CATÁLOGO ↗</a>
+    </div>
+    <p class="foot">Rodio · Acero · Plata 925 · Accesorios y relojería<br>Primera compra desde $150.000 · Envío gratis en compras superiores a $400.000<br>Juego promocional: los puntos son virtuales y no equivalen a descuentos ni premios.</p>
   </main>
-  <script>
+    <script>
   (function () {
     "use strict";
     var canvas = document.getElementById("game");
@@ -140,6 +191,12 @@
     var timeEl = document.getElementById("timeValue");
     var lifeEl = document.getElementById("lifeValue");
     var levelEl = document.getElementById("level");
+    var orderNameEl = document.getElementById("orderName");
+    var orderCountEl = document.getElementById("orderCount");
+    var orderBarEl = document.getElementById("orderBar");
+    var toastBox = document.getElementById("gameToast");
+    var toastTitleEl = document.getElementById("toastTitle");
+    var toastDescEl = document.getElementById("toastDesc");
     var playBtn = document.getElementById("playBtn");
     var pauseBtn = document.getElementById("pauseBtn");
     var soundBtn = document.getElementById("soundBtn");
@@ -151,10 +208,12 @@
     var W = 500, H = 530, DPR = 1;
     var mode = "ready", score = 0, lives = 3, elapsed = 0, lastTime = 0, spawnClock = 0;
     var items = [], particles = [], stars = [], shake = 0, flash = 0, combo = 0;
-    var basket = {x:250,target:250,y:470,w:96};
+    var orderCount = 0, ordersDone = 0, orderGoal = 8, toastTime = 0;
+    var raTips = ["Rodio, acero y plata 925","Envíos a toda Colombia","¡Envío gratis desde $400.000!","Primera compra mayorista desde $150.000","Candongas, topos, pulseras y cadenas","Diseños para emprendedores de todo el país","Revisa las novedades de cada semana","Pedidos preparados con cariño en Villavicencio"];
+    var basket = {x:250,target:250,y:470,w:100};
     var pointerDown = false, keys = {left:false,right:false}, held = 0, soundOn = false, audio = null;
     var best = 0;
-    try { best = Math.max(0, Number(localStorage.getItem("gemrush-best-v1")) || 0); } catch(e) {}
+    try { best = Math.max(0, Number(localStorage.getItem("ra-reto-mayorista-best-v1")) || 0); } catch(e) {}
     function rnd(a,b) {return a + Math.random()*(b-a);}
     function clamp(x,a,b) {return Math.max(a,Math.min(b,x));}
     function initStars(){
@@ -178,9 +237,18 @@
       scoreEl.textContent=score.toLocaleString("es-CO");
       timeEl.textContent=Math.ceil(Math.max(0,60-elapsed))+" s";
       lifeEl.textContent=Array.from({length:3},function(_,i){return i<lives?"♥":"♡";}).join(" ");
-      levelEl.textContent="NIVEL "+(1+Math.floor(elapsed/15))+" · "+(mode==="running"?"¡SIGUE ASÍ!":mode==="paused"?"EN PAUSA":"ATRAPA Y GANA");
+      orderNameEl.textContent="PEDIDO RA-"+String(ordersDone+1).padStart(3,"0");
+      orderCountEl.textContent=orderCount+" / "+orderGoal;
+      orderBarEl.style.width=(orderCount/orderGoal*100)+"%";
+      levelEl.textContent="RA ACCESORIOS · "+ordersDone+" PEDIDO"+(ordersDone===1?"":"S")+" LISTO"+(ordersDone===1?"":"S");
     }
-    function beep(freq,duration,style){
+    function notifyOrder(){
+      toastTitleEl.textContent="📦 ¡Pedido RA-"+String(ordersDone).padStart(3,"0")+" listo! +60";
+      toastDescEl.textContent=raTips[(ordersDone-1)%raTips.length];
+      toastTime=2.7;
+      toastBox.classList.add("visible");
+    }
+        function beep(freq,duration,style){
       if(!soundOn)return;
       try {
         var AC=window.AudioContext||window.webkitAudioContext;
@@ -206,15 +274,16 @@
     }
     function startGame(){
       score=0;lives=3;elapsed=0;combo=0;items=[];particles=[];flash=0;shake=0;spawnClock=.25;
+      orderCount=0;ordersDone=0;toastTime=0;toastBox.classList.remove("visible");
       basket.x=basket.target=W/2;mode="running";
       overlay.classList.add("is-hidden");pauseBtn.disabled=false;pauseBtn.textContent="⏸";
       pauseBtn.setAttribute("aria-label","Pausar");
       updateHUD();lastTime=performance.now();beep(550,.1);
     }
-    function togglePause(){
+        function togglePause(){
       if(mode==="running"){
         mode="paused";pauseBtn.textContent="▶";pauseBtn.setAttribute("aria-label","Reanudar");
-        showOverlay("¡Tiempo de respirar!","Tu partida está en pausa. Las gemas te esperan.","CONTINUAR →","⏸",null);
+        showOverlay("¡Pausa de bodega!","Los pedidos RA están en pausa. ¡Retoma cuando quieras!","CONTINUAR →","📦",null);
       }else if(mode==="paused"){
         mode="running";overlay.classList.add("is-hidden");pauseBtn.textContent="⏸";pauseBtn.setAttribute("aria-label","Pausar");lastTime=performance.now();
       }
@@ -224,19 +293,25 @@
       if(mode!=="running")return;
       mode="over";pauseBtn.disabled=true;
       var isRecord=score>best;
-      if(isRecord){best=score;try{localStorage.setItem("gemrush-best-v1",String(best));}catch(e){}}
-      var message=isRecord?"¡Nuevo récord! Eres una estrella.":"¡Buen intento! Cada partida es una nueva oportunidad.";
-      var result='<span class="result-number">'+score.toLocaleString("es-CO")+' puntos</span>🏆 Tu récord: '+best.toLocaleString("es-CO");
-      showOverlay(lives===0?"¡Se acabaron las vidas!":"¡Tiempo cumplido!",message,"VOLVER A JUGAR →",isRecord?"🏆":"✨",result);
+      if(isRecord){best=score;try{localStorage.setItem("ra-reto-mayorista-best-v1",String(best));}catch(e){}}
+      var message=isRecord?"¡Nuevo récord RA! Tu bodega está imparable.":"¡Cada pedido cuenta! Vuelve a intentarlo y supera tu marca.";
+      var result='<span class="result-number">'+score.toLocaleString("es-CO")+' puntos</span>📦 Pedidos preparados: '+ordersDone+'<br>🏆 Récord RA: '+best.toLocaleString("es-CO");
+      showOverlay(lives===0?"¡Cuidado con las averías!":"¡Turno terminado!",message,"VOLVER A JUGAR →",isRecord?"🏆":"✨",result);
+      toastBox.classList.remove("visible");
       beep(isRecord?780:320,.25);
       updateHUD();
     }
-    function spawn(){
-      var chance=Math.random(),kind=chance<.17?"bomb":chance<.29?"star":"gem";
-      var radius=kind==="bomb"?20:kind==="star"?21:18;
-      items.push({x:rnd(32,W-32),y:-35,r:radius,kind:kind,color:["cyan","pink","purple"][Math.floor(Math.random()*3)],vy:rnd(142,201)+elapsed*2.2+Math.min(H,650)*.075,spin:rnd(-1.5,1.5),a:0,sway:rnd(0,7),sv:rnd(.5,1.7)});
+        function spawn(){
+      var chance=Math.random(),kind=chance<.17?"bomb":chance<.30?"star":"gem";
+      var radius=kind==="bomb"?23:kind==="star"?23:22;
+      var styles=["hoop","flower","necklace","bracelet","ring","watch"];
+      items.push({x:rnd(35,W-35),y:-36,r:radius,kind:kind,
+        style:styles[Math.floor(Math.random()*styles.length)],
+        color:["gold","silver","rose"][Math.floor(Math.random()*3)],
+        vy:rnd(133,190)+elapsed*2.1+Math.min(H,650)*.07,
+        spin:rnd(-1.2,1.2),a:0,sway:rnd(0,7),sv:rnd(.5,1.7)});
     }
-    function burst(x,y,color,count){
+        function burst(x,y,color,count){
       for(var i=0;i<count;i++){
         var a=rnd(0,Math.PI*2),v=rnd(40,180);
         particles.push({x:x,y:y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-24,life:rnd(.38,.9),max:.9,r:rnd(2,5),color:color});
@@ -248,16 +323,21 @@
     }
     function collect(item){
       if(item.kind==="bomb"){
-        lives--;combo=0;shake=9;flash=.32;burst(item.x,item.y,"#ff6f99",19);beep(170,.3,"sawtooth");
+        lives--;combo=0;shake=9;flash=.32;burst(item.x,item.y,"#ff8294",19);beep(170,.3,"sawtooth");
         if(lives<=0)endGame();
       }else{
-        var points=item.kind==="star"?30:10;score+=points;combo++;
-        burst(item.x,item.y,item.kind==="star"?"#ffe28f":item.color==="cyan"?"#7cf7ee":item.color==="pink"?"#ff9cdb":"#bba1ff",15);
+        var points=item.kind==="star"?30:10;
+        score+=points;combo++;orderCount++;
+        burst(item.x,item.y,item.kind==="star"?"#ffe4ae":item.color==="gold"?"#fbd5a7":item.color==="rose"?"#fabac9":"#d4e7f2",15);
         beep(item.kind==="star"?960:650+Math.min(combo,8)*38,.1);
+        if(orderCount>=orderGoal){
+          orderCount=0;ordersDone++;score+=60;
+          burst(basket.x,basket.y-8,"#f9d7a9",26);notifyOrder();beep(980,.18);
+        }
       }
       updateHUD();
     }
-    function update(dt){
+        function update(dt){
       if(mode!=="running")return;
       elapsed+=dt;spawnClock-=dt;
       if(spawnClock<=0){
@@ -274,6 +354,7 @@
         else if(it.y>H+35)items.splice(i,1);
       }
       if(flash>0)flash-=dt;
+      if(toastTime>0){toastTime-=dt;if(toastTime<=0)toastBox.classList.remove("visible");}
       if(shake>0)shake=Math.max(0,shake-dt*28);
       if(elapsed>=60)endGame();
       updateHUD();
@@ -281,66 +362,103 @@
     function drawBackground(now){
       for(var i=0;i<stars.length;i++){
         var s=stars[i],alpha=.20+.33*(.5+.5*Math.sin(now*.001*s.speed+s.phase));
-        ctx.fillStyle="rgba(229,220,255,"+alpha+")";
+        ctx.fillStyle="rgba(255,226,215,"+alpha+")";
         ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fill();
       }
       ctx.save();
       var grd=ctx.createRadialGradient(W/2,H*.88,4,W/2,H*.88,W*.62);
-      grd.addColorStop(0,"#8b56cb22");grd.addColorStop(1,"#8b56cb00");
+      grd.addColorStop(0,"#c57b9527");grd.addColorStop(1,"#c57b9500");
       ctx.fillStyle=grd;ctx.fillRect(0,0,W,H);ctx.restore();
-      ctx.strokeStyle="#b9a8ef18";ctx.lineWidth=2;
+      ctx.strokeStyle="#f3cecf24";ctx.lineWidth=2;
       ctx.beginPath();ctx.ellipse(W/2,H-28,W*.42,21,0,0,Math.PI*2);ctx.stroke();
     }
     function drawGem(it){
-      var r=it.r;
+      // Piezas ilustradas inspiradas en las categorías reales de RA Accesorios.
+      var r=it.r,style=it.style||"hoop";
+      var metal=it.color==="silver"?"#dce9f4":it.color==="rose"?"#e9aabd":"#f5d39b";
+      var shadow=it.color==="silver"?"#9bc4e8":it.color==="rose"?"#e68ca9":"#eebd7c";
       ctx.save();ctx.translate(it.x,it.y);ctx.rotate(it.a);
-      ctx.shadowBlur=18;ctx.shadowColor=it.color==="cyan"?"#4df7edbb":it.color==="pink"?"#ff7bcdbb":"#ad8cffbb";
-      var colors=it.color==="cyan"?["#b7fff8","#2bd9cb","#1689bd"]:it.color==="pink"?["#fff2fc","#f683d4","#9e4ba6"]:["#efe7ff","#ad92ff","#6353da"];
-      var g=ctx.createLinearGradient(-r,-r,r,r);g.addColorStop(0,colors[0]);g.addColorStop(.5,colors[1]);g.addColorStop(1,colors[2]);
-      ctx.beginPath();ctx.moveTo(-r*.67,-r*.52);ctx.lineTo(r*.66,-r*.52);ctx.lineTo(r,-r*.08);ctx.lineTo(0,r);ctx.lineTo(-r,-r*.08);ctx.closePath();ctx.fillStyle=g;ctx.fill();
-      ctx.shadowBlur=0;ctx.lineWidth=1.5;ctx.strokeStyle="#ffffffb8";ctx.stroke();
-      ctx.beginPath();ctx.moveTo(-r*.67,-r*.52);ctx.lineTo(-r*.33,-r*.06);ctx.lineTo(0,r);ctx.lineTo(r*.33,-r*.06);ctx.lineTo(r*.66,-r*.52);
-      ctx.moveTo(-r,-r*.08);ctx.lineTo(-r*.33,-r*.06);ctx.lineTo(r*.33,-r*.06);ctx.lineTo(r,-r*.08);
-      ctx.strokeStyle="#ffffff88";ctx.lineWidth=1.3;ctx.stroke();
-      ctx.beginPath();ctx.moveTo(-r*.28,-r*.40);ctx.lineTo(-r*.43,-r*.13);ctx.lineTo(-r*.16,-r*.15);ctx.closePath();ctx.fillStyle="#ffffffbb";ctx.fill();
+      ctx.shadowBlur=12;ctx.shadowColor=shadow+"aa";ctx.lineCap="round";ctx.lineJoin="round";
+      if(style==="hoop"){
+        ctx.lineWidth=6;ctx.strokeStyle=metal;
+        ctx.beginPath();ctx.ellipse(-9,1,9,15,-.12,0,Math.PI*2);ctx.stroke();
+        ctx.beginPath();ctx.ellipse(11,1,9,15,.10,0,Math.PI*2);ctx.stroke();
+        ctx.shadowBlur=0;ctx.lineWidth=2;ctx.strokeStyle="#fff9f0";
+        ctx.beginPath();ctx.arc(-9,-14,4.5,-2.8,-.3);ctx.stroke();
+        ctx.beginPath();ctx.arc(11,-14,4.5,-2.8,-.3);ctx.stroke();
+      }else if(style==="flower"){
+        for(var i=0;i<5;i++){
+          var a=i*2*Math.PI/5;
+          ctx.save();ctx.rotate(a);ctx.fillStyle=i%2?"#ffe5ef":"#f6b3cc";ctx.strokeStyle=metal;ctx.lineWidth=2;
+          ctx.beginPath();ctx.ellipse(0,-12,7.5,11,0,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.restore();
+        }
+        ctx.beginPath();ctx.arc(0,0,5,0,Math.PI*2);ctx.fillStyle=metal;ctx.fill();
+        ctx.shadowBlur=0;ctx.beginPath();ctx.arc(-1,-2,1.7,0,Math.PI*2);ctx.fillStyle="#ffffff";ctx.fill();
+      }else if(style==="necklace"){
+        ctx.strokeStyle=metal;ctx.lineWidth=3.5;ctx.beginPath();ctx.moveTo(-19,-16);ctx.bezierCurveTo(-19,8,-10,14,0,19);ctx.bezierCurveTo(10,14,19,8,19,-16);ctx.stroke();
+        ctx.shadowBlur=0;ctx.fillStyle=metal;ctx.beginPath();ctx.moveTo(0,10);ctx.lineTo(10,20);ctx.lineTo(0,31);ctx.lineTo(-10,20);ctx.closePath();ctx.fill();
+        ctx.fillStyle="#fff5ff";ctx.beginPath();ctx.arc(0,19,4,0,Math.PI*2);ctx.fill();
+      }else if(style==="bracelet"){
+        ctx.lineWidth=3;ctx.strokeStyle=metal;ctx.beginPath();ctx.ellipse(0,0,17,17,0,0,Math.PI*2);ctx.stroke();
+        for(var b=0;b<10;b++){
+          var ba=b*2*Math.PI/10;ctx.beginPath();ctx.arc(Math.cos(ba)*17,Math.sin(ba)*17,3.8,0,Math.PI*2);
+          ctx.fillStyle=b%3===0?"#fff0fc":metal;ctx.fill();
+        }
+        ctx.shadowBlur=0;ctx.fillStyle="#fff9fa";ctx.beginPath();ctx.arc(0,0,4,0,Math.PI*2);ctx.fill();
+      }else if(style==="ring"){
+        ctx.strokeStyle=metal;ctx.lineWidth=5;ctx.beginPath();ctx.ellipse(0,6,13,15,0,0,Math.PI*2);ctx.stroke();
+        ctx.fillStyle=metal;ctx.beginPath();ctx.moveTo(-10,-7);ctx.lineTo(-5,-20);ctx.lineTo(7,-20);ctx.lineTo(13,-7);ctx.lineTo(0,3);ctx.closePath();ctx.fill();
+        ctx.shadowBlur=0;ctx.fillStyle="#fff7ff";ctx.beginPath();ctx.moveTo(-5,-15);ctx.lineTo(6,-15);ctx.lineTo(10,-7);ctx.lineTo(0,-1);ctx.lineTo(-9,-7);ctx.closePath();ctx.fill();
+      }else if(style==="watch"){
+        ctx.shadowBlur=0;ctx.fillStyle=metal;ctx.beginPath();ctx.roundRect(-7,-29,14,58,4);ctx.fill();
+        ctx.fillStyle="#593d4a";ctx.beginPath();ctx.roundRect(-5,-24,10,48,3);ctx.fill();
+        ctx.shadowColor=shadow+"88";ctx.shadowBlur=9;ctx.fillStyle=metal;ctx.beginPath();ctx.arc(0,0,17,0,Math.PI*2);ctx.fill();
+        ctx.shadowBlur=0;ctx.fillStyle="#fffaf6";ctx.beginPath();ctx.arc(0,0,12,0,Math.PI*2);ctx.fill();
+        ctx.strokeStyle="#aa7683";ctx.lineWidth=2.4;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,-8);ctx.moveTo(0,0);ctx.lineTo(6,3);ctx.stroke();
+      }
       ctx.restore();
     }
-    function drawStar(it){
-      var r=it.r;
-      ctx.save();ctx.translate(it.x,it.y);ctx.rotate(it.a);
-      ctx.shadowBlur=23;ctx.shadowColor="#ffd978";
-      ctx.beginPath();
-      for(var i=0;i<10;i++){var ang=-Math.PI/2+i*Math.PI/5,rad=i%2?r*.49:r;ctx.lineTo(Math.cos(ang)*rad,Math.sin(ang)*rad);}
-      ctx.closePath();var g=ctx.createLinearGradient(-r,-r,r,r);g.addColorStop(0,"#fff9c1");g.addColorStop(.48,"#ffc85c");g.addColorStop(1,"#ec8e40");ctx.fillStyle=g;ctx.fill();ctx.shadowBlur=0;ctx.lineWidth=2;ctx.strokeStyle="#fff3b3";ctx.stroke();
-      ctx.fillStyle="#ffffffd6";ctx.beginPath();ctx.arc(-r*.18,-r*.2,2.8,0,Math.PI*2);ctx.fill();ctx.restore();
+        function drawStar(it){
+      // Caja de pedido VIP: bono de 30 puntos.
+      var r=it.r;ctx.save();ctx.translate(it.x,it.y);ctx.rotate(it.a);
+      ctx.shadowBlur=18;ctx.shadowColor="#ffe3a0bb";
+      var g=ctx.createLinearGradient(-r,-r,r,r);g.addColorStop(0,"#fff2cf");g.addColorStop(1,"#c69478");
+      ctx.fillStyle=g;ctx.beginPath();ctx.roundRect(-20,-13,40,33,5);ctx.fill();
+      ctx.shadowBlur=0;ctx.strokeStyle="#fff3cf";ctx.lineWidth=2;ctx.stroke();
+      ctx.fillStyle="#a96581";ctx.beginPath();ctx.roundRect(-22,-20,44,12,4);ctx.fill();
+      ctx.fillStyle="#fff1cf";ctx.fillRect(-4,-20,8,40);
+      ctx.lineWidth=3;ctx.strokeStyle="#ffd5e3";
+      ctx.beginPath();ctx.ellipse(-9,-24,9,5,.35,0,Math.PI*2);ctx.stroke();
+      ctx.beginPath();ctx.ellipse(9,-24,9,5,-.35,0,Math.PI*2);ctx.stroke();
+      ctx.fillStyle="#fff7e3";ctx.font="bold 10px system-ui";ctx.textAlign="center";ctx.fillText("VIP",0,12);
+      ctx.restore();
     }
-    function drawBomb(it){
-      var r=it.r;
-      ctx.save();ctx.translate(it.x,it.y);ctx.rotate(it.a*.25);
-      ctx.shadowBlur=18;ctx.shadowColor="#fa3d8580";
-      var g=ctx.createRadialGradient(-7,-7,2,0,0,r);g.addColorStop(0,"#6d6585");g.addColorStop(1,"#242337");
-      ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle="#d3b7ea9c";ctx.lineWidth=2;ctx.stroke();
-      ctx.strokeStyle="#d8a57e";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(7,-r+2);ctx.quadraticCurveTo(15,-r-9,11,-r-16);ctx.stroke();
-      ctx.fillStyle="#ff6274";ctx.beginPath();ctx.arc(11,-r-16,4.8+Math.sin(performance.now()*.02)*1.2,0,Math.PI*2);ctx.fill();
-      ctx.strokeStyle="#ff9fbb";ctx.lineWidth=2.8;ctx.beginPath();ctx.moveTo(-7,-3);ctx.lineTo(-2,2);ctx.moveTo(-2,-3);ctx.lineTo(-7,2);ctx.moveTo(5,-3);ctx.lineTo(10,2);ctx.moveTo(10,-3);ctx.lineTo(5,2);ctx.stroke();
-      ctx.beginPath();ctx.arc(1,8,6,Math.PI*1.2,Math.PI*1.8);ctx.strokeStyle="#ff9fbb";ctx.lineWidth=2;ctx.stroke();ctx.restore();
+        function drawBomb(it){
+      // Paquete averiado; esquívalo para conservar vidas.
+      var r=it.r;ctx.save();ctx.translate(it.x,it.y);ctx.rotate(it.a*.2);
+      ctx.shadowBlur=13;ctx.shadowColor="#ff6f8a88";
+      ctx.fillStyle="#d6aa83";ctx.beginPath();ctx.roundRect(-18,-17,36,34,4);ctx.fill();
+      ctx.shadowBlur=0;ctx.strokeStyle="#a96558";ctx.lineWidth=2.8;ctx.stroke();
+      ctx.fillStyle="#eed1b3";ctx.fillRect(-4,-17,8,15);ctx.fillRect(-18,-2,36,6);
+      ctx.strokeStyle="#9a4055";ctx.lineWidth=2.6;ctx.beginPath();
+      ctx.moveTo(-11,9);ctx.lineTo(-4,3);ctx.lineTo(1,11);ctx.lineTo(6,4);ctx.lineTo(11,10);ctx.stroke();
+      ctx.fillStyle="#ac2e53";ctx.beginPath();ctx.arc(14,-14,9,0,Math.PI*2);ctx.fill();
+      ctx.font="bold 13px system-ui";ctx.textAlign="center";ctx.fillStyle="white";ctx.fillText("!",14,-9);
+      ctx.restore();
     }
-    function drawBasket(now){
+        function drawBasket(now){
       var x=basket.x,y=basket.y,w=basket.w;
       ctx.save();ctx.translate(x,y);
-      ctx.shadowBlur=24;ctx.shadowColor="#bf88f766";
-      var g=ctx.createLinearGradient(0,-8,0,31);g.addColorStop(0,"#c7afff");g.addColorStop(.4,"#805ddb");g.addColorStop(1,"#49358e");
-      ctx.beginPath();ctx.roundRect(-w/2+4,-5,w-8,33,[8,8,20,20]);ctx.fillStyle=g;ctx.fill();
-      ctx.shadowBlur=0;ctx.strokeStyle="#dec6ff";ctx.lineWidth=2;ctx.stroke();
-      ctx.beginPath();ctx.roundRect(-w/2-3,-10,w+6,13,6);ctx.fillStyle="#e9d6ff";ctx.fill();
-      ctx.fillStyle="#9c7cea";ctx.beginPath();ctx.roundRect(-w/2+3,-6,w-6,6,3);ctx.fill();
-      ctx.fillStyle="#fff1be";ctx.beginPath();ctx.arc(0,12,6,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle="#ffffffb8";ctx.beginPath();ctx.arc(-1.5,10,2,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle="#eed6ff75";
-      for(var j=-1;j<=1;j+=2){ctx.beginPath();ctx.arc(j*(w*.28),17,2.5,0,Math.PI*2);ctx.fill();}
+      ctx.shadowBlur=24;ctx.shadowColor="#e5a4bc66";
+      var g=ctx.createLinearGradient(0,-8,0,31);g.addColorStop(0,"#f6dbb5");g.addColorStop(.4,"#cc8e9e");g.addColorStop(1,"#76455d");
+      ctx.beginPath();ctx.roundRect(-w/2+4,-5,w-8,34,[8,8,18,18]);ctx.fillStyle=g;ctx.fill();
+      ctx.shadowBlur=0;ctx.strokeStyle="#ffe8ca";ctx.lineWidth=2;ctx.stroke();
+      ctx.beginPath();ctx.roundRect(-w/2-3,-10,w+6,14,6);ctx.fillStyle="#ffe5c1";ctx.fill();
+      ctx.fillStyle="#b77690";ctx.beginPath();ctx.roundRect(-w/2+3,-6,w-6,6,3);ctx.fill();
+      ctx.font="bold 16px Georgia,serif";ctx.textAlign="center";ctx.fillStyle="#fff9ef";ctx.fillText("RA",0,20);
       ctx.restore();
     }
-    function drawParticles(dt){
+        function drawParticles(dt){
       for(var i=particles.length-1;i>=0;i--){
         var p=particles[i];p.life-=dt;
         if(p.life<=0){particles.splice(i,1);continue;}
@@ -358,7 +476,7 @@
       if(mode==="ready"){
         for(var k=0;k<6;k++){
           var a=k*1.047+now*.00021;
-          var item={x:W/2+Math.cos(a)*Math.min(W*.25,135),y:H*.53+Math.sin(a)*Math.min(H*.17,85)+Math.sin(now*.002+k)*7,r:18,kind:k===2?"star":"gem",color:["cyan","pink","purple"][k%3],a:Math.sin(now*.0007+k)*.24};
+          var item={x:W/2+Math.cos(a)*Math.min(W*.25,135),y:H*.53+Math.sin(a)*Math.min(H*.17,85)+Math.sin(now*.002+k)*7,r:18,kind:k===2?"star":"gem",style:["hoop","flower","necklace","bracelet","ring","watch"][k],color:["gold","rose","silver"][k%3],a:Math.sin(now*.0007+k)*.24};
           if(item.kind==="star")drawStar(item);else drawGem(item);
         }
       }
