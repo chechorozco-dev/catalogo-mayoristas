@@ -1,4 +1,350 @@
 import { NextResponse } from "next/server";
+import {
+  constants,
+  createPublicKey,
+  verify as verifyCrypto,
+} from "crypto";
+
+const VERCEL_OWNER =
+  "sergio-orozco";
+
+const VERCEL_ISSUER =
+  `https://oidc.vercel.com/${VERCEL_OWNER}`;
+
+const VERCEL_AUDIENCE =
+  `https://vercel.com/${VERCEL_OWNER}`;
+
+const ALLOWED_CALLER_PROJECT =
+  "ra-whatsapp-lab";
+
+const ALLOWED_CALLER_ENVS =
+  new Set([
+    "production",
+    "preview",
+  ]);
+
+function decodePart(value) {
+  return JSON.parse(
+    Buffer.from(
+      value,
+      "base64url"
+    ).toString("utf8")
+  );
+}
+
+async function verificarOidcVercel(
+  request
+) {
+  /*
+  | Mantener una llave manual como respaldo opcional.
+  | No es necesaria para la operación normal entre
+  | los dos proyectos de Vercel.
+  */
+  const legacySecret =
+    process.env
+      .RA_AUTOMATION_SECRET;
+
+  const legacyReceived =
+    request.headers.get(
+      "x-ra-automation-secret"
+    );
+
+  if (
+    legacySecret &&
+    legacyReceived ===
+      legacySecret
+  ) {
+    return {
+      ok: true,
+      via:
+        "LEGACY_SECRET",
+    };
+  }
+
+  const authorization =
+    request.headers.get(
+      "authorization"
+    ) || "";
+
+  if (
+    !authorization.startsWith(
+      "Bearer "
+    )
+  ) {
+    return {
+      ok: false,
+      error:
+        "Falta autenticación interna.",
+    };
+  }
+
+  const token =
+    authorization
+      .slice(7)
+      .trim();
+
+  const parts =
+    token.split(".");
+
+  if (
+    parts.length !== 3
+  ) {
+    return {
+      ok: false,
+      error:
+        "Token interno inválido.",
+    };
+  }
+
+  let header;
+  let payload;
+
+  try {
+    header =
+      decodePart(parts[0]);
+
+    payload =
+      decodePart(parts[1]);
+  } catch {
+    return {
+      ok: false,
+      error:
+        "Token interno ilegible.",
+    };
+  }
+
+  if (
+    payload?.iss !==
+      VERCEL_ISSUER
+  ) {
+    return {
+      ok: false,
+      error:
+        "Emisor interno no autorizado.",
+    };
+  }
+
+  const audiences =
+    Array.isArray(
+      payload?.aud
+    )
+      ? payload.aud
+      : [payload?.aud];
+
+  if (
+    !audiences.includes(
+      VERCEL_AUDIENCE
+    )
+  ) {
+    return {
+      ok: false,
+      error:
+        "Audiencia interna no autorizada.",
+    };
+  }
+
+  const subject =
+    String(
+      payload?.sub ||
+        ""
+    );
+
+  const prefix =
+    `owner:${VERCEL_OWNER}:project:${ALLOWED_CALLER_PROJECT}:environment:`;
+
+  if (
+    !subject.startsWith(
+      prefix
+    )
+  ) {
+    return {
+      ok: false,
+      error:
+        "Proyecto llamador no autorizado.",
+    };
+  }
+
+  const environment =
+    subject.slice(
+      prefix.length
+    );
+
+  if (
+    !ALLOWED_CALLER_ENVS.has(
+      environment
+    )
+  ) {
+    return {
+      ok: false,
+      error:
+        "Entorno llamador no autorizado.",
+    };
+  }
+
+  const now =
+    Math.floor(
+      Date.now() / 1000
+    );
+
+  if (
+    typeof payload?.exp !==
+      "number" ||
+    payload.exp <= now
+  ) {
+    return {
+      ok: false,
+      error:
+        "Token interno vencido.",
+    };
+  }
+
+  if (
+    typeof payload?.nbf ===
+      "number" &&
+    payload.nbf >
+      now + 30
+  ) {
+    return {
+      ok: false,
+      error:
+        "Token interno todavía no es válido.",
+    };
+  }
+
+  const jwksResponse =
+    await fetch(
+      VERCEL_ISSUER +
+        "/.well-known/jwks",
+      {
+        cache:
+          "no-store",
+      }
+    );
+
+  if (
+    !jwksResponse.ok
+  ) {
+    return {
+      ok: false,
+      error:
+        "No se pudo validar la identidad interna.",
+    };
+  }
+
+  const jwks =
+    await jwksResponse.json();
+
+  const jwk =
+    Array.isArray(
+      jwks?.keys
+    )
+      ? jwks.keys.find(
+          (item) =>
+            item.kid ===
+            header?.kid
+        )
+      : null;
+
+  if (!jwk) {
+    return {
+      ok: false,
+      error:
+        "La llave de firma interna no existe.",
+    };
+  }
+
+  const publicKey =
+    createPublicKey({
+      key:
+        jwk,
+      format:
+        "jwk",
+    });
+
+  const signingInput =
+    Buffer.from(
+      parts[0] +
+        "." +
+        parts[1]
+    );
+
+  const signature =
+    Buffer.from(
+      parts[2],
+      "base64url"
+    );
+
+  let valid = false;
+
+  if (
+    header?.alg ===
+      "RS256"
+  ) {
+    valid =
+      verifyCrypto(
+        "RSA-SHA256",
+        signingInput,
+        publicKey,
+        signature
+      );
+  } else if (
+    header?.alg ===
+      "PS256"
+  ) {
+    valid =
+      verifyCrypto(
+        "sha256",
+        signingInput,
+        {
+          key:
+            publicKey,
+          padding:
+            constants
+              .RSA_PKCS1_PSS_PADDING,
+          saltLength:
+            32,
+        },
+        signature
+      );
+  } else if (
+    header?.alg ===
+      "ES256"
+  ) {
+    valid =
+      verifyCrypto(
+        "sha256",
+        signingInput,
+        {
+          key:
+            publicKey,
+          dsaEncoding:
+            "ieee-p1363",
+        },
+        signature
+      );
+  } else {
+    return {
+      ok: false,
+      error:
+        "Algoritmo de firma no permitido.",
+    };
+  }
+
+  if (!valid) {
+    return {
+      ok: false,
+      error:
+        "Firma interna inválida.",
+    };
+  }
+
+  return {
+    ok: true,
+    via:
+      "VERCEL_OIDC",
+    environment,
+  };
+}
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -222,34 +568,24 @@ export async function GET() {
     ok: true,
     servicio:
       "RA Automatizaciones · productos",
-    configurado:
-      Boolean(
-        process.env
-          .RA_AUTOMATION_SECRET
-      ),
+    autenticacion:
+      "VERCEL_OIDC",
   });
 }
 
 export async function POST(request) {
   try {
-    const secreto =
-      process.env
-        .RA_AUTOMATION_SECRET;
-
-    const recibido =
-      request.headers.get(
-        "x-ra-automation-secret"
+    const auth =
+      await verificarOidcVercel(
+        request
       );
 
-    if (
-      !secreto ||
-      !recibido ||
-      recibido !== secreto
-    ) {
+    if (!auth.ok) {
       return NextResponse.json(
         {
           ok: false,
           mensaje:
+            auth.error ||
             "No autorizado.",
         },
         {
