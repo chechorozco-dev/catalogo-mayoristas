@@ -1,3 +1,4 @@
+import { getNegocioId } from "../../lib/negocioFetch.mjs";
 import { notFound } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import TiendaCliente from "./TiendaCliente";
@@ -19,9 +20,10 @@ export async function generateMetadata({ params }) {
     } = await supabase
       .from("tiendas")
       .select(
-        "nombre_tienda,slug,logo_url,mensaje_portada"
+        "nombre_tienda,slug,logo_url,mensaje_portada,tipo_tienda"
       )
       .eq("slug", slug)
+      .eq("negocio_id", getNegocioId())
       .eq("activa", true)
       .single();
 
@@ -36,6 +38,7 @@ export async function generateMetadata({ params }) {
       tienda.nombre_tienda || "Catálogo digital";
 
   const esRA =
+  (process.env.NEGOCIO_SLUG || "ra-accesorios") === "ra-accesorios" &&
   String(tienda.slug || "")
     .trim()
     .toLowerCase() === "mayoristas-ra";
@@ -45,14 +48,11 @@ const descripcion = esRA
   : tienda.mensaje_portada ||
     `Descubre los productos de ${nombreTienda}`;
 
-   const esTiendaRA =
-  String(tienda.slug || "")
-    .trim()
-    .toLowerCase() === "mayoristas-ra";
+   const esTiendaRA = esRA;
 
 const urlCatalogo = esTiendaRA
   ? "https://www.mayoristasra.com/mayoristas-ra"
-  : `https://mi-catalogo-accesorios.vercel.app/${encodeURIComponent(
+  : `${(process.env.NEXT_PUBLIC_SITE_URL || "https://mi-catalogo-accesorios.vercel.app").replace(/\\/$/, "")}/${encodeURIComponent(
       tienda.slug
     )}`;
 
@@ -144,6 +144,7 @@ export default async function TiendaPage({
   "id,nombre_tienda,slug,whatsapp,logo_url,color_principal,color_fondo,mensaje_portada,instagram,facebook,tiktok,tipo_tienda,creado_en"
 )
     .eq("slug", slug)
+      .eq("negocio_id", getNegocioId())
     .eq("activa", true)
     .single();
 
@@ -1069,7 +1070,7 @@ created_at:
  return (
   <main>
 {/* META PIXEL - SOLO TIENDA RA */}
-{esTiendaRA && (
+{esTiendaRA && (process.env.NEGOCIO_SLUG || "ra-accesorios") === "ra-accesorios" && (
   <>
     <script
       dangerouslySetInnerHTML={{
@@ -1099,7 +1100,7 @@ created_at:
     </noscript>
   </>
 )}
-    {esTiendaRA && (
+    {esTiendaRA && (process.env.NEGOCIO_SLUG || "ra-accesorios") === "ra-accesorios" && (
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -1123,6 +1124,7 @@ created_at:
     )}
 
     <TiendaCliente
+  esNegocioRA={(process.env.NEGOCIO_SLUG || "ra-accesorios") === "ra-accesorios"}
   tiendaId={tienda.id}
 
   tipoTienda={

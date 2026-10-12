@@ -575,7 +575,7 @@ const colorFondo =
           ).replace(/\D/g, "");
 
        const enlaceTienda =
-  `https://mi-catalogo-accesorios.vercel.app/${slug}`;
+  `${(process.env.NEXT_PUBLIC_SITE_URL || "https://mi-catalogo-accesorios.vercel.app").replace(/\\/$/, "")}/${slug}`;
 
         const urlWati =
           `${baseWati}/api/v1/sendTemplateMessage` +
