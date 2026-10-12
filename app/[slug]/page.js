@@ -644,7 +644,7 @@ if (!producto.created_at) {
       `&tienda_id=eq.${encodeURIComponent(
         tienda.id
       )}` +
-      `&order=actualizado_en.desc`;
+      `&order=actualizado_en.desc,id.desc`;
 
     const respuestaPrecios =
       await fetchSupabasePaginado(urlPrecios, {
@@ -699,60 +699,43 @@ if (!producto.created_at) {
   // 7. BUSCAR PRECIO PERSONALIZADO
   // =========================================
 
-  function obtenerPrecioPersonalizado(
-    productoId,
-    varianteId = null
-  ) {
-    const encontrado =
-      preciosPersonalizados.find(
-        (precio) => {
-          const mismoProducto =
-            Number(
-              precio.producto_id
-            ) ===
-            Number(productoId);
+  // Mapas en memoria: evitan recorrer todos los precios y variantes
+  // para cada producto cuando el catálogo alcanza miles de registros.
+  const mapaPreciosPersonalizados = new Map();
 
-          if (!mismoProducto) {
-            return false;
-          }
+  for (const precio of preciosPersonalizados) {
+    const clave =
+      String(precio.producto_id) + ":" +
+      (precio.variante_id == null ? "" : String(precio.variante_id));
 
-          // PRODUCTO NORMAL
+    // La consulta ya viene ordenada por fecha; conservar el más reciente.
+    if (!mapaPreciosPersonalizados.has(clave)) {
+      mapaPreciosPersonalizados.set(clave, precio);
+    }
+  }
 
-          if (
-            varianteId === null ||
-            varianteId === undefined
-          ) {
-            return (
-              precio.variante_id === null ||
-              precio.variante_id === undefined
-            );
-          }
+  function obtenerPrecioPersonalizado(productoId, varianteId = null) {
+    const clave =
+      String(productoId) + ":" +
+      (varianteId == null ? "" : String(varianteId));
 
-          // VARIANTE
+    const encontrado = mapaPreciosPersonalizados.get(clave);
+    if (!encontrado) return null;
 
-          return (
-            Number(
-              precio.variante_id
-            ) ===
-            Number(varianteId)
-          );
-        }
-      );
+    const precio = Number(encontrado.precio_sugerido);
+    return Number.isFinite(precio) ? precio : null;
+  }
 
-    if (!encontrado) {
-      return null;
+  const variantesPorProducto = new Map();
+
+  for (const variante of variantesData) {
+    const clave = String(variante.producto_id);
+
+    if (!variantesPorProducto.has(clave)) {
+      variantesPorProducto.set(clave, []);
     }
 
-    const precio =
-      Number(
-        encontrado.precio_sugerido
-      );
-
-    if (!Number.isFinite(precio)) {
-      return null;
-    }
-
-    return precio;
+    variantesPorProducto.get(clave).push(variante);
   }
 
   // =========================================
@@ -779,14 +762,7 @@ if (!producto.created_at) {
         // =====================================
 
         const variantesDelProducto =
-          variantesData
-            .filter(
-              (variante) =>
-                String(
-                  variante.producto_id
-                ) ===
-                String(producto.id)
-            )
+          (variantesPorProducto.get(String(producto.id)) || [])
             .sort(
               (a, b) =>
                 Number(
@@ -1024,7 +1000,7 @@ created_at:
         tienda.id
       )}` +
       `&activo=eq.true` +
-      `&order=orden.asc`;
+      `&order=orden.asc,id.asc`;
 
     const respuestaAnuncios =
       await fetchSupabasePaginado(urlAnuncios, {
