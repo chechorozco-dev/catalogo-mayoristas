@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
+import { fetchSupabasePaginado } from "../../../lib/supabasePagination";
 
 export const dynamic = "force-dynamic";
 
@@ -97,15 +98,16 @@ function validarSesion(cookie) {
 ========================================================= */
 
 async function consultarSupabase(ruta, opciones = {}) {
-  const response = await fetch(
+  const { paginar = false, ...opcionesFetch } = opciones;
+  const response = await (paginar ? fetchSupabasePaginado : fetch)(
     `${SUPABASE_URL}/rest/v1/${ruta}`,
     {
-      ...opciones,
+      ...opcionesFetch,
 
       headers: {
         apikey: SUPABASE_SECRET_KEY,
         "Content-Type": "application/json",
-        ...(opciones.headers || {}),
+        ...(opcionesFetch.headers || {}),
       },
 
       cache: "no-store",
@@ -227,7 +229,8 @@ export async function GET(request) {
       await consultarSupabase(
         `precios_tienda?select=id,producto_id,variante_id,precio_sugerido,actualizado_en&tienda_id=eq.${encodeURIComponent(
           cliente.tienda_id
-        )}&order=actualizado_en.desc`
+        )}&order=actualizado_en.desc,id.desc`,
+        { paginar: true }
       );
 
     return NextResponse.json({
