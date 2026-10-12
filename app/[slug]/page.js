@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import TiendaCliente from "./TiendaCliente";
+import { fetchSupabasePaginado, dividirEnBloques } from "../../lib/supabasePagination";
 
 export const dynamic = "force-dynamic";
 
@@ -214,10 +215,10 @@ export default async function TiendaPage({
         "tiene_variantes",
       ].join(",") +
       `&activo=eq.true` +
-      `&order=created_at.desc`;
+      `&order=created_at.desc,id.desc`;
 
     const respuestaProductos =
-      await fetch(urlProductos, {
+      await fetchSupabasePaginado(urlProductos, {
         method: "GET",
 
         headers: {
@@ -316,10 +317,11 @@ try {
     `?select=producto_id,visible,publicar_anticipadamente` +
     `&tienda_id=eq.${encodeURIComponent(
       tienda.id
-    )}`;
+    )}` +
+    `&order=producto_id.asc`;
 
   const respuestaConfiguracionProductos =
-    await fetch(urlConfiguracionProductos, {
+    await fetchSupabasePaginado(urlConfiguracionProductos, {
       method: "GET",
 
       headers: {
@@ -561,15 +563,13 @@ if (!producto.created_at) {
     idsProductosConVariantes.length > 0
   ) {
     try {
-      const ids =
-        idsProductosConVariantes
-          .map((id) => Number(id))
-          .filter((id) =>
-            Number.isFinite(id)
-          )
-          .join(",");
+      // Grupos pequeños para no exceder el tamaño máximo de las URLs
+      // cuando el catálogo tenga miles de productos.
+      const ids = idsProductosConVariantes
+        .map((id) => Number(id))
+        .filter((id) => Number.isFinite(id));
 
-      if (ids) {
+      for (const bloqueIds of dividirEnBloques(ids, 80)) {
         const urlVariantes =
           `${supabaseUrl}` +
           `/rest/v1/producto_variantes` +
@@ -586,50 +586,32 @@ if (!producto.created_at) {
             "activo",
             "orden",
           ].join(",") +
-          `&producto_id=in.(${ids})` +
+          `&producto_id=in.(${bloqueIds.join(",")})` +
           `&activo=eq.true` +
-          `&order=orden.asc`;
+          `&order=orden.asc,id.asc`;
 
-        const respuestaVariantes =
-          await fetch(urlVariantes, {
+        const respuestaVariantes = await fetchSupabasePaginado(
+          urlVariantes,
+          {
             method: "GET",
-
             headers: {
               apikey: supabaseSecretKey,
-
-              "Content-Type":
-                "application/json",
+              "Content-Type": "application/json",
             },
-
             cache: "no-store",
-          });
-
-        const textoVariantes =
-          await respuestaVariantes.text();
+          }
+        );
 
         if (!respuestaVariantes.ok) {
-          console.error(
-            "ERROR SUPABASE VARIANTES:",
-            respuestaVariantes.status,
-            textoVariantes
-          );
-
+          const texto = await respuestaVariantes.text();
+          console.error("ERROR SUPABASE VARIANTES:", texto);
           throw new Error(
             `Error cargando variantes: ${respuestaVariantes.status}`
           );
         }
 
-        if (textoVariantes) {
-          const datosVariantes =
-            JSON.parse(textoVariantes);
-
-          if (
-            Array.isArray(datosVariantes)
-          ) {
-            variantesData =
-              datosVariantes;
-          }
-        }
+        const datosVariantes = await respuestaVariantes.json();
+        variantesData.push(...datosVariantes);
       }
     } catch (error) {
       console.error(
@@ -665,7 +647,7 @@ if (!producto.created_at) {
       `&order=actualizado_en.desc`;
 
     const respuestaPrecios =
-      await fetch(urlPrecios, {
+      await fetchSupabasePaginado(urlPrecios, {
         method: "GET",
 
         headers: {
@@ -1045,7 +1027,7 @@ created_at:
       `&order=orden.asc`;
 
     const respuestaAnuncios =
-      await fetch(urlAnuncios, {
+      await fetchSupabasePaginado(urlAnuncios, {
         method: "GET",
 
         headers: {
