@@ -14,6 +14,13 @@ export default function CarritosMaestroPage() {
 const [editando, setEditando] = useState(null);
 const [filtroTienda, setFiltroTienda] =
   useState("TODAS");
+const [tiendaExacta, setTiendaExacta] = useState("");
+
+useEffect(() => {
+  // Enlace desde el nuevo resumen: ?tienda=<id>
+  const id = new URLSearchParams(window.location.search).get("tienda") || "";
+  setTiendaExacta(id);
+}, []);
 const [carritoEditado, setCarritoEditado] = useState(null);
 const [guardandoCambios, setGuardandoCambios] = useState(false);
 const [eliminandoCarrito, setEliminandoCarrito] = useState(null);
@@ -70,8 +77,14 @@ async function cargarCiudades() {
     }
 
     try {
+      const tiendaDesdeUrl =
+        new URLSearchParams(window.location.search).get("tienda") || "";
+      const endpoint = tiendaDesdeUrl
+        ? `/api/admin-maestro/carritos?tienda=${encodeURIComponent(tiendaDesdeUrl)}`
+        : "/api/admin-maestro/carritos";
+
       const response = await fetch(
-        "/api/admin-maestro/carritos",
+        endpoint,
         {
           method: "GET",
           cache: "no-store",
@@ -525,7 +538,8 @@ const carritosFiltrados =
 
     return (
       cumpleEstado &&
-      cumpleTienda
+      cumpleTienda &&
+      (!tiendaExacta || String(carrito.tienda_id) === String(tiendaExacta))
     );
   });
   function estadoVisual(estado) {
@@ -609,6 +623,48 @@ const carritosFiltrados =
         {mensaje && (
           <div style={error}>
             {mensaje}
+          </div>
+        )}
+
+        {tiendaExacta && (
+          <div style={{
+            marginTop: "16px",
+            padding: "12px 15px",
+            borderRadius: "12px",
+            background: "#fff3f6",
+            border: "1px solid #f3d9e1",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "12px",
+            flexWrap: "wrap",
+          }}>
+            <span style={{ color: "#633e49", fontSize: "13px" }}>
+              Filtrando carritos de <strong>{
+                carritos.find((c) => String(c.tienda_id) === String(tiendaExacta))
+                  ?.tienda_nombre || "esta tienda"
+              }</strong>.
+            </span>
+            <button
+              type="button"
+              style={{
+                border: "1px solid #d97883",
+                borderRadius: "9px",
+                background: "white",
+                padding: "8px 12px",
+                cursor: "pointer",
+                color: "#6e3441",
+                fontWeight: "700",
+              }}
+              onClick={() => {
+                window.history.replaceState(null, "", "/admin-maestro/carritos");
+                setTiendaExacta("");
+                setFiltroTienda("TODAS");
+                cargarCarritos();
+              }}
+            >
+              Ver carritos de todas las tiendas
+            </button>
           </div>
         )}
 
