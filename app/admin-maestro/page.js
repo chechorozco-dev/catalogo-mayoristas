@@ -90,6 +90,10 @@ export default function AdminMaestroPage() {
     router.push("/admin-maestro/carritos");
   }
 
+  function irTiendas() {
+    router.push("/admin-maestro/tiendas");
+  }
+
   function irAdminCliente() {
     router.push("/admin");
   }
@@ -267,6 +271,39 @@ export default function AdminMaestroPage() {
                 style={botonPrincipal}
               >
                 ＋ Agregar con variantes
+              </button>
+            </div>
+          </section>
+
+          {/* TODAS LAS TIENDAS */}
+
+          <section style={tarjeta}>
+            <div
+              style={{
+                ...icono,
+                background: "#faeef5",
+              }}
+            >
+              🏪
+            </div>
+
+            <h2 style={tituloTarjeta}>
+              Todas mis tiendas
+            </h2>
+
+            <p style={descripcion}>
+              Consulta qué tiendas están activas, qué carritos
+              están preparando, sus pedidos completados y
+              la actividad de cada catálogo en un solo panel.
+            </p>
+
+            <div style={acciones}>
+              <button
+                type="button"
+                onClick={irTiendas}
+                style={botonPrincipal}
+              >
+                📊 Ver resumen de tiendas
               </button>
             </div>
           </section>
