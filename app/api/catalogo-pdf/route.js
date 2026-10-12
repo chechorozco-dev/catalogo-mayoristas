@@ -6,6 +6,7 @@ import {
 } from "pdf-lib";
 import crypto from "crypto";
 import sharp from "sharp";
+import { fetchSupabasePaginado } from "../../../lib/supabasePagination";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -140,10 +141,12 @@ async function supabaseFetch(
     );
   }
 
-  const response = await fetch(
+  const { paginar = false, ...opcionesFetch } = opciones;
+
+  const response = await (paginar ? fetchSupabasePaginado : fetch)(
     `${SUPABASE_URL}/rest/v1/${ruta}`,
     {
-      ...opciones,
+      ...opcionesFetch,
 
       headers: {
         apikey:
@@ -152,7 +155,7 @@ async function supabaseFetch(
         "Content-Type":
           "application/json",
 
-        ...(opciones.headers || {}),
+        ...(opcionesFetch.headers || {}),
       },
 
       cache: "no-store",
@@ -1349,7 +1352,8 @@ const esTiendaRA =
   "tiene_variantes",
 ].join(","),
           "&order=id.desc",
-        ].join("")
+        ].join(""),
+        { paginar: true }
       );
 
     const productos =
@@ -1361,7 +1365,8 @@ const esTiendaRA =
 
     const visibilidadResponse =
       await supabaseFetch(
-        `tienda_productos?tienda_id=eq.${tiendaId}&select=producto_id,visible`
+        `tienda_productos?tienda_id=eq.${tiendaId}&select=producto_id,visible&order=producto_id.asc`,
+        { paginar: true }
       );
 
     const visibilidades =
@@ -1388,7 +1393,8 @@ const esTiendaRA =
 
     const preciosResponse =
       await supabaseFetch(
-        `precios_tienda?tienda_id=eq.${tiendaId}&variante_id=is.null&select=producto_id,precio_sugerido`
+        `precios_tienda?tienda_id=eq.${tiendaId}&variante_id=is.null&select=producto_id,precio_sugerido&order=producto_id.asc`,
+        { paginar: true }
       );
 
     const precios =
