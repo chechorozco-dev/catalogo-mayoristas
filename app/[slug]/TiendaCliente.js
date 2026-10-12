@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import FotoOptimizada from "../components/FotoOptimizada";
 
 const CATEGORIAS_PRINCIPALES = [
   "Todos",
@@ -1783,7 +1784,8 @@ try {
 
     <div className="marca">
       {logoUrl ? (
-        <img
+        <FotoOptimizada
+          width={96} height={96} sizes="62px" priority quality={85}
           className="logo-tienda"
           src={logoUrl}
           alt={nombreTienda}
@@ -2036,7 +2038,8 @@ try {
               <span />
             </span>
           ) : imagenCategoria ? (
-            <img
+            <FotoOptimizada
+          width={96} height={96} sizes="60px" quality={80}
               src={imagenCategoria}
               alt={categoria}
               loading="lazy"
@@ -2120,7 +2123,8 @@ try {
     >
       {anuncioActual.imagen_url && (
         <div className="anuncio-imagen">
-          <img
+          <FotoOptimizada
+          width={160} height={120} sizes="64px" quality={80} loading="lazy"
             src={anuncioActual.imagen_url}
             alt=""
           />
@@ -2202,7 +2206,7 @@ try {
 
         {productosFiltrados.length > 0 ? (
           <div className="productos-grid">
-           {productosVisibles.map((producto) => {
+           {productosVisibles.map((producto, indiceProducto) => {
               const fotos = fotosProducto(producto);
 
               const indiceActual =
@@ -2225,7 +2229,8 @@ try {
                 >
                   <div className="imagen-contenedor">
                     {fotoActual ? (
-                      <img
+                      <FotoOptimizada
+          width={640} height={640} sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" quality={85} priority={indiceProducto === 0}
                         className="producto-imagen"
                         src={fotoActual}
                         alt={producto.nombre}
@@ -2298,7 +2303,8 @@ try {
           }}
           aria-label={`Ver foto ${index + 1} de ${producto.nombre}`}
         >
-          <img
+          <FotoOptimizada
+          width={96} height={96} sizes="50px" quality={80}
             src={foto}
             alt={`Foto ${index + 1} de ${producto.nombre}`}
             loading="lazy"
@@ -2588,7 +2594,8 @@ try {
                               }}
                             >
                               {variante.foto_url && (
-                                <img
+                                <FotoOptimizada
+          width={160} height={160} sizes="90px" quality={80} loading="lazy"
                                   src={
                                     variante.foto_url
                                   }
@@ -2662,7 +2669,8 @@ try {
                       >
                         <div className="recomendado-imagen">
                           {producto.foto_url ? (
-                            <img
+                            <FotoOptimizada
+          width={384} height={384} sizes="(max-width: 640px) 38vw, 180px" quality={85} loading="lazy"
                               src={producto.foto_url}
                               alt={producto.nombre}
                             />
@@ -3263,7 +3271,8 @@ setErroresCompra((actual) => ({
                     }
                   >
                     {item.foto_url ? (
-                      <img
+                      <FotoOptimizada
+          width={128} height={128} sizes="85px" quality={80} loading="lazy"
                         src={item.foto_url}
                         alt={item.nombre}
                       />
@@ -7863,7 +7872,8 @@ function GaleriaProducto({
 
   return (
     <div className="galeria-producto">
-      <img
+      <FotoOptimizada
+          width={1400} height={1400} sizes="(max-width: 768px) 100vw, 800px" quality={85} loading="eager"
         src={fotos[indiceFoto] || fotos[0]}
         alt={producto.nombre}
       />
