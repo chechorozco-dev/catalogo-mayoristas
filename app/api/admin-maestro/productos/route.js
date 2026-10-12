@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import crypto from "crypto";
+import { fetchSupabasePaginado } from "../../../../lib/supabasePagination";
 
 export const runtime = "nodejs";
 
@@ -155,10 +156,10 @@ export async function GET() {
 
     const { supabaseUrl, headersSupabase } = acceso;
 
-    const response = await fetch(
+    const response = await fetchSupabasePaginado(
       `${supabaseUrl}/rest/v1/productos` +
         `?select=id,referencia,nombre,categoria,descripcion,foto_url,foto_url_2,costo,precio_detal,precio_minimo,infoimagen,activo,origen,tiene_variantes,created_at` +
-        `&order=created_at.desc`,
+        `&order=created_at.desc,id.desc`,
       {
         method: "GET",
         headers: headersSupabase,
