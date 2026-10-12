@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
+import { fetchSupabasePaginado, dividirEnBloques } from "../../../../lib/supabasePagination";
 
 export const dynamic = "force-dynamic";
 
@@ -170,17 +171,19 @@ async function supabaseRequest(
     );
   }
 
-  const respuesta = await fetch(
+  const { paginar = false, ...opcionesFetch } = opciones;
+
+  const respuesta = await (paginar ? fetchSupabasePaginado : fetch)(
     `${supabaseUrl}/rest/v1/${ruta}`,
     {
-      ...opciones,
+      ...opcionesFetch,
 
       headers: {
         apikey: secretKey,
         "Content-Type":
           "application/json",
 
-        ...(opciones.headers || {}),
+        ...(opcionesFetch.headers || {}),
       },
 
       cache: "no-store",
@@ -392,7 +395,8 @@ if (!tienda) {
   "tiene_variantes",
 ].join(",") +
           `&activo=eq.true` +
-          `&order=created_at.desc`
+          `&order=created_at.desc,id.desc`,
+        { paginar: true }
       );
 
     const productosBaseSinFiltrar =
@@ -426,7 +430,9 @@ const visibilidadData =
       `?select=producto_id,visible,publicar_anticipadamente` +
       `&tienda_id=eq.${encodeURIComponent(
         cliente.tienda_id
-      )}`
+      )}` +
+      `&order=producto_id.asc`,
+    { paginar: true }
   );
 const mapaVisibilidad =
   new Map();
@@ -473,11 +479,10 @@ if (Array.isArray(visibilidadData)) {
     let variantesData = [];
 
     if (idsConVariantes.length > 0) {
-      const ids =
-        idsConVariantes.join(",");
-
-      const variantes =
-        await supabaseRequest(
+      // Consultar grupos de IDs: el parámetro 'in' de Supabase
+      // no debe crecer indefinidamente al añadir productos.
+      for (const bloqueIds of dividirEnBloques(idsConVariantes, 80)) {
+        const variantes = await supabaseRequest(
           `producto_variantes` +
             `?select=` +
             [
@@ -494,15 +499,14 @@ if (Array.isArray(visibilidadData)) {
               "activo",
               "orden",
             ].join(",") +
-            `&producto_id=in.(${ids})` +
+            `&producto_id=in.(${bloqueIds.join(",")})` +
             `&activo=eq.true` +
-            `&order=orden.asc`
+            `&order=orden.asc,id.asc`,
+          { paginar: true }
         );
 
-      variantesData =
-        Array.isArray(variantes)
-          ? variantes
-          : [];
+        variantesData.push(...(Array.isArray(variantes) ? variantes : []));
+      }
     }
 
     // =====================================
