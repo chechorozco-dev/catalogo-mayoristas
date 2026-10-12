@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import FotoOptimizada from "../../components/FotoOptimizada";
 
 /* =========================================================
    UTILIDADES
@@ -243,7 +244,8 @@ function GaleriaProducto({
           )
         }
       >
-        <img
+        <FotoOptimizada
+         width={640} height={640} sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" quality={85} loading="lazy"
           src={imagenActual}
           alt={producto.nombre}
           className="product-image"
@@ -323,7 +325,8 @@ function GaleriaProducto({
             }}
             aria-label={`Ver foto ${i + 1}`}
           >
-            <img
+            <FotoOptimizada
+         width={96} height={96} sizes="56px" quality={80} loading="lazy"
               src={foto}
               alt={`${producto.nombre} - foto ${i + 1}`}
               loading="lazy"
@@ -374,7 +377,8 @@ function VisorImagen({
         className="viewer-content"
         onClick={(e) => e.stopPropagation()}
       >
-        <img
+        <FotoOptimizada
+         width={1600} height={1600} sizes="100vw" quality={85} loading="eager"
           src={visor.imagenes[visor.indice]}
           alt={visor.nombre}
           className="viewer-image"
@@ -906,7 +910,8 @@ function Carrito({
                     <div className="cart-item-top">
                       <div className="cart-item-image">
                         {item.foto_url ? (
-                          <img
+                          <FotoOptimizada
+         width={128} height={128} sizes="80px" quality={80} loading="lazy"
                             src={item.foto_url}
                             alt={item.nombre}
                           />
@@ -6043,7 +6048,8 @@ async function publicarProductoAhora(productoId) {
                                             }}
                                           >
                                             {variante.foto_url ? (
-                                              <img
+                                              <FotoOptimizada
+         width={384} height={384} sizes="(max-width: 640px) 40vw, 180px" quality={85} loading="lazy"
                                                 src={
                                                   variante.foto_url
                                                 }
