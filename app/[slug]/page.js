@@ -52,7 +52,7 @@ const descripcion = esRA
 
 const urlCatalogo = esTiendaRA
   ? "https://www.mayoristasra.com/mayoristas-ra"
-  : `${(process.env.NEXT_PUBLIC_SITE_URL || "https://mi-catalogo-accesorios.vercel.app").replace(/\\/$/, "")}/${encodeURIComponent(
+  : `${(process.env.NEXT_PUBLIC_SITE_URL || "https://mi-catalogo-accesorios.vercel.app").replace(/\/$/, "")}/${encodeURIComponent(
       tienda.slug
     )}`;
 
