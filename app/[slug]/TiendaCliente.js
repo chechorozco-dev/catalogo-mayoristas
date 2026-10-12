@@ -2764,8 +2764,9 @@ try {
                 <div className="recomendados-scroll">
                   {productosRecomendados.map(
                     (producto) => (
+                      <div key={producto.id} className="recomendado-item">
                       <button
-                        key={producto.id}
+                        type="button"
                         className="recomendado-card"
                         onClick={() => {
                           abrirProducto(producto);
@@ -2822,6 +2823,16 @@ try {
                           </strong>
                         </div>
                       </button>
+                      <button
+                        type="button"
+                        className="recomendado-agregar"
+                        onClick={() => agregarAlCarrito(producto)}
+                      >
+                        {producto.tiene_variantes && Array.isArray(producto.variantes) && producto.variantes.length > 0
+                          ? "Elegir opción"
+                          : "+ Agregar al pedido"}
+                      </button>
+                      </div>
                     )
                   )}
                 </div>
@@ -6129,14 +6140,30 @@ height: 60px;
           display: none;
         }
 
-        .recomendado-card {
+        .recomendado-item {
           flex: 0 0 43%;
           max-width: 200px;
+          display: flex;
+          flex-direction: column;
+          scroll-snap-align: start;
+        }
+        .recomendado-card {
+          width: 100%;
+          flex: 1;
           border: none;
           background: white;
           padding: 0;
           text-align: left;
-          scroll-snap-align: start;
+        }
+        .recomendado-agregar {
+          width: 100%;
+          padding: 10px 4px;
+          border: 1px solid var(--color-principal);
+          border-radius: 7px;
+          background: var(--color-principal);
+          color: var(--texto-principal);
+          font-size: 12px;
+          font-weight: 700;
         }
 
         .recomendado-imagen {
