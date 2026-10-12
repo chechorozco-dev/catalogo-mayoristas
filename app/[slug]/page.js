@@ -209,6 +209,7 @@ export default async function TiendaPage({
         "precio_detal",
         "costo",
         "activo",
+        "solo_ra",
         "created_at",
         "tiene_variantes",
       ].join(",") +
@@ -399,6 +400,12 @@ try {
   productosData =
     productosData.filter(
       (producto) => {
+        // Los exclusivos de RA no pueden llegar a las tiendas de clientes.
+        // Este filtro se aplica en el servidor, antes de renderizar la tienda.
+        if (!esTiendaRAParaPublicacion && producto.solo_ra === true) {
+          return false;
+        }
+
         const configuracion =
           mapaConfiguracion.get(
             String(producto.id)
@@ -951,6 +958,7 @@ activo:
 
         return {
           id: producto.id,
+          solo_ra: producto.solo_ra === true,
 
           referencia:
             primeraVariante?.referencia ||
