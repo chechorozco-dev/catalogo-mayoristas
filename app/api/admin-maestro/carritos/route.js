@@ -63,7 +63,7 @@ function verificarToken(token, secreto) {
   }
 }
 
-export async function GET() {
+export async function GET(request) {
   try {
     // ========================================
     // 1. VERIFICAR CONFIGURACIÓN
@@ -144,12 +144,51 @@ export async function GET() {
       );
     }
 
+    // Comprobar permisos actuales: un antiguo token MAESTRO no debe
+    // conservar acceso si esa cuenta fue desactivada.
+    const verificarMaestro = await fetch(
+      `${supabaseUrl}/rest/v1/clientes_autorizados` +
+        `?id=eq.${encodeURIComponent(sesion.cliente_id || "")}` +
+        "&activo=eq.true&select=id,rol&limit=1",
+      {
+        headers: { apikey: supabaseSecret, Accept: "application/json" },
+        cache: "no-store",
+      }
+    );
+
+    if (!verificarMaestro.ok) {
+      throw new Error("Error comprobando permisos de administrador.");
+    }
+    const [maestroActual] = await verificarMaestro.json();
+    if (!maestroActual || maestroActual.rol !== "MAESTRO") {
+      return NextResponse.json(
+        { ok: false, error: "Acceso reservado al administrador maestro." },
+        { status: 403 }
+      );
+    }
+
+    // La nueva vista de tiendas enlaza a los carritos de UNA tienda,
+    // sin modificar la vista global existente de los últimos 200.
+    const tiendaSolicitada =
+      new URL(request.url).searchParams.get("tienda") || "";
+
+    if (tiendaSolicitada && !/^[a-zA-Z0-9_-]{1,64}$/.test(tiendaSolicitada)) {
+      return NextResponse.json(
+        { ok: false, error: "Identificador de tienda inválido." },
+        { status: 400 }
+      );
+    }
+
+    const filtroTienda = tiendaSolicitada
+      ? `&tienda_id=eq.${encodeURIComponent(tiendaSolicitada)}`
+      : "";
+
     // ========================================
     // 5. CONSULTAR CARRITOS
     // ========================================
 
     const respuesta = await fetch(
-      `${supabaseUrl}/rest/v1/carritos_web?select=id,sesion_id,visitante_id,tienda_id,nombre_cliente,cedula_cliente,telefono_cliente,correo_cliente,direccion_cliente,estado,productos,cantidad_productos,subtotal,ciudad,forma_pago,creado_en,ultima_actividad,completado_en&order=ultima_actividad.desc&limit=200`,
+      `${supabaseUrl}/rest/v1/carritos_web?select=id,sesion_id,visitante_id,tienda_id,nombre_cliente,cedula_cliente,telefono_cliente,correo_cliente,direccion_cliente,estado,productos,cantidad_productos,subtotal,ciudad,forma_pago,creado_en,ultima_actividad,completado_en&order=ultima_actividad.desc&limit=200${filtroTienda}`,
       {
         method: "GET",
 
