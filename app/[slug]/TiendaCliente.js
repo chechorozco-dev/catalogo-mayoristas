@@ -859,13 +859,6 @@ const tieneEnvioGratis =
   costoEnvioNormal !== null &&
   costoEnvioNormal < 18000;
 
-// La política vigente exige superar $400.000 en mercancía
-// y un destino cuyo envío normal cueste menos de $18.000.
-const faltanteEnvioGratis = Math.max(0, 400001 - totalCarrito);
-const avanceEnvioGratis = Math.min(100, totalCarrito / 400001 * 100);
-const destinoAptoEnvioGratis =
-  costoEnvioNormal === null || costoEnvioNormal < 18000;
-
 // Valor que realmente pagará por el envío
 const costoEnvioFinal =
   costoEnvioNormal === null
@@ -3278,32 +3271,6 @@ setErroresCompra((actual) => ({
 
             {carrito.length > 0 && (
               <div className="carrito-pie">
-                {esTiendaRA && destinoAptoEnvioGratis && (
-                  <div className="progreso-envio-gratis" role="status" aria-live="polite">
-                    <div className="progreso-envio-encabezado">
-                      <strong>
-                        🚚 {tieneEnvioGratis
-                          ? "¡Tu pedido tiene envío gratis!"
-                          : faltanteEnvioGratis > 0
-                            ? `Agrega ${formatoPrecio(faltanteEnvioGratis)} más`
-                            : "¡Ya superaste el monto mínimo!"}
-                      </strong>
-                      <span>
-                        {costoEnvioNormal === null
-                          ? "En destinos elegibles"
-                          : tieneEnvioGratis
-                            ? "Beneficio aplicado"
-                            : "Para envío gratis"}
-                      </span>
-                    </div>
-                    <div className="progreso-envio-pista" aria-hidden="true">
-                      <div className="progreso-envio-relleno" style={{ width: `${avanceEnvioGratis}%` }} />
-                    </div>
-                    {costoEnvioNormal === null && (
-                      <small>El beneficio depende del destino. Selecciona tu ciudad para confirmarlo.</small>
-                    )}
-                  </div>
-                )}
            {String(tipoTienda || "")
   .trim()
   .toUpperCase() === "RA" &&
@@ -5330,26 +5297,6 @@ height: 60px;
           padding:9px 13px; border-radius:9px; border:1px solid #ddd;
           background:#fff; color:#333; font-size:13px; font-weight:600;
         }
-
-        /* Meta de envío gratis */
-        .progreso-envio-gratis {
-          margin:2px 0 15px; padding:12px; border-radius:12px;
-          background:#f5fbf8; border:1px solid #d2e8df; color:#24533d;
-        }
-        .progreso-envio-encabezado {
-          display:flex; flex-wrap:wrap; gap:4px 10px;
-          justify-content:space-between; font-size:12px;
-        }
-        .progreso-envio-encabezado span { font-size:11px; }
-        .progreso-envio-pista {
-          margin-top:9px; height:8px; border-radius:8px;
-          overflow:hidden; background:#d7e7de;
-        }
-        .progreso-envio-relleno {
-          height:100%; border-radius:8px; background:#37a06e;
-          transition:width .3s ease;
-        }
-        .progreso-envio-gratis small { display:block; margin-top:7px; font-size:10px; }
 
         /* Favoritos */
         .herramientas-catalogo { max-width:1440px; margin:0 auto; padding:0 18px 14px; display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
