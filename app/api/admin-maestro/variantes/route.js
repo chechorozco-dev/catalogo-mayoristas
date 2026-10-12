@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import crypto from "crypto";
+import { fetchSupabasePaginado, dividirEnBloques } from "../../../../lib/supabasePagination";
 
 export const runtime = "nodejs";
 
@@ -242,7 +243,7 @@ export async function GET(request) {
       `&order=id.desc`;
 
     const productosResponse =
-      await fetch(
+      await fetchSupabasePaginado(
         urlProductos,
         {
           method: "GET",
@@ -292,63 +293,47 @@ export async function GET(request) {
        BUSCAR VARIANTES
     ===================================================== */
 
-    const productosConVariantes =
-      await Promise.all(
-        productos.map(async (producto) => {
-          try {
-            const variantesResponse =
-              await fetch(
-                `${supabaseUrl}/rest/v1/producto_variantes` +
-                  `?producto_id=eq.${encodeURIComponent(
-                    producto.id
-                  )}` +
-                  `&select=id,producto_id,nombre_variante,referencia,foto_url,foto_url_2,costo,precio_detal,precio_minimo,infoimagen,activo,orden,creado_en` +
-                  `&order=orden.asc`,
-                {
-                  method: "GET",
-                  headers: headersSupabase,
-                  cache: "no-store",
-                }
-              );
+    // Evitar una solicitud por producto (N+1). Cada grupo de 80
+    // productos se consulta en bloques; funciona con miles de artículos.
+    const variantesPorProducto = new Map();
+    const idsProductos = productos
+      .map((producto) => Number(producto.id))
+      .filter((id) => Number.isFinite(id));
 
-            if (!variantesResponse.ok) {
-              const detalle =
-                await variantesResponse.text();
-
-              console.error(
-                `Error cargando variantes del producto ${producto.id}:`,
-                detalle
-              );
-
-              return {
-                ...producto,
-                variantes: [],
-              };
-            }
-
-            const variantes =
-              await variantesResponse.json();
-
-            return {
-              ...producto,
-              variantes:
-                Array.isArray(variantes)
-                  ? variantes
-                  : [],
-            };
-          } catch (error) {
-            console.error(
-              `Error cargando variantes del producto ${producto.id}:`,
-              error
-            );
-
-            return {
-              ...producto,
-              variantes: [],
-            };
-          }
-        })
+    for (const bloqueIds of dividirEnBloques(idsProductos, 80)) {
+      const variantesResponse = await fetchSupabasePaginado(
+        `${supabaseUrl}/rest/v1/producto_variantes` +
+          `?producto_id=in.(${bloqueIds.join(",")})` +
+          `&select=id,producto_id,nombre_variante,referencia,foto_url,foto_url_2,costo,precio_detal,precio_minimo,infoimagen,activo,orden,creado_en` +
+          `&order=orden.asc,id.asc`,
+        {
+          method: "GET",
+          headers: headersSupabase,
+          cache: "no-store",
+        }
       );
+
+      if (!variantesResponse.ok) {
+        const detalle = await variantesResponse.text();
+        console.error("Error cargando variantes:", detalle);
+        throw new Error("No se pudieron cargar las variantes.");
+      }
+
+      const variantesBloque = await variantesResponse.json();
+
+      for (const variante of variantesBloque) {
+        const clave = String(variante.producto_id);
+        if (!variantesPorProducto.has(clave)) {
+          variantesPorProducto.set(clave, []);
+        }
+        variantesPorProducto.get(clave).push(variante);
+      }
+    }
+
+    const productosConVariantes = productos.map((producto) => ({
+      ...producto,
+      variantes: variantesPorProducto.get(String(producto.id)) || [],
+    }));
 
     return NextResponse.json({
       ok: true,
