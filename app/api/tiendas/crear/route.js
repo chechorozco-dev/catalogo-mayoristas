@@ -1,3 +1,4 @@
+import { negocioFetch as fetch } from "../../../../lib/negocioFetch.mjs";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import crypto from "crypto";

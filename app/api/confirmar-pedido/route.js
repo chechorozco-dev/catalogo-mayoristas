@@ -1,3 +1,4 @@
+import { negocioFetch as fetch } from "../../../lib/negocioFetch.mjs";
 export async function POST(request) {
   try {
     const pedido = await request.json();
