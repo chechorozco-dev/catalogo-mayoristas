@@ -1,0 +1,28 @@
+name: Pruebas del catálogo
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  pruebas:
+    name: Comprobar reglas comerciales
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+      - name: Configurar Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      # Las pruebas unitarias usan solo módulos internos y Node.js.
+      # No requieren conexión a Supabase ni secretos.
+      - name: Ejecutar pruebas
+        run: npm test
