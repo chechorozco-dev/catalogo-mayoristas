@@ -43,7 +43,7 @@ test("PATCH con ID manipulado o filtro ajeno se rechaza", async () => {
   const { cerrar } = entorno();
   try {
     await assert.rejects(negocioFetch("https://ejemplo.supabase.co/rest/v1/tiendas?id=eq.1&negocio_id=eq.otro", { method: "PATCH", body: "{}" }), /inconsistente/);
-    await assert.rejects(negocioFetch("https://ejemplo.supabase.co/rest/v1/tiendas?id=eq.1", { method: "PATCH", body: JSON.stringify({ negocio_id: "otro" }) }), /otro/);
+    await assert.rejects(negocioFetch("https://ejemplo.supabase.co/rest/v1/tiendas?id=eq.1", { method: "PATCH", body: JSON.stringify({ negocio_id: "otro" }) }), /negocio/);
   } finally { cerrar(); }
 });
 
