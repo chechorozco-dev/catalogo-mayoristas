@@ -351,6 +351,49 @@ const imagenesCategorias = useMemo(() => {
   return resultado;
 }, [productosPermitidos]);
 
+
+  // Favoritos persistentes y privados por tienda.
+  const [favoritos, setFavoritos] = useState([]);
+  const [favoritosCargados, setFavoritosCargados] = useState(false);
+  const [mostrarSoloFavoritos, setMostrarSoloFavoritos] = useState(false);
+
+  useEffect(() => {
+    setFavoritosCargados(false);
+    try {
+      const clave = `favoritos_catalogo_${tiendaId || window.location.pathname}`;
+      const guardados = JSON.parse(localStorage.getItem(clave) || "[]");
+      setFavoritos(Array.isArray(guardados) ? guardados.map(String) : []);
+    } catch {
+      setFavoritos([]);
+    } finally {
+      setFavoritosCargados(true);
+    }
+  }, [tiendaId]);
+
+  useEffect(() => {
+    if (!favoritosCargados) return;
+    try {
+      const clave = `favoritos_catalogo_${tiendaId || window.location.pathname}`;
+      localStorage.setItem(clave, JSON.stringify(favoritos));
+    } catch {
+      // El catálogo funciona incluso si el navegador bloquea storage.
+    }
+  }, [favoritos, favoritosCargados, tiendaId]);
+
+  const favoritosIds = useMemo(() => new Set(favoritos), [favoritos]);
+  const cantidadFavoritosDisponibles = useMemo(
+    () => productosPermitidos.filter((p) => favoritosIds.has(String(p.id))).length,
+    [productosPermitidos, favoritosIds]
+  );
+
+  function alternarFavorito(productoId) {
+    const clave = String(productoId);
+    setFavoritos((actual) => actual.includes(clave)
+      ? actual.filter((id) => id !== clave)
+      : [...actual, clave]
+    );
+  }
+
   const [categoriaActiva, setCategoriaActiva] = useState("Todos");
   const [lineaActiva, setLineaActiva] = useState("Todos");
   const [busqueda, setBusqueda] = useState("");
@@ -771,6 +814,11 @@ ciudad:
     );
   }
 
+  // Respetar también las reglas actuales de visibilidad SOLO_RA.
+  if (mostrarSoloFavoritos) {
+    lista = lista.filter((p) => favoritosIds.has(String(p.id)));
+  }
+
   // FILTRO POR LÍNEA DE PRODUCTO
 
   if (lineaActiva === "Rodio") {
@@ -828,6 +876,8 @@ ciudad:
   categoriaActiva,
   lineaActiva,
   busqueda,
+  mostrarSoloFavoritos,
+  favoritosIds,
 ]);
  const productosVisibles = useMemo(() => {
   return productosFiltrados.slice(0, cantidadVisible);
@@ -872,7 +922,7 @@ useEffect(() => {
 }, [cantidadVisible, productosFiltrados.length]);
   useEffect(() => {
   setCantidadVisible(PRODUCTOS_POR_CARGA);
-}, [categoriaActiva, lineaActiva, busqueda]);
+}, [categoriaActiva, lineaActiva, busqueda, mostrarSoloFavoritos]);
 
   // ========================================
   // PRODUCTOS RECOMENDADOS
@@ -2026,6 +2076,7 @@ try {
         }`}
         onClick={() => {
           setCategoriaActiva(categoria);
+          setMostrarSoloFavoritos(false);
           scrollInicio();
         }}
       >
@@ -2189,7 +2240,7 @@ try {
   
       
           <h1>
-            {categoriaActiva === "Todos"
+            {mostrarSoloFavoritos ? "Mis favoritos" : categoriaActiva === "Todos"
               ? "Todos los productos"
               : categoriaActiva}
           </h1>
@@ -2200,6 +2251,23 @@ try {
               ? "producto"
               : "productos"}
           </span>
+        </div>
+
+        <div className="herramientas-catalogo">
+          <button type="button" className={`filtro-favoritos ${mostrarSoloFavoritos ? "activo" : ""}`}
+            aria-pressed={mostrarSoloFavoritos}
+            onClick={() => {
+              setMostrarSoloFavoritos((v) => !v);
+              setCategoriaActiva("Todos");
+              setLineaActiva("Todos");
+              setBusqueda("");
+            }}
+          >
+            <span aria-hidden="true">♥</span>
+            {mostrarSoloFavoritos ? "Ver todos" : "Mis favoritos"}
+            <span className="contador-favoritos">{cantidadFavoritosDisponibles}</span>
+          </button>
+          {mostrarSoloFavoritos && <span className="ayuda-favoritos">Guardados en este dispositivo</span>}
         </div>
 
         {/* PRODUCTOS */}
@@ -2228,6 +2296,12 @@ try {
                   key={producto.id}
                 >
                   <div className="imagen-contenedor">
+                    <button type="button"
+                      className={`boton-favorito ${favoritosIds.has(String(producto.id)) ? "activo" : ""}`}
+                      aria-label={favoritosIds.has(String(producto.id)) ? `Quitar ${producto.nombre} de favoritos` : `Guardar ${producto.nombre} en favoritos`}
+                      aria-pressed={favoritosIds.has(String(producto.id))}
+                      onClick={(e) => { e.stopPropagation(); alternarFavorito(producto.id); }}
+                    >{favoritosIds.has(String(producto.id)) ? "♥" : "♡"}</button>
                     {fotoActual ? (
                       <FotoOptimizada
           width={640} height={640} sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" quality={85} priority={indiceProducto === 0}
@@ -2394,7 +2468,7 @@ try {
           </div>
         ) : (
           <div className="sin-resultados">
-            No encontramos productos.
+            {mostrarSoloFavoritos ? "Todavía no tienes favoritos aquí. Toca el corazón ♡ de tus joyas preferidas." : "No encontramos productos."}
           </div>
         )}
 
@@ -2503,6 +2577,7 @@ try {
                   }
                   onClick={() => {
                     setCategoriaActiva(categoria);
+                    setMostrarSoloFavoritos(false);
                     setMenuAbierto(false);
                     scrollInicio();
                   }}
@@ -5367,6 +5442,16 @@ height: 60px;
   color: var(--texto-fondo);
   opacity: 0.65;
 }
+
+        /* Favoritos */
+        .herramientas-catalogo { max-width:1440px; margin:0 auto; padding:0 18px 14px; display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+        .filtro-favoritos { display:inline-flex; align-items:center; gap:8px; padding:9px 14px; background:var(--color-fondo); color:var(--texto-fondo); border:1px solid #ddd; border-radius:25px; font-size:14px; font-weight:700; }
+        .filtro-favoritos.activo { border-color:var(--color-principal); box-shadow:0 0 0 1px var(--color-principal); }
+        .filtro-favoritos > span:first-child { color:#b83a58; font-size:20px; }
+        .contador-favoritos { min-width:20px; padding:2px 5px; border-radius:20px; background:rgba(128,128,128,.12); font-size:12px; }
+        .ayuda-favoritos { font-size:11px; color:#777; }
+        .boton-favorito { position:absolute; z-index:3; top:10px; right:10px; width:36px; height:36px; display:flex; align-items:center; justify-content:center; border:1px solid #e8e8e8; border-radius:50%; background:rgba(255,255,255,.95); color:#994a60; font-size:26px; line-height:1; box-shadow:0 2px 8px rgba(0,0,0,.11); }
+        .boton-favorito.activo { color:#d42959; }
 
         /* PRODUCTOS */
 
