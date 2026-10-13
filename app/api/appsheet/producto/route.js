@@ -49,7 +49,7 @@ export async function POST(request) {
 
       // Filtro doble obligatorio: por referencia Y negocio_id impuesto por negocioFetch.
       // No se acepta negocio_id desde AppSheet; jamás alcanza productos de RA principal.
-      const eliminarUrl = new URL(supabaseUrl.replace(/\\/$/, "") + "/rest/v1/productos");
+      const eliminarUrl = new URL(supabaseUrl.replace(/\/$/, "") + "/rest/v1/productos");
       eliminarUrl.searchParams.set("referencia", "eq." + referencia);
       eliminarUrl.searchParams.set("select", "id,referencia");
       const eliminadoResp = await negocioFetch(eliminarUrl.toString(), {
