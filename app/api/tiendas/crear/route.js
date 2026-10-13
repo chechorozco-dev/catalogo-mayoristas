@@ -1,3 +1,4 @@
+import { negocioFetch as fetch } from "../../../../lib/negocioFetch.mjs";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import crypto from "crypto";
@@ -574,7 +575,7 @@ const colorFondo =
           ).replace(/\D/g, "");
 
        const enlaceTienda =
-  `https://mi-catalogo-accesorios.vercel.app/${slug}`;
+  `${(process.env.NEXT_PUBLIC_SITE_URL || "https://mi-catalogo-accesorios.vercel.app").replace(/\/$/, "")}/${slug}`;
 
         const urlWati =
           `${baseWati}/api/v1/sendTemplateMessage` +
@@ -678,9 +679,10 @@ const colorFondo =
     );
 
     const duracionSesion =
-      60 * 60 * 24 * 30;
+      process.env.AUTH_MODE === "password" ? 60 * 60 * 8 : 60 * 60 * 24 * 30;
 
     const nuevaSesion = {
+      ...sesion,
       cliente_id:
         cliente.id,
 

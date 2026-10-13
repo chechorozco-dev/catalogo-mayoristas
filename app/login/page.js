@@ -1,4 +1,5 @@
 "use client";
+import ClaveLogin from "./ClaveLogin";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -13,7 +14,7 @@ const PAISES = [
   { nombre: "Panamá", codigo: "507", bandera: "🇵🇦" },
 ];
 
-export default function LoginPage() {
+function WhatsAppLoginPage() {
   const router = useRouter();
 
   const [cargandoSesion, setCargandoSesion] = useState(true);
@@ -685,4 +686,8 @@ function estiloBotonPrincipal(deshabilitado) {
       : "pointer",
     opacity: deshabilitado ? 0.7 : 1,
   };
+}
+
+export default function LoginPage() {
+  return process.env.NEXT_PUBLIC_AUTH_MODE === "password" ? <ClaveLogin /> : <WhatsAppLoginPage />;
 }

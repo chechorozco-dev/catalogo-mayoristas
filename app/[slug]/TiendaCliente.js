@@ -34,6 +34,7 @@ const CATEGORIAS_MENU = [
 ];
 export default function TiendaCliente({
   tiendaId,
+  esNegocioRA = true,
   tipoTienda = "CLIENTE",
   nombreTienda,
   logoUrl,
@@ -4129,23 +4130,23 @@ setErroresCompra((actual) => ({
   <footer className="footer-ra">
     <div className="footer-ra-contenido">
       <strong className="footer-ra-marca">
-        RA ACCESORIOS
+        {esNegocioRA ? "RA ACCESORIOS" : nombreTienda}
       </strong>
 
       <p>
-        Joyería y accesorios al por mayor en Colombia
+        {esNegocioRA ? "Joyería y accesorios al por mayor en Colombia" : "Catálogo de productos al por mayor"}
       </p>
 
       <p>
-        Villavicencio, Meta · Colombia
+        {esNegocioRA ? "Villavicencio, Meta · Colombia" : "Colombia"}
       </p>
 
       <p className="footer-ra-web">
-        MAYORISTASRA.COM
+        {esNegocioRA ? "MAYORISTASRA.COM" : ""}
       </p>
 
       <p className="footer-ra-copyright">
-        © 2026 RA Accesorios. Todos los derechos reservados.
+        © 2026 {esNegocioRA ? "RA Accesorios" : nombreTienda}. Todos los derechos reservados.
       </p>
     </div>
   </footer>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "../../lib/supabase";
+import ClaveLogin from "../login/ClaveLogin";
 
 function crearSlug(texto) {
   return texto
@@ -25,6 +26,7 @@ export default function RegistroPage() {
   const [cargando, setCargando] = useState(false);
 
   async function registrar(e) {
+    if (process.env.NEXT_PUBLIC_AUTH_MODE === "password") return;
     e.preventDefault();
 
     setMensaje("");
@@ -90,6 +92,8 @@ export default function RegistroPage() {
   function administrarCatalogo() {
     window.location.href = "/login";
   }
+
+  if (process.env.NEXT_PUBLIC_AUTH_MODE === "password") return <ClaveLogin initialMode="registro" />;
 
   return (
     <main

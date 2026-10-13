@@ -117,6 +117,14 @@ export default function AdminMaestroPage() {
   return (
     <main style={pagina}>
       <div style={contenedor}>
+        {process.env.NEXT_PUBLIC_AUTH_MODE === "password" && (
+          <section style={{ padding: 16, borderRadius: 16, background: "white", marginBottom: 15 }}>
+            <strong>🔐 Accesos de clientes del local</strong>
+            <p>Administra la lista de clientes autorizados y sus contraseñas temporales.</p>
+            <button type="button" style={{ padding: 12, borderRadius: 10, cursor: "pointer" }}
+              onClick={() => router.push("/admin-maestro/accesos")}>Administrar clientes y contraseñas</button>
+          </section>
+        )}
         {/* =====================================
             ENCABEZADO
         ===================================== */}

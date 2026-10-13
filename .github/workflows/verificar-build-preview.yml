@@ -1,0 +1,34 @@
+name: Compilación Next.js para cambios de catálogo
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Compilar Next.js
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ejemplo_publico_de_ci
+      NEXT_PUBLIC_AUTH_MODE: password
+      AUTH_MODE: password
+      NEGOCIO_ID: 38100510-1325-4d3c-9b6c-886552e82089
+      NEGOCIO_SLUG: local-2
+
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+      - name: Configurar Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Instalar dependencias
+        run: npm install --no-audit --no-fund
+      - name: Compilar aplicación
+        run: npm run build

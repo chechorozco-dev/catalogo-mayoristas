@@ -1,9 +1,32 @@
+import { negocioFetch } from "../../lib/negocioFetch.mjs";
 import { notFound } from "next/navigation";
-import { supabase } from "../../lib/supabase";
 import TiendaCliente from "./TiendaCliente";
 import { fetchSupabasePaginado, dividirEnBloques } from "../../lib/supabasePagination";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * Las tiendas públicas se cargan desde el servidor, nunca con la llave anónima.
+ * Esto permitirá cerrar SELECT anónimo directo en Supabase sin romper la web.
+ */
+async function buscarTienda(slug, columnas) {
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const clave = process.env.SUPABASE_SECRET_KEY;
+  if (!base || !clave) return { data: null, error: "Falta configuración privada" };
+  const url = new URL(base.replace(/\/$/, "") + "/rest/v1/tiendas");
+  url.searchParams.set("select", columnas);
+  url.searchParams.set("slug", `eq.${slug}`);
+  url.searchParams.set("activa", "eq.true");
+  url.searchParams.set("limit", "1");
+  const response = await negocioFetch(url.toString(), {
+    headers: { apikey: clave, "Content-Type": "application/json" },
+    cache: "no-store",
+  });
+  if (!response.ok) return { data: null, error: response.status };
+  const filas = await response.json();
+  return { data: filas[0] || null, error: null };
+}
+
 
 /* =========================================
    METADATOS PARA WHATSAPP / REDES SOCIALES
@@ -13,17 +36,7 @@ export async function generateMetadata({ params }) {
   try {
     const { slug } = await params;
 
-    const {
-      data: tienda,
-      error,
-    } = await supabase
-      .from("tiendas")
-      .select(
-        "nombre_tienda,slug,logo_url,mensaje_portada"
-      )
-      .eq("slug", slug)
-      .eq("activa", true)
-      .single();
+    const { data: tienda, error } = await buscarTienda(slug, "nombre_tienda,slug,logo_url,mensaje_portada,tipo_tienda");
 
     if (error || !tienda) {
       return {
@@ -36,6 +49,7 @@ export async function generateMetadata({ params }) {
       tienda.nombre_tienda || "Catálogo digital";
 
   const esRA =
+  (process.env.NEGOCIO_SLUG || "ra-accesorios") === "ra-accesorios" &&
   String(tienda.slug || "")
     .trim()
     .toLowerCase() === "mayoristas-ra";
@@ -45,14 +59,11 @@ const descripcion = esRA
   : tienda.mensaje_portada ||
     `Descubre los productos de ${nombreTienda}`;
 
-   const esTiendaRA =
-  String(tienda.slug || "")
-    .trim()
-    .toLowerCase() === "mayoristas-ra";
+   const esTiendaRA = esRA;
 
 const urlCatalogo = esTiendaRA
   ? "https://www.mayoristasra.com/mayoristas-ra"
-  : `https://mi-catalogo-accesorios.vercel.app/${encodeURIComponent(
+  : `${(process.env.NEXT_PUBLIC_SITE_URL || "https://mi-catalogo-accesorios.vercel.app").replace(/\/$/, "")}/${encodeURIComponent(
       tienda.slug
     )}`;
 
@@ -135,17 +146,7 @@ export default async function TiendaPage({
   // 1. BUSCAR TIENDA
   // =========================================
 
-  const {
-    data: tienda,
-    error: tiendaError,
-  } = await supabase
-    .from("tiendas")
-   .select(
-  "id,nombre_tienda,slug,whatsapp,logo_url,color_principal,color_fondo,mensaje_portada,instagram,facebook,tiktok,tipo_tienda,creado_en"
-)
-    .eq("slug", slug)
-    .eq("activa", true)
-    .single();
+  const { data: tienda, error: tiendaError } = await buscarTienda(slug, "id,nombre_tienda,slug,whatsapp,logo_url,color_principal,color_fondo,mensaje_portada,instagram,facebook,tiktok,tipo_tienda,creado_en");
 
   if (tiendaError || !tienda) {
     notFound();
@@ -1069,7 +1070,7 @@ created_at:
  return (
   <main>
 {/* META PIXEL - SOLO TIENDA RA */}
-{esTiendaRA && (
+{esTiendaRA && (process.env.NEGOCIO_SLUG || "ra-accesorios") === "ra-accesorios" && (
   <>
     <script
       dangerouslySetInnerHTML={{
@@ -1099,7 +1100,7 @@ created_at:
     </noscript>
   </>
 )}
-    {esTiendaRA && (
+    {esTiendaRA && (process.env.NEGOCIO_SLUG || "ra-accesorios") === "ra-accesorios" && (
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -1123,6 +1124,7 @@ created_at:
     )}
 
     <TiendaCliente
+  esNegocioRA={(process.env.NEGOCIO_SLUG || "ra-accesorios") === "ra-accesorios"}
   tiendaId={tienda.id}
 
   tipoTienda={

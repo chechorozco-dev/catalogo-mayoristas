@@ -1,3 +1,4 @@
+import { negocioFetch as fetch } from "../../../lib/negocioFetch.mjs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request) {

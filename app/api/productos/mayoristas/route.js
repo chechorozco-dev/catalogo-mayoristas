@@ -1,3 +1,4 @@
+import { negocioFetch as fetch } from "../../../../lib/negocioFetch.mjs";
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { fetchSupabasePaginado, dividirEnBloques } from "../../../../lib/supabasePagination";
