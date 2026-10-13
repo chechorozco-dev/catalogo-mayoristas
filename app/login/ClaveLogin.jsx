@@ -109,20 +109,20 @@ export default function ClaveLogin({ initialMode = "ingresar" }) {
           <form onSubmit={enviar}>
             <label style={{ display: "block", fontWeight: 700, marginTop: 18 }}>Número de celular</label>
             <input type="tel" inputMode="numeric" autoComplete="tel" style={input}
-              placeholder="3146039934" value={telefono}
+              placeholder="3100000000" value={telefono}
               onChange={e => setTelefono(e.target.value)} maxLength={18} required />
             <label style={{ display: "block", fontWeight: 700, marginTop: 18 }}>
               {modo === "cambiar" ? "Contraseña actual o temporal" : "Contraseña"}
             </label>
             <input type="password" autoComplete={modo === "registro" ? "new-password" : "current-password"}
-              style={input} minLength={modo === "registro" ? 10 : 1} maxLength={128}
-              placeholder={modo === "registro" ? "Mínimo 10 caracteres, letras y números" : "Tu contraseña"}
+              style={input} minLength={modo === "registro" ? 6 : 1} maxLength={128}
+              placeholder={modo === "registro" ? "Mínimo 6 caracteres, a tu elección" : "Tu contraseña"}
               value={password} onChange={e => setPassword(e.target.value)} required />
             {modo === "cambiar" && (
               <>
                 <label style={{ display: "block", fontWeight: 700, marginTop: 18 }}>Nueva contraseña</label>
                 <input type="password" autoComplete="new-password" style={input}
-                  placeholder="Mínimo 10 caracteres, letras y números" minLength={10} maxLength={128}
+                  placeholder="Mínimo 6 caracteres, a tu elección" minLength={6} maxLength={128}
                   value={nueva} onChange={e => setNueva(e.target.value)} required />
               </>
             )}

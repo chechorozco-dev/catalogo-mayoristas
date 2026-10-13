@@ -7,7 +7,7 @@ export async function POST(request) {
     const body = await request.json();
     const telefono = limpiarTelefono(body.telefono);
     if (!telefono || !claveValida(body.password)) {
-      return NextResponse.json({ ok: false, mensaje: "Escribe un celular colombiano y una contraseña de mínimo 10 caracteres con letras y números." }, { status: 400 });
+      return NextResponse.json({ ok: false, mensaje: "Escribe un celular colombiano y una contraseña de mínimo 6 caracteres. Puedes elegir letras, números o símbolos." }, { status: 400 });
     }
     const autorizados = await tablaSupabase("clientes_autorizados", {
       select: "id,telefono,activo,rol", telefono: "eq." + telefono, activo: "eq.true", rol: "eq.CLIENTE", limit: "1"

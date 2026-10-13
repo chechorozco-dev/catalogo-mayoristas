@@ -7,7 +7,7 @@ export async function POST(request) {
     const body = await request.json();
     const telefono = limpiarTelefono(body.telefono);
     if (!telefono || !claveValida(body.nueva) || typeof body.actual !== "string" || body.actual === body.nueva) {
-      return NextResponse.json({ ok: false, mensaje: "Elige una contraseña nueva con mínimo 10 caracteres, letras y números." }, { status: 400 });
+      return NextResponse.json({ ok: false, mensaje: "Elige una contraseña nueva de mínimo 6 caracteres. Puedes usar letras, números o símbolos." }, { status: 400 });
     }
     const clientes = await tablaSupabase("clientes_autorizados", {
       select: "id,nombre,telefono,tienda_id,rol,negocio_id", telefono: "eq." + telefono, activo: "eq.true", limit: "1"

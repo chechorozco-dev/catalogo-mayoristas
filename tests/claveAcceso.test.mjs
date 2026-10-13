@@ -9,11 +9,20 @@ test("los números deben tener el formato celular colombiano", () => {
   assert.equal(limpiarTelefono("300000000000000000000"), null);
 });
 test("la contraseña no queda legible y comprueba la coincidencia", () => {
-  assert.equal(claveValida("solo123"), false);
+  assert.equal(claveValida("solo123"), true);
+  assert.equal(claveValida("123456"), true);
+  assert.equal(claveValida("abcdef"), true);
+  assert.equal(claveValida("ab#*12"), true);
+  assert.equal(claveValida("12345"), false);
+  assert.equal(claveValida("      "), false);
+  assert.equal(claveValida("a".repeat(129)), false);
   const cifrado = cifrarClave("UnaClaveSegura2026");
   assert.ok(!cifrado.includes("UnaClaveSegura2026"));
   assert.ok(comprobarClave("UnaClaveSegura2026", cifrado));
   assert.ok(!comprobarClave("NoCoincide2026", cifrado));
+  const claveSoloNumeros = cifrarClave("123456");
+  assert.ok(comprobarClave("123456", claveSoloNumeros));
+  assert.ok(!comprobarClave("654321", claveSoloNumeros));
 });
 test("las sesiones firmadas están atadas al local", () => {
   const anterior = process.env.NEGOCIO_ID;
