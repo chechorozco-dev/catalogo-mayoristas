@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { negocioFetch, getNegocioId } from "../../../../lib/negocioFetch.mjs";
-import { mapearProductoAppSheet } from "../../../../lib/appsheetProducto.mjs";
+import { mapearProductoAppSheet, referenciaParaEliminar } from "../../../../lib/appsheetProducto.mjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,6 +35,49 @@ export async function POST(request) {
     catch { return respuesta({ ok: false, mensaje: "Envía JSON válido." }, 400); }
     if (!autorizado(body?.ra_secret, webhookSecret)) {
       return respuesta({ ok: false, mensaje: "No autorizado." }, 401);
+    }
+
+    const accion = String(body?.accion ?? "").trim().toUpperCase();
+    if (accion && !["ELIMINAR", "DELETE", "CREAR", "ACTUALIZAR", "GUARDAR", "SINCRONIZAR"].includes(accion)) {
+      return respuesta({ ok: false, mensaje: "Acción no reconocida." }, 400);
+    }
+
+    if (accion === "ELIMINAR" || accion === "DELETE") {
+      let referencia;
+      try { referencia = referenciaParaEliminar(body); }
+      catch (err) { return respuesta({ ok: false, mensaje: err.message }, 400); }
+
+      // Filtro doble obligatorio: por referencia Y negocio_id impuesto por negocioFetch.
+      // No se acepta negocio_id desde AppSheet; jamás alcanza productos de RA principal.
+      const eliminarUrl = new URL(supabaseUrl.replace(/\\/$/, "") + "/rest/v1/productos");
+      eliminarUrl.searchParams.set("referencia", "eq." + referencia);
+      eliminarUrl.searchParams.set("select", "id,referencia");
+      const eliminadoResp = await negocioFetch(eliminarUrl.toString(), {
+        method: "DELETE",
+        headers: {
+          apikey: supabaseKey,
+          Prefer: "return=representation",
+        },
+        cache: "no-store",
+      });
+      if (!eliminadoResp.ok) {
+        console.error("AppSheet: error eliminando producto", eliminadoResp.status);
+        return respuesta({ ok: false, accion: "ERROR", mensaje: "No se pudo eliminar el producto.", codigo: eliminadoResp.status }, 502);
+      }
+      const eliminados = await eliminadoResp.json();
+      if (!Array.isArray(eliminados) || eliminados.length === 0) {
+        return respuesta({
+          ok: false, accion: "NO_EXISTE",
+          mensaje: "No existe esa referencia en RA ACCESORIOS VILLAVO.",
+          referencia
+        }, 404);
+      }
+      return respuesta({
+        ok: true, accion: "ELIMINADO",
+        mensaje: "Producto eliminado de RA ACCESORIOS VILLAVO.",
+        referencia,
+        eliminados: eliminados.length
+      });
     }
 
     let producto;

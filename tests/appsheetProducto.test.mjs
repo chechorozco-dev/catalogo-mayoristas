@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mapearProductoAppSheet, precioAppSheet } from "../lib/appsheetProducto.mjs";
+import { mapearProductoAppSheet, precioAppSheet, referenciaParaEliminar } from "../lib/appsheetProducto.mjs";
 
 test("AppSheet mapea el body del mayorista con precio y precio sugerido separados", () => {
   const producto = mapearProductoAppSheet({
@@ -37,4 +37,12 @@ test("Admite formato de miles colombiano y decimales normales", () => {
   assert.equal(precioAppSheet(12500,"precio"),12500);
   assert.equal(precioAppSheet("12.500","precio"),12500);
   assert.equal(precioAppSheet("12,50","precio"),12.5);
+});
+
+test("La accion ELIMINAR solo necesita codigo, sin nombre ni precio", () => {
+  assert.equal(referenciaParaEliminar({ accion: "ELIMINAR", codigo: "  VI001  " }), "VI001");
+  assert.equal(referenciaParaEliminar({ codigo: "VI002" }), "VI002");
+  assert.throws(() => referenciaParaEliminar({ accion: "ELIMINAR", codigo: "" }), /codigo/);
+  assert.throws(() => referenciaParaEliminar({ accion: "ELIMINAR" }), /codigo/);
+  assert.throws(() => referenciaParaEliminar({ accion: "ELIMINAR", codigo: "X".repeat(101) }), /largo/);
 });
