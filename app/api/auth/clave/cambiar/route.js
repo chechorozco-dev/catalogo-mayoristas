@@ -15,11 +15,23 @@ export async function POST(request) {
     const cliente = clientes?.[0];
     if (!cliente) return NextResponse.json({ ok: false, mensaje: "No pudimos verificar tus datos." }, { status: 401 });
     const registros = await tablaSupabase("credenciales_acceso", {
-      select: "password_hash,estado,requiere_cambio,bloqueado_hasta", cliente_id: "eq." + cliente.id, limit: "1"
+      select: "password_hash,estado,requiere_cambio,bloqueado_hasta,intentos_fallidos", cliente_id: "eq." + cliente.id, limit: "1"
     });
     const cred = registros?.[0];
-    if (!cred || cred.estado !== "ACTIVO" || (cred.bloqueado_hasta && Date.parse(cred.bloqueado_hasta) > Date.now()) ||
-        !comprobarClave(body.actual, cred.password_hash)) {
+    if (!cred || cred.estado !== "ACTIVO") {
+      return NextResponse.json({ ok: false, mensaje: "No pudimos verificar tus datos." }, { status: 401 });
+    }
+    if (cred.bloqueado_hasta && Date.parse(cred.bloqueado_hasta) > Date.now()) {
+      return NextResponse.json({ ok: false, mensaje: "Demasiados intentos. Vuelve a intentar en 15 minutos." }, { status: 429 });
+    }
+    if (!comprobarClave(body.actual, cred.password_hash)) {
+      const intentos = (Number(cred.intentos_fallidos) || 0) + 1;
+      await tablaSupabase("credenciales_acceso", { cliente_id: "eq." + cliente.id }, {
+        method: "PATCH", body: JSON.stringify({
+          intentos_fallidos: intentos >= 5 ? 0 : intentos,
+          bloqueado_hasta: intentos >= 5 ? new Date(Date.now() + 15 * 60 * 1000).toISOString() : null
+        })
+      });
       return NextResponse.json({ ok: false, mensaje: "La contraseña actual no es correcta." }, { status: 401 });
     }
     await tablaSupabase("credenciales_acceso", { cliente_id: "eq." + cliente.id }, {
