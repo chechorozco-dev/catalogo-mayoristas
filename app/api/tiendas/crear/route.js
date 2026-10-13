@@ -679,9 +679,10 @@ const colorFondo =
     );
 
     const duracionSesion =
-      60 * 60 * 24 * 30;
+      process.env.AUTH_MODE === "password" ? 60 * 60 * 8 : 60 * 60 * 24 * 30;
 
     const nuevaSesion = {
+      ...sesion,
       cliente_id:
         cliente.id,
 

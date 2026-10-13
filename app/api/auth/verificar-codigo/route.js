@@ -38,6 +38,7 @@ function crearTokenSesion(datos, secreto) {
 }
 
 export async function POST(request) {
+  if (process.env.AUTH_MODE === "password") return NextResponse.json({ ok: false, mensaje: "Este local utiliza contraseña." }, { status: 404 });
   try {
     const body = await request.json();
 
