@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
-import { modoClave, limpiarTelefono, claveValida, cifrarClave, tablaSupabase } from "../../../../lib/claveAcceso.mjs";
+import { modoClave, limpiarTelefono, claveValida, cifrarClave, tablaSupabase } from "../../../lib/claveAcceso.mjs";
 export const runtime = "nodejs";
 
 function mismoSecreto(entrada, secreto) {
