@@ -51,3 +51,4 @@ export default function ActivarAdministrador() {
       {listo && <button onClick={()=>router.replace("/login")} style={{padding:13,borderRadius:10}}>Ir a iniciar sesión</button>}
     </div>
   </main>;
+}
