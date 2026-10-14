@@ -74,3 +74,34 @@ en ambos proyectos. Ninguna clave de servicio debe llegar al cliente.
 La descarga de imágenes se realiza por ID/slot contra una lista restringida
 de proveedores HTTPS, verificando el origen y tamaño del archivo.
 No crea pedidos, WhatsApps ni cambia visibilidad en las tiendas de clientes.
+
+
+## Integración con productos históricos RA para cotizaciones (2026-10)
+
+La base de datos compartida conserva una **tabla maestra privada** adicional,
+`ra_productos_principal`, y la tabla `ra_producto_variantes_principal`.
+Los triggers de Supabase insertan o actualizan automáticamente un producto
+cuando la página lo crea/actualiza, ya sea desde el webhook o el administrador.
+
+**Borrar un producto del catálogo público NO lo elimina del maestro privado.**
+Queda como retirado (`en_catalogo_web=false`) con sus datos históricos.
+
+La columna `costo` de `public.productos` equivale al **precio de venta
+mayorista**. La adquisición de RA se guarda en una columna distinta,
+`ra_productos_principal.costo_compra`.
+
+El endpoint existente `POST /api/automation/producto` acepta opcionalmente
+`costo_compra`, `COSTO_COMPRA` o `COSTO_REAL` en el body autenticado del
+webhook; nunca agrega esta información a `public.productos`. Si no envías
+el campo, el costo real queda vacío (no se adivina a partir del mayorista).
+
+Ejemplo de campo para AÑADIR al JSON de tu webhook actual, **solo si
+tu hoja AppSheet tiene ese dato**:
+
+```json
+{ "costo_compra": "<<[NOMBRE_REAL_DE_TU_COLUMNA_DE_COSTO]>>" }
+```
+
+No reemplaces ni modifiques tus campos ya configurados de autenticación,
+referencia, precios y fotografías para agregar este campo. La migración
+del maestro se instala aparte en el proyecto de WhatsApp Lab.
