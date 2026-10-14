@@ -105,3 +105,29 @@ tu hoja AppSheet tiene ese dato**:
 No reemplaces ni modifiques tus campos ya configurados de autenticación,
 referencia, precios y fotografías para agregar este campo. La migración
 del maestro se instala aparte en el proyecto de WhatsApp Lab.
+
+### Webhook AppSheet con costo real opcional
+
+El body actual de AppSheet puede incluir simultáneamente:
+
+```json
+{
+  "codigo": "<<[CODIGO]>>",
+  "producto": "<<[PRODUCTO]>>",
+  "COSTO": "<<[COSTO]>>",
+  "precio": "<<[PRECIO_SHOPIFY]>>",
+  "precio SUGERIDO": "<<[PRECIO_SUGERIDO_WEB]>>"
+}
+```
+
+- **`precio`** = venta mayorista pública (`productos.costo`).
+- **`COSTO`** = costo real de compra privado (`ra_productos_principal.costo_compra`)
+  cuando también existe el campo `precio`.
+- **COSTO no es obligatorio**: si la celda está en blanco y se envía `""`,
+  `null` o no llega esa clave, se omite silenciosamente; no se
+  sobrescribe ningún costo anterior.
+- Si en la hoja de origen **no existe la columna `COSTO` como tal**,
+  hay que quitar la línea del body o crear la columna: AppSheet no puede
+  evaluar `<<[COSTO]>>` si no encuentra esa columna.
+- Se mantiene compatibilidad con fuentes antiguas que enviaban sólo `COSTO`
+  para el precio de venta. No mostrar nunca el costo de compra en el catálogo público.
