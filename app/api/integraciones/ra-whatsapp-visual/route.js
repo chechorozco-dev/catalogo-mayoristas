@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { timingSafeEqual } from "node:crypto";
 import {
   MAX_VISUAL_IMAGE_BYTES, descargarFotoCatalogo,
-  firmaVisual, similitudVisual,
+  firmaVisualMejorada, similitudVisualMejorada,
 } from "../../../../lib/catalogo/visual.mjs";
 
 export const runtime = "nodejs";
@@ -84,7 +84,7 @@ async function status(db,tienda) {
   // The default Supabase API cap is 1,000 rows; RA has ~1,500 photos.
   for(let offset=0;offset<5000;offset+=500){
     const {data,error}=await db.from(TABLE)
-      .select("producto_id,variante_id,foto_num,foto_url,estado")
+      .select("producto_id,variante_id,foto_num,foto_url,estado,signature")
       .eq("negocio_id",tienda.negocio_id)
       .order("id",{ascending:true}).range(offset,offset+499);
     if(error)throw error;
@@ -96,9 +96,16 @@ async function status(db,tienda) {
     const row=map.get(key(f));
     return row?.estado==="indexed"&&row.foto_url===f.foto_url;
   }).length;
-  return reply({success:true,total:fotos.length,indexed,ready:indexed>=Math.min(30,fotos.length),
-    complete:indexed===fotos.length,indexer:"perceptual-v1",
-    note:"Coincidencias visuales aproximadas; confirmar siempre la referencia."});
+  const enhanced=fotos.filter(f=>{
+    const row=map.get(key(f));
+    return row?.estado==="indexed"&&row.foto_url===f.foto_url&&row.signature?.version===2;
+  }).length;
+  return reply({success:true,total:fotos.length,indexed,enhanced,
+    ready:indexed>=Math.min(30,fotos.length),
+    complete:indexed===fotos.length,
+    enhancementComplete:enhanced===indexed&&indexed>0,
+    indexer:"perceptual-v2-multicrop",
+    note:"Coincidencias aproximadas. Para reconocer imágenes recortadas, mejora primero las huellas del catálogo."});
 }
 
 async function index(db,tienda,body) {
@@ -114,13 +121,14 @@ async function index(db,tienda,body) {
     nextCursor:photos.length,done:true,processed:0,indexed:0,failed:0,skipped:0});
   const productIds=[...new Set(batch.map(p=>p.producto_id))];
   const {data:existing,error:existingError}=await db.from(TABLE)
-    .select("producto_id,variante_id,foto_num,foto_url,estado")
+    .select("producto_id,variante_id,foto_num,foto_url,estado,signature")
     .eq("negocio_id",tienda.negocio_id).in("producto_id",productIds);
   if(existingError)throw existingError;
   const current=new Map((existing||[]).map(x=>[key(x),x]));
   const toCreate=batch.filter(photo=>{
     const row=current.get(key(photo));
-    return !(row?.estado==="indexed"&&row.foto_url===photo.foto_url);
+    return !(row?.estado==="indexed"&&row.foto_url===photo.foto_url&&
+      row.signature?.version===2);
   });
   const results=[];
   // Bound concurrency and egress: max 5 simultaneous remote image downloads.
@@ -129,7 +137,7 @@ async function index(db,tienda,body) {
     results.push(...await Promise.all(slice.map(async photo=>{
       try {
         const bytes=await descargarFotoCatalogo(photo.foto_url);
-        const signature=await firmaVisual(bytes);
+        const signature=await firmaVisualMejorada(bytes);
         return {...photo,estado:"indexed",signature,ok:true};
       }catch(error){
         console.error("No se pudo indexar fotografía RA",
@@ -151,6 +159,7 @@ async function index(db,tienda,body) {
   const nextCursor=Math.min(cursor+limit,photos.length);
   return reply({success:true,total:photos.length,processed:batch.length,
     indexed:results.filter(r=>r.ok).length,
+    upgraded:results.filter(r=>r.ok).length,
     failed:results.filter(r=>!r.ok).length,
     skipped:batch.length-toCreate.length,
     nextCursor,done:nextCursor>=photos.length});
@@ -161,7 +170,7 @@ async function findMatches(db,tienda,uploaded) {
     return reply({success:false,error:"La imagen debe pesar menos de 5 MB."},413);
   if(!["image/jpeg","image/png","image/webp","image/heic","image/heif","application/octet-stream"].includes(uploaded.type))
     return reply({success:false,error:"Utiliza una fotografía JPG, PNG o WebP."},415);
-  const signature=await firmaVisual(await uploaded.arrayBuffer());
+  const signature=await firmaVisualMejorada(await uploaded.arrayBuffer());
   const indexed=[];
   for(let page=0;page<7;page++){
     const {data,error}=await db.from(TABLE)
@@ -175,7 +184,7 @@ async function findMatches(db,tienda,uploaded) {
   if(!indexed.length) return reply({success:true,results:[],indexed:0,
     errorCode:"INDEX_NOT_READY",message:"Primero hay que preparar las fotografías del catálogo."});
   const ranked=indexed.map(entry=>({
-    ...entry,score:similitudVisual(signature,entry.signature),
+    ...entry,score:similitudVisualMejorada(signature,entry.signature),
   })).filter(entry=>entry.score!==null)
     .sort((a,b)=>b.score-a.score);
   const top=ranked.slice(0,160);
