@@ -297,7 +297,7 @@ export async function GET(request) {
     const clientes =
       await supabaseRequest(
         `clientes_autorizados` +
-          `?select=id,nombre,telefono,activo,tienda_id,rol` +
+          `?select=id,nombre,telefono,activo,tienda_id,rol,negocio_id` +
           `&${filtroCliente}` +
           `&limit=1`
       );
@@ -323,7 +323,7 @@ export async function GET(request) {
       );
     }
 
-    if (!cliente.tienda_id) {
+    if (!cliente.tienda_id || !cliente.negocio_id) {
       return NextResponse.json(
         {
           ok: false,
@@ -342,7 +342,7 @@ export async function GET(request) {
 const tiendas =
   await supabaseRequest(
     `tiendas` +
-      `?select=id,creado_en,tipo_tienda` +
+      `?select=id,creado_en,tipo_tienda,negocio_id,activa` +
       `&id=eq.${encodeURIComponent(
         cliente.tienda_id
       )}` +
@@ -354,7 +354,11 @@ const tienda =
     ? tiendas[0]
     : null;
 
-if (!tienda) {
+if (
+  !tienda ||
+  tienda.activa !== true ||
+  tienda.negocio_id !== cliente.negocio_id
+) {
   return NextResponse.json(
     {
       ok: false,
@@ -395,6 +399,7 @@ if (!tienda) {
   "tiene_variantes",
 ].join(",") +
           `&activo=eq.true` +
+          `&negocio_id=eq.${encodeURIComponent(tienda.negocio_id)}` +
           `&order=created_at.desc,id.desc`,
         { paginar: true }
       );
@@ -431,6 +436,7 @@ const visibilidadData =
       `&tienda_id=eq.${encodeURIComponent(
         cliente.tienda_id
       )}` +
+      `&negocio_id=eq.${encodeURIComponent(tienda.negocio_id)}` +
       `&order=producto_id.asc`,
     { paginar: true }
   );
@@ -501,6 +507,7 @@ if (Array.isArray(visibilidadData)) {
             ].join(",") +
             `&producto_id=in.(${bloqueIds.join(",")})` +
             `&activo=eq.true` +
+            `&negocio_id=eq.${encodeURIComponent(tienda.negocio_id)}` +
             `&order=orden.asc,id.asc`,
           { paginar: true }
         );
