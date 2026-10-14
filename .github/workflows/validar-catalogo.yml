@@ -22,7 +22,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "24"
-      # Las pruebas unitarias usan solo módulos internos y Node.js.
-      # No requieren conexión a Supabase ni secretos.
+      # Nuevas pruebas visuales usan sharp; instalar dependencias de forma explícita.
+      - name: Instalar dependencias
+        run: npm install --no-audit --no-fund
       - name: Ejecutar pruebas
         run: npm test
