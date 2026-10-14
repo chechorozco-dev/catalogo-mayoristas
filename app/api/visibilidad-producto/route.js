@@ -197,7 +197,7 @@ async function obtenerCliente(request) {
   const clientes =
     await supabaseRequest(
       `clientes_autorizados` +
-        `?select=id,nombre,telefono,activo,tienda_id,rol` +
+        `?select=id,nombre,telefono,activo,tienda_id,rol,negocio_id` +
         `&${filtroCliente}` +
         `&limit=1`
     );
@@ -210,12 +210,26 @@ async function obtenerCliente(request) {
   if (
     !cliente ||
     cliente.activo !== true ||
-    !cliente.tienda_id
+    !cliente.tienda_id ||
+    !cliente.negocio_id
   ) {
     return null;
   }
 
-  return cliente;
+  // Comprobar el negocio de la tienda antes de escribir cambios.
+  const tiendas = await supabaseRequest(
+    `tiendas?select=id,negocio_id,activa&id=eq.${encodeURIComponent(cliente.tienda_id)}&limit=1`
+  );
+  const tienda = Array.isArray(tiendas) ? tiendas[0] : null;
+  if (
+    !tienda ||
+    tienda.activa !== true ||
+    tienda.negocio_id !== cliente.negocio_id
+  ) {
+    return null;
+  }
+
+  return { ...cliente, negocio_id: tienda.negocio_id };
 }
 
 // =========================================
@@ -292,8 +306,9 @@ export async function POST(request) {
     const productos =
       await supabaseRequest(
         `productos` +
-          `?select=id` +
+          `?select=id,negocio_id` +
           `&id=eq.${productoId}` +
+          `&negocio_id=eq.${encodeURIComponent(cliente.negocio_id)}` +
           `&limit=1`
       );
 
@@ -305,7 +320,7 @@ export async function POST(request) {
         {
           ok: false,
           mensaje:
-            "El producto no existe.",
+            "El producto no existe en tu negocio.",
         },
         {
           status: 404,
@@ -325,6 +340,7 @@ export async function POST(request) {
             cliente.tienda_id
           )}` +
           `&producto_id=eq.${productoId}` +
+          `&negocio_id=eq.${encodeURIComponent(cliente.negocio_id)}` +
           `&limit=1`
       );
 
@@ -343,7 +359,7 @@ export async function POST(request) {
 
       resultado =
         await supabaseRequest(
-          `tienda_productos?id=eq.${registroId}`,
+          `tienda_productos?id=eq.${registroId}&tienda_id=eq.${encodeURIComponent(cliente.tienda_id)}&negocio_id=eq.${encodeURIComponent(cliente.negocio_id)}`,
           {
             method: "PATCH",
 
@@ -378,6 +394,9 @@ export async function POST(request) {
             body: JSON.stringify({
               tienda_id:
                 cliente.tienda_id,
+
+              negocio_id:
+                cliente.negocio_id,
 
               producto_id:
                 productoId,
