@@ -21,8 +21,11 @@ const json = (body, status = 200) =>
 function authenticate(request) {
   const expected = process.env.RA_LAB_CATALOG_SHARED_SECRET;
   const actual = request.headers.get("x-ra-lab-catalog-secret") || "";
-  if (!expected || actual.length !== expected.length || !actual) return false;
-  return timingSafeEqual(Buffer.from(actual), Buffer.from(expected));
+  if (!expected || !actual) return false;
+  const providedBytes = Buffer.from(actual, "utf8");
+  const expectedBytes = Buffer.from(expected, "utf8");
+  if (providedBytes.length !== expectedBytes.length) return false;
+  return timingSafeEqual(providedBytes, expectedBytes);
 }
 
 function getAdmin() {
@@ -161,10 +164,12 @@ function publicAddress(address) {
     (a===198&&b>=18&&b<=19) || (a===198&&b===51&&c===100) ||
     (a===203&&b===0&&c===113));
 }
+// Actual verified RA product photo sources. Avoid generic hosting services
+// like workers.dev or vercel.app, which could point to untrusted applications.
 const trustedHostSuffixes = [
-  "supabase.co", "r2.dev", "workers.dev", "cloudinary.com",
-  "shopifycdn.com", "cdn.shopify.com", "drive.google.com", "googleusercontent.com",
-  "mayoristasra.com", "vercel.app",
+  "hxvujossrzoqqnxxskzb.supabase.co",
+  "drive.google.com",
+  "googleusercontent.com",
 ];
 async function safeUrl(source) {
   const url = new URL(source);
