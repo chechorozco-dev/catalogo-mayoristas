@@ -179,7 +179,7 @@ async function obtenerCliente(request) {
 
   const clientes =
     await consultarSupabase(
-      `clientes_autorizados?select=id,nombre,telefono,activo,tienda_id,rol&${filtro}&limit=1`
+      `clientes_autorizados?select=id,nombre,telefono,activo,tienda_id,rol,negocio_id&${filtro}&limit=1`
     );
 
   if (
@@ -195,11 +195,25 @@ async function obtenerCliente(request) {
     return null;
   }
 
-  if (!cliente.tienda_id) {
+  if (!cliente.tienda_id || !cliente.negocio_id) {
     return null;
   }
 
-  return cliente;
+  // El negocio se obtiene del registro de la tienda, no del navegador.
+  // Impide mezclar precios entre RA Accesorios y otros locales.
+  const tiendas = await consultarSupabase(
+    `tiendas?select=id,negocio_id,activa&id=eq.${encodeURIComponent(cliente.tienda_id)}&limit=1`
+  );
+  const tienda = Array.isArray(tiendas) ? tiendas[0] : null;
+  if (
+    !tienda ||
+    tienda.activa !== true ||
+    tienda.negocio_id !== cliente.negocio_id
+  ) {
+    return null;
+  }
+
+  return { ...cliente, negocio_id: tienda.negocio_id };
 }
 
 /* =========================================================
@@ -229,7 +243,7 @@ export async function GET(request) {
       await consultarSupabase(
         `precios_tienda?select=id,producto_id,variante_id,precio_sugerido,actualizado_en&tienda_id=eq.${encodeURIComponent(
           cliente.tienda_id
-        )}&order=actualizado_en.desc,id.desc`,
+        )}&negocio_id=eq.${encodeURIComponent(cliente.negocio_id)}&order=actualizado_en.desc,id.desc`,
         { paginar: true }
       );
 
@@ -359,7 +373,7 @@ export async function POST(request) {
 
     const productos =
       await consultarSupabase(
-        `productos?select=id,activo&id=eq.${productoId}&limit=1`
+        `productos?select=id,activo,negocio_id&id=eq.${productoId}&negocio_id=eq.${encodeURIComponent(cliente.negocio_id)}&limit=1`
       );
 
     if (
@@ -370,7 +384,7 @@ export async function POST(request) {
         {
           ok: false,
           mensaje:
-            "El producto no existe.",
+            "El producto no existe en tu negocio.",
         },
         {
           status: 404,
@@ -386,7 +400,7 @@ export async function POST(request) {
     if (varianteId !== null) {
       const variantes =
         await consultarSupabase(
-          `producto_variantes?select=id,producto_id,activo&id=eq.${varianteId}&producto_id=eq.${productoId}&limit=1`
+          `producto_variantes?select=id,producto_id,activo,negocio_id&id=eq.${varianteId}&producto_id=eq.${productoId}&negocio_id=eq.${encodeURIComponent(cliente.negocio_id)}&limit=1`
         );
 
       if (
@@ -413,7 +427,7 @@ export async function POST(request) {
     let rutaBusqueda =
       `precios_tienda?select=id&tienda_id=eq.${encodeURIComponent(
         cliente.tienda_id
-      )}&producto_id=eq.${productoId}`;
+      )}&negocio_id=eq.${encodeURIComponent(cliente.negocio_id)}&producto_id=eq.${productoId}`;
 
     if (varianteId === null) {
       rutaBusqueda +=
@@ -433,6 +447,9 @@ export async function POST(request) {
     const datosGuardar = {
       tienda_id:
         cliente.tienda_id,
+
+      negocio_id:
+        cliente.negocio_id,
 
       producto_id:
         productoId,
@@ -462,7 +479,7 @@ export async function POST(request) {
 
       resultado =
         await consultarSupabase(
-          `precios_tienda?id=eq.${registroId}`,
+          `precios_tienda?id=eq.${registroId}&tienda_id=eq.${encodeURIComponent(cliente.tienda_id)}&negocio_id=eq.${encodeURIComponent(cliente.negocio_id)}`,
           {
             method: "PATCH",
 
