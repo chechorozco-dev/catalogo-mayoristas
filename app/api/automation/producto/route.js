@@ -649,6 +649,22 @@ export async function POST(request) {
       accion ===
         "DELETE";
 
+    // Coste REAL de adquisición, nunca confundirlo con "costo":
+    // en el catálogo "costo" es el precio mayorista DE VENTA.
+    // Este dato sólo va al maestro privado, no a public.productos.
+    const costoCompraRaw = obtener(
+      body,"costo_compra","COSTO_COMPRA",
+      "COSTO COMPRA","costo_real","COSTO_REAL","COSTO REAL"
+    );
+    const costoCompra =
+      costoCompraRaw === undefined ? undefined : numeroONull(costoCompraRaw);
+    if (costoCompraRaw !== undefined &&
+        (costoCompra === null || costoCompra < 0 || costoCompra > 99999999999)) {
+      return NextResponse.json({ok:false,
+        mensaje:"COSTO_COMPRA debe contener un número válido y positivo."},
+        {status:400});
+    }
+
     const {
       referencia,
       nombre,
@@ -679,6 +695,34 @@ export async function POST(request) {
         supabaseSecretKey,
       "Content-Type":
         "application/json",
+    };
+
+    const guardarCostoReal = async (catalogoId) => {
+      if (costoCompra === undefined) return;
+      if (!Number.isSafeInteger(Number(catalogoId))) {
+        throw Error("No se pudo identificar el producto para registrar el costo real.");
+      }
+      const response = await fetch(
+        supabaseUrl + "/rest/v1/ra_productos_principal" +
+          "?fuente_catalogo_id=eq." + encodeURIComponent(catalogoId) +
+          "&select=id,costo_compra",
+        {
+          method:"PATCH",
+          headers:{...headersSupabase,Prefer:"return=representation"},
+          body:JSON.stringify({
+            costo_compra:costoCompra,
+            actualizado_en:new Date().toISOString(),
+          }),
+        }
+      );
+      if (!response.ok) {
+        const reason=await response.text();
+        throw Error("El producto llegó al catálogo pero falló COSTO_COMPRA interno: "+reason);
+      }
+      const changed=await response.json();
+      if (!Array.isArray(changed) || changed.length!==1) {
+        throw Error("El producto llegó al catálogo pero no se confirmó COSTO_COMPRA interno.");
+      }
     };
 
     const buscarResponse =
@@ -906,6 +950,10 @@ export async function POST(request) {
             )
           : [];
 
+      await guardarCostoReal(
+        creados?.[0]?.id
+      );
+
       return NextResponse.json({
         ok: true,
         accion:
@@ -957,6 +1005,7 @@ export async function POST(request) {
         cambios
       ).length === 0
     ) {
+      await guardarCostoReal(existente.id);
       return NextResponse.json({
         ok: true,
         accion:
@@ -1010,6 +1059,7 @@ export async function POST(request) {
           )
         : [];
 
+    await guardarCostoReal(existente.id);
     return NextResponse.json({
       ok: true,
       accion:
