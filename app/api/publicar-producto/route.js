@@ -181,7 +181,7 @@ export async function POST(request) {
     const clientes =
       await supabaseRequest(
         `clientes_autorizados` +
-          `?select=id,activo,tienda_id` +
+          `?select=id,activo,tienda_id,negocio_id` +
           `&${filtroCliente}` +
           `&limit=1`
       );
@@ -194,7 +194,8 @@ export async function POST(request) {
     if (
       !cliente ||
       cliente.activo !== true ||
-      !cliente.tienda_id
+      !cliente.tienda_id ||
+      !cliente.negocio_id
     ) {
       return NextResponse.json(
         {
@@ -202,6 +203,18 @@ export async function POST(request) {
           mensaje:
             "No encontramos una tienda válida.",
         },
+        { status: 403 }
+      );
+    }
+
+    /* Verificar la pertenencia de la tienda al negocio */
+    const tiendas = await supabaseRequest(
+      `tiendas?select=id,negocio_id,activa&id=eq.${encodeURIComponent(cliente.tienda_id)}&limit=1`
+    );
+    const tienda = Array.isArray(tiendas) ? tiendas[0] : null;
+    if (!tienda || tienda.activa !== true || tienda.negocio_id !== cliente.negocio_id) {
+      return NextResponse.json(
+        { ok: false, mensaje: "La tienda no pertenece a este negocio." },
         { status: 403 }
       );
     }
@@ -235,6 +248,7 @@ export async function POST(request) {
         `productos` +
           `?id=eq.${productoId}` +
           `&activo=eq.true` +
+          `&negocio_id=eq.${encodeURIComponent(tienda.negocio_id)}` +
           `&select=id` +
           `&limit=1`
       );
@@ -262,6 +276,7 @@ export async function POST(request) {
             cliente.tienda_id
           )}` +
           `&producto_id=eq.${productoId}` +
+          `&negocio_id=eq.${encodeURIComponent(tienda.negocio_id)}` +
           `&select=id,visible,precio_personalizado,publicar_anticipadamente` +
           `&limit=1`
       );
@@ -275,7 +290,7 @@ export async function POST(request) {
 
     if (existente) {
       await supabaseRequest(
-        `tienda_productos?id=eq.${existente.id}`,
+        `tienda_productos?id=eq.${existente.id}&tienda_id=eq.${encodeURIComponent(tienda.id)}&negocio_id=eq.${encodeURIComponent(tienda.negocio_id)}`,
         {
           method: "PATCH",
 
@@ -301,6 +316,9 @@ export async function POST(request) {
           body: JSON.stringify({
             tienda_id:
               cliente.tienda_id,
+
+            negocio_id:
+              tienda.negocio_id,
 
             producto_id:
               productoId,
