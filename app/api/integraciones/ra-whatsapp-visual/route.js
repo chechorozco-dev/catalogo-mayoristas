@@ -80,11 +80,18 @@ const key=r=>[String(r.producto_id),String(r.variante_id??"base"),r.foto_num].jo
 
 async function status(db,tienda) {
   const fotos=await fotosCatalogo(db,tienda.negocio_id);
-  const {data,error}=await db.from(TABLE)
-    .select("producto_id,variante_id,foto_num,foto_url,estado")
-    .eq("negocio_id",tienda.negocio_id).limit(4000);
-  if(error)throw error;
-  const map=new Map((data||[]).map(row=>[key(row),row]));
+  const saved=[];
+  // The default Supabase API cap is 1,000 rows; RA has ~1,500 photos.
+  for(let offset=0;offset<5000;offset+=500){
+    const {data,error}=await db.from(TABLE)
+      .select("producto_id,variante_id,foto_num,foto_url,estado")
+      .eq("negocio_id",tienda.negocio_id)
+      .order("id",{ascending:true}).range(offset,offset+499);
+    if(error)throw error;
+    saved.push(...(data||[]));
+    if(!data||data.length<500)break;
+  }
+  const map=new Map(saved.map(row=>[key(row),row]));
   const indexed=fotos.filter(f=>{
     const row=map.get(key(f));
     return row?.estado==="indexed"&&row.foto_url===f.foto_url;
