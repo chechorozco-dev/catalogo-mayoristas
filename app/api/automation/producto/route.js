@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import {
+  obtenerPrecioMayoristaWebhook,
+  obtenerCostoCompraWebhook,
+  parsearCostoCompraOpcional,
+} from "../../../../lib/catalogo/costoWebhook.mjs";
+import {
   constants,
   createPublicKey,
   verify as verifyCrypto,
@@ -491,17 +496,18 @@ function limpiarProducto(body) {
   }
 
   const camposNumero = [
-    ["costo", ["costo", "COSTO", "precio", "PRECIO"]],
+    // El campo publico "costo" es el PRECIO DE VENTA mayorista.
+    // AppSheet envia "precio" = venta y "COSTO" = costo real privado.
+    ["costo", []],
     ["precio_detal", ["precio_detal", "PRECIO_DETAL", "precioDetal", "PRECIO DETAL", "PRECIO SUGERIDO", "precio SUGERIDO", "precio_sugerido", "PRECIO_SUGERIDO"]],
     ["precio_minimo", ["precio_minimo", "PRECIO_MINIMO", "precioMinimo", "PRECIO MINIMO"]],
   ];
 
   for (const [destino, claves] of camposNumero) {
     const valor =
-      obtener(
-        body,
-        ...claves
-      );
+      destino === "costo"
+        ? obtenerPrecioMayoristaWebhook(body)
+        : obtener(body, ...claves);
 
     if (valor !== undefined) {
       payload[destino] =
@@ -649,20 +655,21 @@ export async function POST(request) {
       accion ===
         "DELETE";
 
-    // Coste REAL de adquisición, nunca confundirlo con "costo":
-    // en el catálogo "costo" es el precio mayorista DE VENTA.
-    // Este dato sólo va al maestro privado, no a public.productos.
-    const costoCompraRaw = obtener(
-      body,"costo_compra","COSTO_COMPRA",
-      "COSTO COMPRA","costo_real","COSTO_REAL","COSTO REAL"
-    );
-    const costoCompra =
-      costoCompraRaw === undefined ? undefined : numeroONull(costoCompraRaw);
-    if (costoCompraRaw !== undefined &&
-        (costoCompra === null || costoCompra < 0 || costoCompra > 99999999999)) {
-      return NextResponse.json({ok:false,
-        mensaje:"COSTO_COMPRA debe contener un número válido y positivo."},
-        {status:400});
+    // Optional real PURCHASE cost. Missing, null, or empty AppSheet
+    // <<[COSTO]>> must not fail the webhook or erase an existing cost.
+    // "precio" stays the public WHOLESALE SALE price.
+    let costoCompra;
+    if (!eliminar) {
+      try {
+        costoCompra = parsearCostoCompraOpcional(
+          obtenerCostoCompraWebhook(body)
+        );
+      } catch (error) {
+        return NextResponse.json({
+          ok: false,
+          mensaje: error instanceof Error ? error.message : "COSTO inválido.",
+        }, { status: 400 });
+      }
     }
 
     const {
