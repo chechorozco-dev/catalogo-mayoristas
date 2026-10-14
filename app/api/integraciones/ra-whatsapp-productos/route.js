@@ -161,7 +161,7 @@ function publicAddress(address) {
 }
 const trustedHostSuffixes = [
   "supabase.co", "r2.dev", "workers.dev", "cloudinary.com",
-  "shopifycdn.com", "cdn.shopify.com", "googleusercontent.com",
+  "shopifycdn.com", "cdn.shopify.com", "drive.google.com", "googleusercontent.com",
   "mayoristasra.com", "vercel.app",
 ];
 async function safeUrl(source) {
