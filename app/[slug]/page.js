@@ -141,13 +141,13 @@ export default async function TiendaPage({
   } = await supabase
     .from("tiendas")
    .select(
-  "id,nombre_tienda,slug,whatsapp,logo_url,color_principal,color_fondo,mensaje_portada,instagram,facebook,tiktok,tipo_tienda,creado_en"
+  "id,nombre_tienda,slug,whatsapp,logo_url,color_principal,color_fondo,mensaje_portada,instagram,facebook,tiktok,tipo_tienda,creado_en,negocio_id"
 )
     .eq("slug", slug)
     .eq("activa", true)
     .single();
 
-  if (tiendaError || !tienda) {
+  if (tiendaError || !tienda || !tienda.negocio_id) {
     notFound();
   }
 
@@ -215,6 +215,7 @@ export default async function TiendaPage({
         "tiene_variantes",
       ].join(",") +
       `&activo=eq.true` +
+      `&negocio_id=eq.${encodeURIComponent(tienda.negocio_id)}` +
       `&order=created_at.desc,id.desc`;
 
     const respuestaProductos =
@@ -318,6 +319,7 @@ try {
     `&tienda_id=eq.${encodeURIComponent(
       tienda.id
     )}` +
+    `&negocio_id=eq.${encodeURIComponent(tienda.negocio_id)}` +
     `&order=producto_id.asc`;
 
   const respuestaConfiguracionProductos =
@@ -588,6 +590,7 @@ if (!producto.created_at) {
           ].join(",") +
           `&producto_id=in.(${bloqueIds.join(",")})` +
           `&activo=eq.true` +
+          `&negocio_id=eq.${encodeURIComponent(tienda.negocio_id)}` +
           `&order=orden.asc,id.asc`;
 
         const respuestaVariantes = await fetchSupabasePaginado(
@@ -644,6 +647,7 @@ if (!producto.created_at) {
       `&tienda_id=eq.${encodeURIComponent(
         tienda.id
       )}` +
+      `&negocio_id=eq.${encodeURIComponent(tienda.negocio_id)}` +
       `&order=actualizado_en.desc,id.desc`;
 
     const respuestaPrecios =
