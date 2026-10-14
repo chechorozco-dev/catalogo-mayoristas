@@ -62,7 +62,7 @@ function item(product, variant = null) {
     id: String(product.id),
     variantId: variant ? String(variant.id) : null,
     referencia: String(referencia),
-    nombre: String(product.nombre || ""),
+    nombre: [product.nombre, variant?.nombre_variante].filter(Boolean).join(" · "),
     categoria: String(product.categoria || ""),
     solo_ra: product.solo_ra === true,
     foto_url: variant?.foto_url || product.foto_url || null,
