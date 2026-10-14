@@ -58,3 +58,19 @@ El despliegue y la compilación completa los valida Vercel con la configuración
 - No modificar el diseño de joyas ni las imágenes originales como parte de una reorganización de código.
 
 > Esta reorganización extrajo funciones y componentes existentes sin cambiar las políticas ni la base de datos. Todavía quedan componentes extensos, especialmente `TiendaCliente.js` y sus estilos; conviene dividirlos por etapas para reducir riesgos.
+
+
+## Integración interna con RA WhatsApp Lab
+
+La API `/api/integraciones/ra-whatsapp-productos` devuelve exclusivamente
+información de productos visibles en la tienda RA `mayoristas-ra`, con
+búsqueda por referencia/nombre y variantes activas. Incluye los marcados
+`SOLO_RA`, pero no incluye artículos ocultados manualmente en RA.
+
+Esta API es privada: requiere el encabezado
+`x-ra-lab-catalog-secret` con la variable
+`RA_LAB_CATALOG_SHARED_SECRET`, almacenada como `sensitive` en Vercel
+en ambos proyectos. Ninguna clave de servicio debe llegar al cliente.
+La descarga de imágenes se realiza por ID/slot contra una lista restringida
+de proveedores HTTPS, verificando el origen y tamaño del archivo.
+No crea pedidos, WhatsApps ni cambia visibilidad en las tiendas de clientes.
