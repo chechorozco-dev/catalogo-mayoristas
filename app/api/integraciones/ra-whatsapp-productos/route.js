@@ -28,18 +28,20 @@ function authenticate(request) {
 function getAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SECRET_KEY;
-  const negocio = process.env.NEGOCIO_ID;
-  if (!url || !key || !negocio) throw Error("Falta configurar el catálogo interno.");
-  return { negocio, db: createClient(url, key, {
+  if (!url || !key) throw Error("Falta configurar el catálogo interno.");
+  return createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
-  }) };
+  });
 }
 
-async function tiendaRa(db, negocio) {
+async function tiendaRa(db) {
+  // Select the very same RA store that customers see on mayoristasra.com,
+  // instead of assuming an environment business ID belongs to that store.
+  const slug = process.env.RA_LAB_CATALOG_RA_SLUG || "mayoristas-ra";
   const { data, error } = await db.from("tiendas")
-    .select("id").eq("negocio_id", negocio)
+    .select("id,negocio_id").eq("slug", slug)
     .eq("tipo_tienda", "RA").eq("activa", true).limit(1).maybeSingle();
-  if (error || !data) throw Error("No se encontró la tienda principal RA activa.");
+  if (error || !data?.negocio_id) throw Error("No se encontró la tienda principal RA activa.");
   return data;
 }
 
@@ -247,8 +249,9 @@ async function proxyImage(db, negocio, tienda, url) {
 export async function GET(request) {
   if (!authenticate(request)) return json({ success:false,error:"No autorizado." },401);
   try {
-    const { negocio, db } = getAdmin();
-    const tienda = await tiendaRa(db, negocio);
+    const db = getAdmin();
+    const tienda = await tiendaRa(db);
+    const negocio = tienda.negocio_id;
     const url = new URL(request.url);
     if (url.searchParams.has("photoProductId")) return await proxyImage(db, negocio, tienda, url);
     const q = (url.searchParams.get("q") || "").trim();
