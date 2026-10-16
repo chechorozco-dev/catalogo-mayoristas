@@ -677,6 +677,12 @@ if (
         }
 
         const costoUnitario = pesos(variante.costo);
+        if (!Number.isFinite(costoUnitario) || costoUnitario <= 0) {
+          return responder({
+            ok: false,
+            mensaje: "Una variante del pedido no tiene precio de venta válido. Actualiza el catálogo antes de comprar.",
+          }, 400);
+        }
         const precioSugerido = pesos(
           variante.precio_detal
         );
@@ -754,6 +760,12 @@ if (
       --------------------------------------------------- */
 
       const costoUnitario = pesos(producto.costo);
+      if (!Number.isFinite(costoUnitario) || costoUnitario <= 0) {
+        return responder({
+          ok: false,
+          mensaje: "Un producto del pedido no tiene precio de venta válido. Actualiza el catálogo antes de comprar.",
+        }, 400);
+      }
       const precioSugerido = pesos(
         producto.precio_detal
       );
