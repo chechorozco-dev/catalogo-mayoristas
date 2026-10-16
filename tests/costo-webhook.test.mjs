@@ -46,7 +46,7 @@ test("COSTO de compra nunca es precio mayorista aunque falte PRECIO_SHOPIFY", ()
   assert.equal(obtenerPrecioMayoristaWebhook({COSTO:"3200"}),undefined);
   assert.equal(obtenerPrecioMayoristaWebhook({precio:"",COSTO:"3200"}),undefined);
   assert.equal(obtenerPrecioMayoristaWebhook({PRECIO_SHOPIFY:"7500",COSTO:"3200"}),"7500");
-  assert.equal(obtenerPrecioMayoristaWebhook({costo:"7500"}),"7500");
+  assert.equal(obtenerPrecioMayoristaWebhook({costo:"7500"}),undefined);
   assert.equal(obtenerCostoCompraWebhook({costo:"7500"}),undefined);
   assert.equal(obtenerPrecioMayoristaWebhook({precio:"7500",COSTO:""}),"7500");
 });
