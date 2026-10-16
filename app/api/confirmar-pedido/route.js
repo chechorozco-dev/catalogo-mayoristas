@@ -393,12 +393,20 @@ for (const item of productosRecibidos) {
     // Descontar SOLO_RA de forma atómica e idempotente (por pedido_id).
     // Stock 0 desaparece del catálogo público, sin borrar el registro.
     if (productosLimitados.length > 0) {
-      const descontado = await rpcInventario("ra_solo_ra_consumir", {
-        p_pedido_id: pedidoCreado.id,
-        ...parametrosInventario,
-      });
-      if (!descontado?.ok) {
-        console.error("PEDIDO EN MAKE, INVENTARIO PENDIENTE:", pedidoCreado.id, descontado);
+      try {
+        const descontado = await rpcInventario("ra_solo_ra_consumir", {
+          p_pedido_id: pedidoCreado.id,
+          ...parametrosInventario,
+        });
+        if (!descontado?.ok) throw new Error(descontado?.error || "Sin confirmación de inventario");
+      } catch (errorInventario) {
+        // Make ya recibió el pedido. No devolver un fallo genérico que
+        // induzca al cliente a crear otro pedido duplicado.
+        console.error("REVISAR INVENTARIO PEDIDO CONFIRMADO:", {
+          pedido_id: pedidoCreado.id,
+          numero_pedido: pedidoCreado.numero_pedido,
+          error: errorInventario.message,
+        });
         return Response.json({
           ok: true,
           inventario_pendiente: true,
