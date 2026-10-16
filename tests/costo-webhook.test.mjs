@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   obtenerPrecioMayoristaWebhook,
+  obtenerNombreProductoWebhook,
   obtenerCostoCompraWebhook,
   parsearCostoCompraOpcional,
 } from "../lib/catalogo/costoWebhook.mjs";
@@ -13,6 +14,14 @@ const appsheet = {
   "precio SUGERIDO": "15000",
   COSTO: "3200",
 };
+
+test("reenvío AppSheet actualiza el nombre desde PRODUCTO aunque nombre esté vacío o desactualizado", () => {
+  assert.equal(obtenerNombreProductoWebhook({producto:"ARETE EN RODIO PLATEADO LARGO",nombre:"ARETE EN RODIO"}),"ARETE EN RODIO PLATEADO LARGO");
+  assert.equal(obtenerNombreProductoWebhook({producto:" ",nombre:"ARETE NUEVO"}),"ARETE NUEVO");
+  assert.equal(obtenerNombreProductoWebhook({nombre:"ARETE ÚNICO"}),"ARETE ÚNICO");
+  assert.equal(obtenerNombreProductoWebhook({nombre:"",producto:""}),undefined);
+  assert.equal(obtenerNombreProductoWebhook({PRODUCTO:"CADENA NUEVA"}),"CADENA NUEVA");
+});
 
 test("body AppSheet: PRECIO_SHOPIFY es la venta y COSTO es la compra interna", () => {
   assert.equal(obtenerPrecioMayoristaWebhook(appsheet), "7500");
