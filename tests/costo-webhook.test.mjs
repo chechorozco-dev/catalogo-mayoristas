@@ -42,9 +42,10 @@ test("costo_compra explícito opcional conserva compatibilidad", () => {
   assert.equal(obtenerCostoCompraWebhook({precio:"7500",costo_compra:"",COSTO:"3000"}),"3000");
 });
 
-test("webhooks antiguos que usan COSTO para el precio mayorista siguen funcionando", () => {
-  assert.equal(obtenerPrecioMayoristaWebhook({COSTO:"7500"}),"7500");
-  assert.equal(obtenerCostoCompraWebhook({COSTO:"7500"}),undefined);
+test("COSTO de compra nunca es precio mayorista aunque falte PRECIO_SHOPIFY", () => {
+  assert.equal(obtenerPrecioMayoristaWebhook({COSTO:"3200"}),undefined);
+  assert.equal(obtenerPrecioMayoristaWebhook({precio:"",COSTO:"3200"}),undefined);
+  assert.equal(obtenerPrecioMayoristaWebhook({PRECIO_SHOPIFY:"7500",COSTO:"3200"}),"7500");
   assert.equal(obtenerPrecioMayoristaWebhook({costo:"7500"}),"7500");
   assert.equal(obtenerCostoCompraWebhook({costo:"7500"}),undefined);
   assert.equal(obtenerPrecioMayoristaWebhook({precio:"7500",COSTO:""}),"7500");
