@@ -202,7 +202,32 @@ const imagenesCategorias = useMemo(() => {
   const [lineaActiva, setLineaActiva] = useState("Todos");
   const [busqueda, setBusqueda] = useState("");
   const [mostrarBusqueda, setMostrarBusqueda] = useState(false);
+  const [mostrarLupaFlotante, setMostrarLupaFlotante] = useState(false);
+  const encabezadoRef = useRef(null);
   const [menuAbierto, setMenuAbierto] = useState(false);
+
+  // La lupa sigue disponible cuando el encabezado sale de la pantalla.
+  useEffect(() => {
+    const encabezado = encabezadoRef.current;
+    if (!encabezado || typeof IntersectionObserver === "undefined") return;
+
+    const observador = new IntersectionObserver(([entrada]) => {
+      setMostrarLupaFlotante(!entrada.isIntersecting);
+    }, { threshold: 0 });
+
+    observador.observe(encabezado);
+    return () => observador.disconnect();
+  }, []);
+
+  function alternarBusqueda() {
+    const abrir = !mostrarBusqueda;
+    setMostrarBusqueda(abrir);
+    if (abrir) {
+      window.setTimeout(() => {
+        document.querySelector(".buscador-input")?.focus({ preventScroll: true });
+      }, 60);
+    }
+  }
   const PRODUCTOS_POR_CARGA = 24;
 
 const [cantidadVisible, setCantidadVisible] =
@@ -1633,7 +1658,7 @@ try {
 
         {/* HEADER */}
 
-<header className="header">
+<header ref={encabezadoRef} className="header">
   <div className="header-contenido">
 
     {/* MENÚ */}
@@ -1697,16 +1722,10 @@ try {
      <button
   type="button"
   className="header-btn"
-  onClick={() => {
-    setMostrarBusqueda((actual) => !actual);
-
-    setTimeout(() => {
-      document
-        .querySelector(".buscador-input")
-        ?.focus();
-    }, 100);
-  }}
-  aria-label="Buscar"
+  onClick={alternarBusqueda}
+  aria-label="Buscar productos"
+  aria-expanded={mostrarBusqueda}
+  aria-controls="buscador-productos"
 >
         <svg
           viewBox="0 0 24 24"
@@ -1837,10 +1856,41 @@ try {
   )}
 </header>
 
-        {/* BUSCADOR PRINCIPAL - SOLO APARECE AL TOCAR LA LUPA */}
+        {/* Lupa siempre accesible, sin duplicar la del encabezado al inicio */}
+{mostrarLupaFlotante && !mostrarBusqueda && (
+  <button
+    type="button"
+    className="lupa-flotante"
+    onClick={alternarBusqueda}
+    aria-label="Buscar productos"
+    aria-controls="buscador-productos"
+    aria-expanded={mostrarBusqueda}
+    title="Buscar productos"
+  >
+    <svg
+      viewBox="0 0 24 24"
+      width="24"
+      height="24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+  </button>
+)}
+
+        {/* Buscador fijo si la persona está recorriendo los productos */}
 
 {mostrarBusqueda && (
-  <div className="buscador-contenedor">
+  <div
+    id="buscador-productos"
+    className={`buscador-contenedor ${mostrarLupaFlotante ? "buscador-flotante" : ""}`}
+  >
     <div className="buscador-caja">
 
       <svg
@@ -1860,7 +1910,6 @@ try {
       </svg>
 
       <input
-        autoFocus
         className="buscador-input"
         type="search"
         placeholder="Buscar productos, referencias..."
@@ -7769,6 +7818,85 @@ height: 60px;
   font-size: 19px;
   font-weight: 800;
 }
+        /* Buscador accesible incluso al desplazarse por el catálogo */
+        .lupa-flotante {
+          position: fixed;
+          top: calc(env(safe-area-inset-top, 0px) + 12px);
+          right: 14px;
+          z-index: 75;
+          width: 48px;
+          height: 48px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 1px solid rgba(128, 128, 128, 0.2);
+          border-radius: 50%;
+          background: var(--color-fondo);
+          color: var(--texto-fondo);
+          box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18);
+        }
+
+        .lupa-flotante:focus-visible {
+          outline: 3px solid var(--color-principal);
+          outline-offset: 2px;
+        }
+
+        .buscador-contenedor.buscador-flotante {
+          position: fixed;
+          top: calc(env(safe-area-inset-top, 0px) + 9px);
+          left: 50%;
+          z-index: 80;
+          width: min(680px, calc(100% - 24px));
+          max-width: none;
+          margin: 0;
+          padding: 7px;
+          transform: translateX(-50%);
+          border: 1px solid rgba(128, 128, 128, 0.16);
+          border-radius: 32px;
+          background: var(--color-fondo);
+          box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+        }
+
+        .buscador-contenedor.buscador-flotante .buscador-caja {
+          height: 48px;
+          background: var(--color-fondo);
+        }
+
+        .buscador-contenedor.buscador-flotante .buscador-input {
+          width: 100%;
+          height: 100%;
+          padding: 0 48px 0 49px;
+          border: none;
+          border-radius: 999px;
+          background: transparent;
+          font-size: 16px;
+        }
+
+        .buscador-contenedor.buscador-flotante .buscador-icono {
+          left: 17px;
+        }
+
+        .buscador-contenedor.buscador-flotante .limpiar-busqueda {
+          top: 50%;
+          right: 9px;
+          width: 32px;
+          height: 32px;
+          transform: translateY(-50%);
+          border-radius: 50%;
+          background: rgba(128, 128, 128, 0.1);
+          font-size: 21px;
+        }
+
+        @media (max-width: 650px) {
+          .lupa-flotante {
+            right: 10px;
+            width: 44px;
+            height: 44px;
+          }
+          .buscador-contenedor.buscador-flotante {
+            width: calc(100% - 16px);
+          }
+        }
       `}</style>
     </>
   );
