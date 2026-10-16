@@ -1530,6 +1530,11 @@ if (Object.keys(nuevosErrores).length > 0) {
           "No se pudo confirmar el pedido."
       );
     }
+    if (datos.inventario_pendiente) {
+      window.alert(
+        "Tu pedido fue recibido, pero necesitamos verificar manualmente la disponibilidad de un producto de unidades limitadas. No repitas el pedido; nos comunicaremos contigo."
+      );
+    }
 
     // ========================================
 // MARCAR CARRITO COMO COMPLETADO
