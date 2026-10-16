@@ -2,6 +2,24 @@ export async function POST(request) {
   try {
     const pedido = await request.json();
 
+    const rpcInventario = async (nombre, parametros) => {
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const key = process.env.SUPABASE_SECRET_KEY;
+      const res = await fetch(url + "/rest/v1/rpc/" + nombre, {
+        method: "POST",
+        headers: { apikey: key, Authorization: "Bearer " + key,
+          "Content-Type": "application/json" },
+        body: JSON.stringify(parametros),
+        cache: "no-store",
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok) {
+        console.error("Error control inventario SOLO_RA:", nombre, json);
+        throw new Error("Error al validar las unidades disponibles.");
+      }
+      return json;
+    };
+
     // ========================================
     // 1. VALIDAR PRODUCTOS RECIBIDOS
     // ========================================
@@ -31,6 +49,7 @@ export async function POST(request) {
 // ========================================
 
 const productosCompletos = [];
+const productosLimitados = [];
 
 for (const item of productosRecibidos) {
   const productoId = Number(item?.producto_id);
@@ -100,7 +119,7 @@ for (const item of productosRecibidos) {
 
   try {
     const respuestaProducto = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/productos?select=id,infoimagen&id=eq.${encodeURIComponent(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/productos?select=id,infoimagen,solo_ra,cant,activo&id=eq.${encodeURIComponent(
         productoId
       )}&limit=1`,
       {
@@ -126,6 +145,12 @@ for (const item of productosRecibidos) {
 
       if (productoSupabase) {
         productoDisponible = true;
+        if (productoSupabase.solo_ra === true) {
+          productosLimitados.push({
+            producto_id: productoId,
+            cantidad: Number(item.cantidad || 0),
+          });
+        }
 
         infoimagen =
           productoSupabase.infoimagen ||
@@ -244,6 +269,32 @@ for (const item of productosRecibidos) {
       !productoDisponible,
   });
 }
+
+    // Verificar reservas ANTES de enviar el pedido a Make.
+    // El servidor consulta los productos reales, nunca confía en
+    // que el navegador diga si son SOLO_RA.
+    const sesionReserva = String(pedido?.sesion_id || "");
+    const tiendaReserva = String(pedido?.tienda_id || "");
+    const parametrosInventario = {
+      p_tienda_id: tiendaReserva,
+      p_sesion_id: sesionReserva,
+      p_items: productosLimitados,
+    };
+    if (productosLimitados.length > 0) {
+      if (!sesionReserva || !tiendaReserva) {
+        return Response.json({
+          ok: false,
+          error: "Falta la sesión del carrito para validar un producto de unidades limitadas.",
+        }, { status: 400 });
+      }
+      const resultado = await rpcInventario("ra_solo_ra_verificar", parametrosInventario);
+      if (!resultado?.ok) {
+        return Response.json({
+          ok: false,
+          error: resultado?.error || "Una reserva ha vencido. Revisa el carrito.",
+        }, { status: 409 });
+      }
+    }
     // ========================================
     // 3. CREAR NÚMERO ÚNICO DEL PEDIDO
     // ========================================
@@ -336,6 +387,25 @@ for (const item of productosRecibidos) {
       throw new Error(
         `Make respondió con estado ${respuestaMake.status}`
       );
+    }
+
+    // Enviar a Make exitosamente confirma el pedido.
+    // Descontar SOLO_RA de forma atómica e idempotente (por pedido_id).
+    // Stock 0 desaparece del catálogo público, sin borrar el registro.
+    if (productosLimitados.length > 0) {
+      const descontado = await rpcInventario("ra_solo_ra_consumir", {
+        p_pedido_id: pedidoCreado.id,
+        ...parametrosInventario,
+      });
+      if (!descontado?.ok) {
+        console.error("PEDIDO EN MAKE, INVENTARIO PENDIENTE:", pedidoCreado.id, descontado);
+        return Response.json({
+          ok: true,
+          inventario_pendiente: true,
+          pedido_id: pedidoCreado.id,
+          numero_pedido: pedidoCreado.numero_pedido,
+        });
+      }
     }
 
     // ========================================
