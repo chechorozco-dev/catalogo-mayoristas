@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import FotoOptimizada from "../components/FotoOptimizada";
 import { limpiarTexto, formatoPrecio, limpiarWhatsapp, normalizarTelefonoColombia, obtenerColorTexto } from "../../lib/catalogo/formatos.mjs";
 import { productoPerteneceCategoria, obtenerTipoProducto } from "../../lib/catalogo/categorias.mjs";
@@ -46,7 +47,47 @@ export default function TiendaCliente({
   tiktok = "",
   productos = [],
   anuncios = [],
+  idsSoloRaDisponibles = [],
 }) {
+  const router = useRouter();
+  const reservasEnCurso = useRef(new Set());
+
+  // Detectar cambios de existencias entre compradores, incluyendo liberación
+  // automática de las reservas después de 48 horas.
+  const disponibilidadInicial = idsSoloRaDisponibles
+    .map(Number).sort((a, b) => a - b).join(",");
+  useEffect(() => {
+    if (tipoTienda !== "RA" || !tiendaId) return;
+    let activo = true;
+    let actualizando = false;
+    async function comprobar() {
+      if (actualizando || !activo || document.visibilityState === "hidden") return;
+      try {
+        const respuesta = await fetch(
+          "/api/solo-ra/reservas?tienda_id=" + encodeURIComponent(tiendaId),
+          { cache: "no-store" }
+        );
+        if (!respuesta.ok) return;
+        const datos = await respuesta.json();
+        const actuales = (datos.ids || []).map(Number).sort((a, b) => a - b).join(",");
+        if (activo && actuales !== disponibilidadInicial) {
+          actualizando = true;
+          router.refresh();
+        }
+      } catch (error) {
+        console.error("No se pudo revisar disponibilidad SOLO_RA:", error);
+      }
+    }
+    const intervalo = setInterval(comprobar, 20000);
+    const alRegresar = () => { if (document.visibilityState === "visible") comprobar(); };
+    document.addEventListener("visibilitychange", alRegresar);
+    return () => {
+      activo = false;
+      clearInterval(intervalo);
+      document.removeEventListener("visibilitychange", alRegresar);
+    };
+  }, [tipoTienda, tiendaId, disponibilidadInicial, router]);
+
     function crearEnlaceRedSocial(red, valor) {
     const texto = String(valor || "").trim();
 
@@ -1103,10 +1144,48 @@ function fotosProducto(producto) {
   }
 
   // ========================================
+  // APARTAR STOCK SOLO_RA
+  // ========================================
+
+  async function cambiarReservaSoloRa(producto, cantidad) {
+    if (!producto?.solo_ra) return true;
+    const id = Number(producto.id_producto || producto.id);
+    if (!sesionCarrito || !tiendaId || !Number.isSafeInteger(id)) {
+      window.alert("Espera un momento y vuelve a intentar apartar el producto.");
+      return false;
+    }
+    if (reservasEnCurso.current.has(id)) return false;
+    reservasEnCurso.current.add(id);
+    try {
+      const respuesta = await fetch("/api/solo-ra/reservas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          producto_id: id,
+          tienda_id: tiendaId,
+          sesion_id: sesionCarrito,
+          cantidad,
+        }),
+      });
+      const resultado = await respuesta.json();
+      if (!respuesta.ok || !resultado.ok) {
+        throw new Error(resultado.error || "Este producto ya no está disponible.");
+      }
+      router.refresh();
+      return true;
+    } catch (error) {
+      window.alert(error.message || "No fue posible reservar este producto.");
+      return false;
+    } finally {
+      reservasEnCurso.current.delete(id);
+    }
+  }
+
+  // ========================================
   // AGREGAR AL CARRITO
   // ========================================
 
-  function agregarAlCarrito(producto, elementoOrigen = null) {
+  async function agregarAlCarrito(producto, elementoOrigen = null) {
     if (!producto) return;
 
     // Si tiene variantes y se pulsa el botón desde
@@ -1127,6 +1206,15 @@ function fotosProducto(producto) {
         : obtenerProductoSeleccionado(producto);
 
     const clave = claveCarrito(productoFinal);
+    const actual = carrito.find((item) => item.clave_carrito === clave);
+    if (productoFinal.solo_ra) {
+      const reservado = await cambiarReservaSoloRa(
+        productoFinal, Number(actual?.cantidad || 0) + 1
+      );
+      if (!reservado) return;
+      // Cuando quedan 0 unidades, el artículo sale de la vitrina.
+      setProductoModal(null);
+    }
 // ========================================
 // META PIXEL - AGREGAR AL CARRITO
 // ========================================
@@ -1192,43 +1280,38 @@ if (
   // CANTIDADES
   // ========================================
 
-  function aumentarCantidad(clave) {
+  async function aumentarCantidad(clave) {
+    const item = carrito.find((p) => p.clave_carrito === clave);
+    if (!item) return;
+    if (!await cambiarReservaSoloRa(item, Number(item.cantidad || 0) + 1)) return;
     setCarrito((actual) =>
-      actual.map((item) =>
-        item.clave_carrito === clave
-          ? {
-              ...item,
-              cantidad: Number(item.cantidad || 0) + 1,
-            }
-          : item
+      actual.map((p) =>
+        p.clave_carrito === clave ? { ...p, cantidad: Number(p.cantidad || 0) + 1 } : p
       )
     );
   }
 
-  function disminuirCantidad(clave) {
+  async function disminuirCantidad(clave) {
+    const item = carrito.find((p) => p.clave_carrito === clave);
+    if (!item) return;
+    if (!await cambiarReservaSoloRa(item, Math.max(0, Number(item.cantidad || 0) - 1))) return;
     setCarrito((actual) =>
-      actual
-        .map((item) =>
-          item.clave_carrito === clave
-            ? {
-                ...item,
-                cantidad: Number(item.cantidad || 0) - 1,
-              }
-            : item
-        )
-        .filter((item) => item.cantidad > 0)
+      actual.map((p) => p.clave_carrito === clave
+        ? { ...p, cantidad: Number(p.cantidad || 0) - 1 } : p
+      ).filter((p) => p.cantidad > 0)
     );
   }
 
-  function eliminarProducto(clave) {
-    setCarrito((actual) =>
-      actual.filter(
-        (item) => item.clave_carrito !== clave
-      )
-    );
+  async function eliminarProducto(clave) {
+    const item = carrito.find((p) => p.clave_carrito === clave);
+    if (item && !await cambiarReservaSoloRa(item, 0)) return;
+    setCarrito((actual) => actual.filter((p) => p.clave_carrito !== clave));
   }
 
-  function vaciarCarrito() {
+  async function vaciarCarrito() {
+    for (const item of carrito.filter((p) => p.solo_ra)) {
+      if (!await cambiarReservaSoloRa(item, 0)) return;
+    }
     setCarrito([]);
   }
   function abrirCheckoutConPago(metodo) {
@@ -1336,6 +1419,8 @@ if (Object.keys(nuevosErrores).length > 0) {
 }
 
   const pedido = {
+    sesion_id: sesionCarrito,
+    tienda_id: tiendaId,
     cliente: {
       nombre: nombreCliente.trim(),
 
