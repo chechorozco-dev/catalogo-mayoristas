@@ -849,6 +849,10 @@ activo:
                     variante.orden,
                 };
               }
+            )
+            // Jamás ofrecer al cliente una variante sin precio de venta válido.
+            .filter((variante) =>
+              Number.isFinite(variante.precio) && variante.precio > 0
             );
 
         // =====================================
@@ -903,6 +907,11 @@ activo:
                   producto.precio_detal ||
                     0
                 );
+
+        // No presentar productos con variantes si ninguna opción tiene precio.
+        if (producto.tiene_variantes === true && !tieneVariantes) {
+          return null;
+        }
 
         // =====================================
         // PRODUCTO QUE SE ENVÍA AL NAVEGADOR
@@ -972,6 +981,13 @@ created_at:
             variantesDelProducto,
         };
       }
+    )
+    // Nunca mostrar ni permitir vender productos con precio $0 o indefinido.
+    // No sustituir por precio_detal ni por el costo privado de compra.
+    .filter((producto) =>
+      producto !== null &&
+      Number.isFinite(producto.precio) &&
+      producto.precio > 0
     );
   // =========================================
   // 10. CARGAR ANUNCIOS DE ESTA TIENDA
