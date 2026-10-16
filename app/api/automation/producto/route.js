@@ -509,6 +509,17 @@ function limpiarProducto(body) {
     }
   }
 
+  // CANT de AppSheet: guardar unidades, pero solo SOLO_RA usa el control
+  // de disponibilidad. Una celda vacía nunca elimina la cantidad anterior.
+  const cantidadRaw = obtener(body, "CANT", "cant");
+  if (cantidadRaw !== undefined && cantidadRaw !== null &&
+      String(cantidadRaw).trim() !== "") {
+    const cantidadTexto = String(cantidadRaw).trim();
+    payload.cant = /^\d+$/.test(cantidadTexto) && Number.isSafeInteger(Number(cantidadTexto))
+      ? Number(cantidadTexto)
+      : -1;
+  }
+
   const activoRaw =
     obtener(
       body,
@@ -674,6 +685,13 @@ export async function POST(request) {
     } = limpiarProducto(
       body
     );
+
+    if (payload.cant !== undefined && (payload.cant < 0 || payload.cant > 999999)) {
+      return NextResponse.json({
+        ok: false,
+        mensaje: "CANT debe ser una cantidad entera válida, desde 0. Si está vacía, se conserva la anterior.",
+      }, { status: 400 });
+    }
 
     // Never allow a purchase-cost field to replace the wholesale SALE price.
     // Blank prices in an update may be omitted; an explicit non-positive price
