@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   obtenerPrecioMayoristaWebhook,
+  obtenerNombreProductoWebhook,
   obtenerCostoCompraWebhook,
   parsearCostoCompraOpcional,
 } from "../../../../lib/catalogo/costoWebhook.mjs";
@@ -443,14 +444,7 @@ function limpiarProducto(body) {
       ) ?? ""
     ).trim();
 
-  const nombreRaw =
-    obtener(
-      body,
-      "nombre",
-      "NOMBRE",
-      "producto",
-      "PRODUCTO"
-    );
+  const nombreRaw = obtenerNombreProductoWebhook(body);
 
   const precioDetalRaw =
     obtener(
