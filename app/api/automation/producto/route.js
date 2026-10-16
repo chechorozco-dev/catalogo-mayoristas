@@ -681,6 +681,17 @@ export async function POST(request) {
       body
     );
 
+    // Never allow a purchase-cost field to replace the wholesale SALE price.
+    // Blank prices in an update may be omitted; an explicit non-positive price
+    // must be rejected before writing to the database.
+    if (payload.costo !== undefined &&
+      (!Number.isFinite(payload.costo) || payload.costo <= 0)) {
+      return NextResponse.json({
+        ok: false,
+        mensaje: "PRECIO_SHOPIFY (venta mayorista) debe ser mayor que cero. COSTO es únicamente costo interno.",
+      }, { status: 400 });
+    }
+
     if (!referencia) {
       return NextResponse.json(
         {
@@ -891,6 +902,13 @@ export async function POST(request) {
             status: 400,
           }
         );
+      }
+
+      if (!Number.isFinite(payload.costo) || payload.costo <= 0) {
+        return NextResponse.json({
+          ok: false,
+          mensaje: "Para crear un producto se requiere PRECIO_SHOPIFY mayor que cero. COSTO no reemplaza el precio de venta.",
+        }, { status: 400 });
       }
 
       const nuevo = {
