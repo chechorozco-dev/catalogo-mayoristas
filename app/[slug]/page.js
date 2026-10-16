@@ -540,6 +540,39 @@ if (!producto.created_at) {
   // no mostramos productos por seguridad.
   productosData = [];
 }
+  // SOLO_RA: las unidades apartadas se ocultan durante 48 horas.
+  // Si el control de reservas falla, no mostrar exclusivas por seguridad.
+  let idsSoloRaDisponibles = [];
+  if (tienda.slug === "mayoristas-ra" && tienda.tipo_tienda === "RA") {
+    try {
+      const respuesta = await fetch(
+        `${supabaseUrl}/rest/v1/rpc/ra_solo_ra_disponibles`,
+        {
+          method: "POST",
+          headers: {
+            apikey: supabaseSecretKey,
+            Authorization: "Bearer " + supabaseSecretKey,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ p_tienda_id: tienda.id }),
+          cache: "no-store",
+        }
+      );
+      if (!respuesta.ok) throw new Error(await respuesta.text());
+      const disponibles = await respuesta.json();
+      idsSoloRaDisponibles = disponibles
+        .filter((fila) => Number(fila.disponible) > 0)
+        .map((fila) => Number(fila.producto_id));
+      const permitidos = new Set(idsSoloRaDisponibles);
+      productosData = productosData.filter(
+        (producto) => !producto.solo_ra || permitidos.has(Number(producto.id))
+      );
+    } catch (error) {
+      console.error("Error reservas SOLO_RA:", error);
+      productosData = productosData.filter((producto) => !producto.solo_ra);
+    }
+  }
+
   // =========================================
   // 4. IDENTIFICAR PRODUCTOS CON VARIANTES
   // =========================================
@@ -1190,6 +1223,7 @@ created_at:
                 productos={
           productos
         }
+        idsSoloRaDisponibles={idsSoloRaDisponibles}
 
         anuncios={
           anuncios
