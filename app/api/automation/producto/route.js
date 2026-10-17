@@ -677,6 +677,24 @@ export async function POST(request) {
       }
     }
 
+    // Referencia del proveedor: solo se sincroniza con el maestro privado RA.
+    // Un valor ausente o en blanco no borra la referencia guardada.
+    const referenciaProveedorRaw = eliminar ? undefined : obtener(
+      body, "referencia_proveedor", "REFERENCIA_PROVEEDOR",
+      "REFERENCIA PROVEEDOR", "referenciaProveedor"
+    );
+    let referenciaProveedor;
+    if (referenciaProveedorRaw !== undefined && referenciaProveedorRaw !== null &&
+        String(referenciaProveedorRaw).trim() !== "") {
+      if (typeof referenciaProveedorRaw !== "string" ||
+          referenciaProveedorRaw.trim().length > 160) {
+        return NextResponse.json({
+          ok:false, mensaje:"REFERENCIA PROVEEDOR debe ser texto de máximo 160 caracteres."
+        },{status:400});
+      }
+      referenciaProveedor = referenciaProveedorRaw.trim();
+    }
+
     const {
       referencia,
       nombre,
@@ -727,31 +745,32 @@ export async function POST(request) {
         "application/json",
     };
 
-    const guardarCostoReal = async (catalogoId) => {
-      if (costoCompra === undefined) return;
+    const guardarDatosInternos = async (catalogoId) => {
+      if (costoCompra === undefined && referenciaProveedor === undefined) return;
       if (!Number.isSafeInteger(Number(catalogoId))) {
-        throw Error("No se pudo identificar el producto para registrar el costo real.");
+        throw Error("No se pudo identificar el producto para guardar datos internos.");
       }
       const response = await fetch(
         supabaseUrl + "/rest/v1/ra_productos_principal" +
           "?fuente_catalogo_id=eq." + encodeURIComponent(catalogoId) +
-          "&select=id,costo_compra",
+          "&select=id",
         {
           method:"PATCH",
           headers:{...headersSupabase,Prefer:"return=representation"},
           body:JSON.stringify({
-            costo_compra:costoCompra,
+            ...(costoCompra !== undefined ? {costo_compra:costoCompra} : {}),
+            ...(referenciaProveedor !== undefined ? {referencia_proveedor:referenciaProveedor} : {}),
             actualizado_en:new Date().toISOString(),
           }),
         }
       );
       if (!response.ok) {
         const reason=await response.text();
-        throw Error("El producto llegó al catálogo pero falló COSTO_COMPRA interno: "+reason);
+        throw Error("El producto llegó al catálogo pero falló la actualización interna RA: "+reason);
       }
       const changed=await response.json();
       if (!Array.isArray(changed) || changed.length!==1) {
-        throw Error("El producto llegó al catálogo pero no se confirmó COSTO_COMPRA interno.");
+        throw Error("El producto llegó al catálogo pero no se confirmó la actualización interna RA.");
       }
     };
 
@@ -987,7 +1006,7 @@ export async function POST(request) {
             )
           : [];
 
-      await guardarCostoReal(
+      await guardarDatosInternos(
         creados?.[0]?.id
       );
 
@@ -1042,7 +1061,7 @@ export async function POST(request) {
         cambios
       ).length === 0
     ) {
-      await guardarCostoReal(existente.id);
+      await guardarDatosInternos(existente.id);
       return NextResponse.json({
         ok: true,
         accion:
@@ -1096,7 +1115,7 @@ export async function POST(request) {
           )
         : [];
 
-    await guardarCostoReal(existente.id);
+    await guardarDatosInternos(existente.id);
     return NextResponse.json({
       ok: true,
       accion:
