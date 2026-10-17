@@ -92,7 +92,26 @@ mayorista**. La adquisición de RA se guarda en una columna distinta,
 
 El endpoint existente `POST /api/automation/producto` acepta opcionalmente
 `costo_compra`, `COSTO_COMPRA` o `COSTO_REAL` en el body autenticado del
-webhook; nunca agrega esta información a `public.productos`. Si no envías
+webhook; nunca agrega esta información a `public.productos`.
+
+También admite `referencia_proveedor`, `REFERENCIA_PROVEEDOR` o
+`REFERENCIA PROVEEDOR`. El dato se guarda **solo en**
+`ra_productos_principal.referencia_proveedor` (privado), sin cambiar la
+referencia RA ni incluirlo en `public.productos`. Campo opcional: si no llega
+su valor o está vacío, se conserva el anterior.
+
+Si tu columna de AppSheet se llama exactamente `REFERENCIA PROVEEDOR`, añade
+al body **existente** esta línea junto a los otros campos (sin alterar claves ni
+la autenticación):
+
+```json
+"referencia_proveedor": "<<[REFERENCIA PROVEEDOR]>>"
+```
+
+En Productos RA Principal también puede editarse manualmente este dato y el
+de cada variante. No implica conciliación automática con la DIAN, que necesitará
+relacionar después las líneas de facturas de compra con la referencia y el
+identificador del producto. Si no envías
 el campo, el costo real queda vacío (no se adivina a partir del mayorista).
 
 Ejemplo de campo para AÑADIR al JSON de tu webhook actual, **solo si
