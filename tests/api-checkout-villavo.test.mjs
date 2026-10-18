@@ -81,8 +81,8 @@ test("contraentrega es rechazada antes de crear un pedido o llamar a Make", asyn
   assert.equal(fake.payloadMake,null);
 });
 
-test("transferencia en Villavo se envía al flujo simulado sin 6% ni flete", async () => {
-  const {respuesta,fake}=await ejecutarConFetchFalso("TRANSFERENCIA",true);
+test("pedido con pago por acordar se envía al flujo simulado sin 6% ni flete", async () => {
+  const {respuesta,fake}=await ejecutarConFetchFalso("POR_ACORDAR",true);
   assert.equal(respuesta.status,200);
   const data=await respuesta.json();
   assert.equal(data.ok,true);
@@ -91,19 +91,19 @@ test("transferencia en Villavo se envía al flujo simulado sin 6% ni flete", asy
   assert.equal(fake.payloadMake.valores.porcentaje_descuento,0);
   assert.equal(fake.payloadMake.valores.descuento,0);
   assert.equal(fake.payloadMake.valores.costo_envio_final,0);
-  assert.equal(fake.payloadMake.pago.forma_pago,"TRANSFERENCIA");
+  assert.equal(fake.payloadMake.pago.forma_pago,"POR_ACORDAR");
   assert.equal(fake.payloadMake.cliente.direccion,"RECOGEN EN LOCAL");
 });
 
-test("efectivo es aceptado como pago presencial con el total exacto", async () => {
-  const {respuesta,fake}=await ejecutarConFetchFalso("EFECTIVO",true);
+test("retiro se acepta con pago por acordar y total exacto", async () => {
+  const {respuesta,fake}=await ejecutarConFetchFalso("POR_ACORDAR",true);
   assert.equal(respuesta.status,200);
-  assert.equal(fake.payloadMake.pago.forma_pago,"EFECTIVO");
+  assert.equal(fake.payloadMake.pago.forma_pago,"POR_ACORDAR");
   assert.equal(fake.payloadMake.valores.total_pedido,24000);
 });
 
-test("envío exige transferencia; efectivo y contraentrega se rechazan sin crear pedido", async () => {
-  for (const formaPago of ["EFECTIVO","CONTRA_ENTREGA","PAGO EN CASA"]) {
+test("envío rechaza métodos elegidos antes de hablar por WhatsApp", async () => {
+  for (const formaPago of ["EFECTIVO","TRANSFERENCIA","CONTRA_ENTREGA","PAGO EN CASA"]) {
     const {respuesta,fake} = await ejecutarConFetchFalso(formaPago,false,"ENVIO");
     assert.equal(respuesta.status,400);
     assert.equal(fake.llamadas.length,1);
@@ -111,7 +111,7 @@ test("envío exige transferencia; efectivo y contraentrega se rechazan sin crear
 });
 
 test("envío requiere dirección y ciudad real de la lista", async () => {
-  const {respuesta,fake}=await ejecutarConFetchFalso("TRANSFERENCIA",false,"ENVIO",{
+  const {respuesta,fake}=await ejecutarConFetchFalso("POR_ACORDAR",false,"ENVIO",{
     cliente: {nombre:"Test",direccion:"",ciudad_id:""},
   });
   assert.equal(respuesta.status,400);
@@ -119,10 +119,10 @@ test("envío requiere dirección y ciudad real de la lista", async () => {
 });
 
 test("pedido de envío Villavo lleva costo de transporte real y 0% descuento", async () => {
-  const {respuesta,fake}=await ejecutarConFetchFalso("TRANSFERENCIA",true,"ENVIO");
+  const {respuesta,fake}=await ejecutarConFetchFalso("POR_ACORDAR",true,"ENVIO");
   assert.equal(respuesta.status,200);
   assert.equal(fake.payloadMake.modalidad_entrega,"ENVIO");
-  assert.equal(fake.payloadMake.pago.forma_pago,"TRANSFERENCIA");
+  assert.equal(fake.payloadMake.pago.forma_pago,"POR_ACORDAR");
   assert.equal(fake.payloadMake.valores.subtotal_productos,24000);
   assert.equal(fake.payloadMake.valores.costo_envio_original,15000);
   assert.equal(fake.payloadMake.valores.costo_envio_final,15000);
@@ -135,7 +135,21 @@ test("pedido de envío Villavo lleva costo de transporte real y 0% descuento", a
 });
 
 test("no se acepta pedido Villavo sin elegir recoger o enviar", async () => {
-  const {respuesta,fake}=await ejecutarConFetchFalso("TRANSFERENCIA",false,"");
+  const {respuesta,fake}=await ejecutarConFetchFalso("POR_ACORDAR",false,"");
   assert.equal(respuesta.status,400);
   assert.equal(fake.llamadas.length,1);
+});
+
+test("retiro rechaza elección anticipada de efectivo o transferencia", async () => {
+  for (const metodo of ["EFECTIVO", "TRANSFERENCIA"]) {
+    const { respuesta, fake } = await ejecutarConFetchFalso(metodo, false, "RECOGER");
+    assert.equal(respuesta.status, 400);
+    assert.equal(fake.llamadas.length, 1);
+  }
+});
+
+test("el servidor exige el estado POR_ACORDAR para pedidos Villavo", async () => {
+  const { respuesta, fake } = await ejecutarConFetchFalso("", false, "RECOGER");
+  assert.equal(respuesta.status, 400);
+  assert.equal(fake.llamadas.length, 1);
 });
