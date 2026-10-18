@@ -970,6 +970,7 @@ const costoEnvioNormal =
 // productos SUPERIORES a $400.000
 // y envío normal MENOR a $18.000
 const tieneEnvioGratis =
+  !esPuntoVillavo &&
   totalCarrito > 400000 &&
   costoEnvioNormal !== null &&
   costoEnvioNormal < 18000;
