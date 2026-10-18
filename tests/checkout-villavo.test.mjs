@@ -13,7 +13,7 @@ test("el servidor decide cuándo es la principal de Villavo", () => {
 });
 
 test("el checkout físico tiene únicamente transferencia y efectivo", () => {
-  const start=checkout.indexOf("esPuntoVillavo ? (");
+  const start=checkout.indexOf(") : retiroVillavo ? (");
   const end=checkout.indexOf(") : checkoutMinimizado ? (",start);
   assert.ok(start>=0 && end>start);
   const bloque=checkout.slice(start,end);
@@ -27,15 +27,15 @@ test("el checkout físico tiene únicamente transferencia y efectivo", () => {
 test("la principal mayorista mantiene su checkout de contraentrega, sin ejecutar para Villavo", () => {
   assert.match(checkout, /\) : checkoutMinimizado \? \(/);
   assert.match(checkout, /abrirCheckoutConPago\("CONTRA_ENTREGA"\)/);
-  assert.match(checkout, /!esPuntoVillavo &&\s*!checkoutMinimizado/);
+  assert.match(checkout, /\(!esPuntoVillavo \|\| envioVillavo\) &&\s*!checkoutMinimizado/);
 });
 
 test("para retiro local no hay flete ni descuento por transferencia", () => {
   assert.match(checkout, /formaPago === "TRANSFERENCIA" && !esPuntoVillavo/);
-  assert.match(checkout, /const costoEnvioNormal =\s*esPuntoVillavo \? 0/);
-  assert.match(checkout, /const tieneEnvioGratis =\s*!esPuntoVillavo/);
+  assert.match(checkout, /const costoEnvioNormal =\s*retiroVillavo \? 0/);
+  assert.match(checkout, /const tieneEnvioGratis =\s*!retiroVillavo/);
   assert.match(checkout, /esPuntoVillavo \? 0 : Math.round\(totalCarrito \* 0\.06\)/);
-  assert.match(checkout, /esPuntoVillavo \? Number\(totalCarrito\) : Number\(totalPedido\)/);
+  assert.match(checkout, /retiroVillavo \? Number\(totalCarrito\) : Number\(totalPedido\)/);
 });
 
 test("el API consulta tienda real y bloquea métodos no admitidos antes de escribir", () => {
@@ -44,7 +44,17 @@ test("el API consulta tienda real y bloquea métodos no admitidos antes de escri
   const firstRpc=api.indexOf('"ra_solo_ra_verificar"');
   assert.ok(chequeo>=0 && chequeo<write);
   assert.ok(chequeo<firstRpc);
-  assert.match(api, /esFormaPagoLocalValida\(metodo\)/);
-  assert.match(api, /totalesRetiroLocal\(pedido\?\.productos\)/);
+  assert.match(api, /esFormaPagoLocalValida\(metodo, modalidad\)/);
+  assert.match(api, /calcularTotalesVillavo\(pedido\?\.productos, modalidad, tarifaEnvio\)/);
   assert.match(api, /direccion: "RECOGEN EN LOCAL"/);
+});
+
+test("la modalidad de entrega tiene dos opciones, pero el envío jamás acepta efectivo ni contraentrega", () => {
+  assert.match(checkout, /setModalidadEntrega\("RECOGER"\)/);
+  assert.match(checkout, /setModalidadEntrega\("ENVIO"\)/);
+  assert.match(checkout, /envioVillavo && metodo !== "TRANSFERENCIA"/);
+  assert.match(checkout, /!esPuntoVillavo && \(/);
+  assert.match(checkout, /{!esPuntoVillavo && <span className="pago-descuento-badge">/);
+  assert.match(api, /const modalidad = String\(pedido\?\.modalidad_entrega/);
+  assert.match(api, /ciudades_envio\?select=ciudad_id/);
 });

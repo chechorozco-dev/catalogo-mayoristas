@@ -351,6 +351,10 @@ const [cargandoPerfilAutorizado, setCargandoPerfilAutorizado] = useState(false);
 // FORMA DE PAGO
 // "CONTRA_ENTREGA" o "TRANSFERENCIA"
 const [formaPago, setFormaPago] = useState("");
+const [modalidadEntrega, setModalidadEntrega] = useState("");
+// Se declaran después del estado para no repetir el problema de TDZ/hooks.
+const retiroVillavo = esPuntoVillavo && modalidadEntrega === "RECOGER";
+const envioVillavo = esPuntoVillavo && modalidadEntrega === "ENVIO";
 const [checkoutMinimizado, setCheckoutMinimizado] =
   useState(false);
 
@@ -960,7 +964,7 @@ const descuentoTransferencia =
 
 // Valor normal del envío según la ciudad
 const costoEnvioNormal =
-  esPuntoVillavo ? 0 :
+  retiroVillavo ? 0 :
   ciudadSeleccionada?.costo_envio !== null &&
   ciudadSeleccionada?.costo_envio !== undefined
     ? Number(ciudadSeleccionada.costo_envio)
@@ -970,7 +974,7 @@ const costoEnvioNormal =
 // productos SUPERIORES a $400.000
 // y envío normal MENOR a $18.000
 const tieneEnvioGratis =
-  !esPuntoVillavo &&
+  !retiroVillavo &&
   totalCarrito > 400000 &&
   costoEnvioNormal !== null &&
   costoEnvioNormal < 18000;
@@ -1360,6 +1364,7 @@ if (
   }
   function abrirCheckoutConPago(metodo) {
   if (esPuntoVillavo && !["EFECTIVO","TRANSFERENCIA"].includes(metodo)) return;
+  if (envioVillavo && metodo !== "TRANSFERENCIA") return;
   setFormaPago(metodo);
   setCheckoutMinimizado(false);
 
@@ -1418,17 +1423,20 @@ if (!/^573\d{9}$/.test(telefonoNormalizado)) {
     "Por favor ingresa un WhatsApp válido.";
 }
 
-if (!esPuntoVillavo && !direccionCliente.trim()) {
+if (!retiroVillavo && !direccionCliente.trim()) {
   nuevosErrores.direccion =
     "Por favor completa tu dirección.";
 }
 
-if (!esPuntoVillavo && !ciudadSeleccionada?.ciudad_id) {
+if (!retiroVillavo && !ciudadSeleccionada?.ciudad_id) {
   nuevosErrores.ciudad =
     "Por favor selecciona una ciudad de la lista.";
 }
 
-if (!formaPago || (esPuntoVillavo && !["EFECTIVO","TRANSFERENCIA"].includes(formaPago))) {
+if (!formaPago ||
+    (esPuntoVillavo && !["RECOGER","ENVIO"].includes(modalidadEntrega)) ||
+    (envioVillavo && formaPago !== "TRANSFERENCIA") ||
+    (retiroVillavo && !["EFECTIVO","TRANSFERENCIA"].includes(formaPago))) {
   nuevosErrores.pago =
     "Por favor selecciona una forma de pago.";
 }
@@ -1466,6 +1474,7 @@ if (Object.keys(nuevosErrores).length > 0) {
   const pedido = {
     sesion_id: sesionCarrito,
     tienda_id: tiendaId,
+    ...(esPuntoVillavo ? { modalidad_entrega: modalidadEntrega } : {}),
     cliente: {
       nombre: nombreCliente.trim(),
 
@@ -1475,17 +1484,17 @@ if (Object.keys(nuevosErrores).length > 0) {
 
       correo: correoCliente.trim(),
 
-      direccion: esPuntoVillavo ? "RECOGEN EN LOCAL" : direccionCliente.trim(),
+      direccion: retiroVillavo ? "RECOGEN EN LOCAL" : direccionCliente.trim(),
 
       // MUY IMPORTANTE:
       // este es el ID EXACTO que viene de Supabase/AppSheet
-      ciudad_id: esPuntoVillavo ? null : ciudadSeleccionada.ciudad_id,
+      ciudad_id: retiroVillavo ? null : ciudadSeleccionada.ciudad_id,
 
       ciudad_departamento:
-        (esPuntoVillavo ? "Villavicencio, Meta" : ciudadSeleccionada.ciudad_departamento) || "",
+        (retiroVillavo ? "Villavicencio, Meta" : ciudadSeleccionada.ciudad_departamento) || "",
 
       tiempo_estimado:
-        (esPuntoVillavo ? "Recoger en el local" : ciudadSeleccionada.tiempo_estimado) || "",
+        (retiroVillavo ? "Recoger en el local" : ciudadSeleccionada.tiempo_estimado) || "",
     },
 
     pago: {
@@ -1514,7 +1523,7 @@ if (Object.keys(nuevosErrores).length > 0) {
           ? 0
           : Number(costoEnvioFinal),
 
-      total_pedido: esPuntoVillavo ? Number(totalCarrito) : Number(totalPedido),
+      total_pedido: retiroVillavo ? Number(totalCarrito) : Number(totalPedido),
     },
 
     productos: carrito.map((item) => ({
@@ -3481,10 +3490,45 @@ setErroresCompra((actual) => ({
 
             {carrito.length > 0 && (
               <div className="carrito-pie">
+           {esPuntoVillavo && (
+             <section aria-label="¿Cómo quieres recibir tu pedido?" style={{
+               padding:"14px",borderRadius:"14px",background:"#f8f5ff",
+               border:"1px solid #e6dcf7",marginBottom:"12px"
+             }}>
+               <strong style={{display:"block",marginBottom:"9px",fontSize:"15px"}}>
+                 ¿Cómo quieres recibir tu pedido?
+               </strong>
+               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"9px"}}>
+                 <button type="button" aria-pressed={modalidadEntrega === "RECOGER"}
+                   className={`forma-pago-opcion ${modalidadEntrega === "RECOGER" ? "seleccionada" : ""}`}
+                   style={{minWidth:0,padding:"12px 7px",fontSize:"12px"}}
+                   onClick={() => {
+                     setModalidadEntrega("RECOGER"); setFormaPago("");
+                     setCheckoutMinimizado(false);
+                     setErroresCompra(actual => ({...actual,pago:"",ciudad:"",direccion:""}));
+                   }}>🏬 Recoger en el local</button>
+                 <button type="button" aria-pressed={modalidadEntrega === "ENVIO"}
+                   className={`forma-pago-opcion ${modalidadEntrega === "ENVIO" ? "seleccionada" : ""}`}
+                   style={{minWidth:0,padding:"12px 7px",fontSize:"12px"}}
+                   onClick={() => {
+                     setModalidadEntrega("ENVIO"); setFormaPago("");
+                     setCheckoutMinimizado(false);
+                     setErroresCompra(actual => ({...actual,pago:"",ciudad:"",direccion:""}));
+                   }}>🚚 Enviar a mi dirección</button>
+               </div>
+               <p style={{margin:"9px 0 0",fontSize:"12px",color:"#6b6474"}}>
+                 {modalidadEntrega === "RECOGER"
+                   ? "Sin costo de envío. Puedes pagar por transferencia o en efectivo al recoger."
+                   : modalidadEntrega === "ENVIO"
+                     ? "Selecciona tu ciudad y dirección. Para despacho, pagas por transferencia."
+                     : "Elige una opción para continuar."}
+               </p>
+             </section>
+           )}
            {String(tipoTienda || "")
   .trim()
   .toUpperCase() === "RA" &&
-  !esPuntoVillavo &&
+  (!esPuntoVillavo || envioVillavo) &&
   !checkoutMinimizado && (
   <div
     style={{
@@ -3745,7 +3789,8 @@ setErroresCompra((actual) => ({
 
 <div className="comparacion-pagos">
 
-  {/* CONTRAENTREGA */}
+  {/* CONTRAENTREGA: solo RA Mayoristas */}
+  {!esPuntoVillavo && (
 
   <button
     type="button"
@@ -3816,6 +3861,7 @@ setErroresCompra((actual) => ({
       Toca para elegir
     </div>
   </button>
+  )}
 
 
   {/* TRANSFERENCIA */}
@@ -3839,14 +3885,12 @@ setErroresCompra((actual) => ({
         </strong>
 
         <small>
-          6% de descuento en los productos
+          {esPuntoVillavo ? "Pago anticipado para despacho" : "6% de descuento en los productos"}
         </small>
       </div>
 
       <div className="pago-cabecera-derecha">
-        <span className="pago-descuento-badge">
-          -6%
-        </span>
+        {!esPuntoVillavo && <span className="pago-descuento-badge">-6%</span>}
 
         <span
           className={`pago-selector ${
@@ -3870,7 +3914,7 @@ setErroresCompra((actual) => ({
       </span>
     </div>
 
-    <div className="pago-resumen-fila fila-descuento">
+    {!esPuntoVillavo && <div className="pago-resumen-fila fila-descuento">
       <span>Descuento (6%)</span>
 
       <strong>
@@ -3878,7 +3922,7 @@ setErroresCompra((actual) => ({
           descuentoTransferenciaVista
         )}
       </strong>
-    </div>
+    </div>}
 
     <div className="pago-resumen-fila">
       <span>Envío</span>
@@ -3909,9 +3953,9 @@ setErroresCompra((actual) => ({
 
 </div>
 
-<div className="aviso-descuento-transferencia">
+{!esPuntoVillavo && <div className="aviso-descuento-transferencia">
   El descuento del 6% aplica únicamente a los productos, no al envío.
-</div>
+</div>}
   </>
 )}
   </div>
@@ -3922,7 +3966,11 @@ setErroresCompra((actual) => ({
   .trim()
   .toUpperCase() === "RA" ? (
 
-  esPuntoVillavo ? (
+  esPuntoVillavo && !modalidadEntrega ? (
+    <div style={{fontSize:"13px",padding:"12px",color:"#666"}}>
+      Elige si recogerás tu pedido o necesitas envío a domicilio.
+    </div>
+  ) : retiroVillavo ? (
     <div className="checkout-villavo" id="checkout-inline" style={{
       padding:"16px", border:"1px solid #e2dfed", borderRadius:"14px",
       background:"var(--color-fondo)", marginTop:"12px"
@@ -4069,7 +4117,9 @@ setErroresCompra((actual) => ({
       </strong>
 
       <span>
-        Elige pago contra entrega o transferencia para continuar.
+        {esPuntoVillavo
+          ? "Para enviar tu pedido selecciona transferencia bancaria."
+          : "Elige pago contra entrega o transferencia para continuar."}
       </span>
     </div>
 
@@ -4327,7 +4377,7 @@ setErroresCompra((actual) => ({
           </strong>
         </div>
 
-        {formaPago === "TRANSFERENCIA" && (
+        {formaPago === "TRANSFERENCIA" && !esPuntoVillavo && (
           <div className="checkout-inline-descuento">
             <span>
               Descuento (6%)
