@@ -758,6 +758,7 @@ export default function EditorTienda({
 
               <input
                 type="text"
+                aria-label="Nombre de la tienda"
                 value={nombre}
                 onChange={(e) =>
                   setNombre(
@@ -777,6 +778,7 @@ export default function EditorTienda({
               </CampoEtiqueta>
 
               <textarea
+                aria-label="Mensaje de tu tienda"
                 value={
                   mensajePortada
                 }
@@ -834,6 +836,7 @@ export default function EditorTienda({
               </CampoEtiqueta>
 
               <input
+                aria-label="WhatsApp de tu tienda"
                 value={whatsapp}
                 readOnly
                 style={{
@@ -897,6 +900,7 @@ export default function EditorTienda({
 
               <input
                 type="text"
+                aria-label="Instagram"
                 value={
                   instagram
                 }
@@ -919,6 +923,7 @@ export default function EditorTienda({
 
               <input
                 type="text"
+                aria-label="TikTok"
                 value={tiktok}
                 onChange={(e) =>
                   setTiktok(
@@ -939,6 +944,7 @@ export default function EditorTienda({
 
               <input
                 type="text"
+                aria-label="Facebook"
                 value={
                   facebook
                 }
