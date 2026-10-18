@@ -7,7 +7,7 @@ import {
 import crypto from "crypto";
 import sharp from "sharp";
 import { fetchSupabasePaginado } from "../../../lib/supabasePagination";
-import { fotosProducto, posicionesFotosProducto } from "../../../lib/catalogo/pdf-layout.mjs";
+import { fotosProducto, organizarFilasProductosPdf } from "../../../lib/catalogo/pdf-layout.mjs";
 import {
   esSeleccionPdfValida, productoCoincidePdf, MAX_PRODUCTOS_PDF,
 } from "../../../lib/catalogo/pdf-filtros.mjs";
@@ -221,29 +221,17 @@ async function descargarImagen(url) {
   }
 }
 
-async function insertarImagen(
-  pdfDoc,
-  pagina,
-  url,
-  x,
-  y,
-  ancho,
-  alto
-) {
-  if (!url) return false;
 
+/**
+ * Comprobación REAL de cada imagen: solo se contabiliza cuando
+ * el enlace descarga, Sharp la decodifica y se convierte a JPEG.
+ * Ningún URL falso puede reservar una columna en el PDF.
+ */
+async function descargarImagenOptimizada(url) {
   try {
-    const imagenDescargada =
-      await descargarImagen(url);
-
-    if (!imagenDescargada) {
-      return false;
-    }
-
-    // Reducimos cada imagen antes de incrustarla: un PNG o fotografía
-    // original de varios MB nunca llega sin comprimir al PDF final.
-    // El fondo blanco evita transparencia negra en imágenes con alpha.
-    const imagenOptimizada = await sharp(Buffer.from(imagenDescargada.bytes), {
+    const descarga = await descargarImagen(url);
+    if (!descarga) return null;
+    return await sharp(Buffer.from(descarga.bytes), {
       limitInputPixels: 25_000_000,
     })
       .rotate()
@@ -251,47 +239,84 @@ async function insertarImagen(
       .resize({ width: 900, height: 900, fit: "inside", withoutEnlargement: true })
       .jpeg({ quality: 79 })
       .toBuffer();
-    const imagenPdf = await pdfDoc.embedJpg(imagenOptimizada);
+  } catch (error) {
+    console.warn("Fotografía inaccesible para PDF:", error?.message || "Error de imagen");
+    return null;
+  }
+}
 
-    const dimensiones =
-      imagenPdf.scale(1);
-
-   const escala = Math.min(
-  ancho / dimensiones.width,
-  alto / dimensiones.height
-);
-
-    const anchoFinal =
-      dimensiones.width * escala;
-
-    const altoFinal =
-      dimensiones.height * escala;
-
-    const xFinal =
-      x +
-      (ancho - anchoFinal) / 2;
-
-    const yFinal =
-      y +
-      (alto - altoFinal) / 2;
-
+// Mantiene la carga del logo de la portada compatible con el diseño actual.
+async function insertarImagen(pdfDoc, pagina, url, x, y, ancho, alto) {
+  const jpeg = await descargarImagenOptimizada(url);
+  if (!jpeg) return false;
+  try {
+    const imagenPdf = await pdfDoc.embedJpg(jpeg);
+    const dimensiones = imagenPdf.scale(1);
+    const escala = Math.min(ancho / dimensiones.width, alto / dimensiones.height);
+    const anchoFinal = dimensiones.width * escala;
+    const altoFinal = dimensiones.height * escala;
     pagina.drawImage(imagenPdf, {
-      x: xFinal,
-      y: yFinal,
+      x: x + (ancho - anchoFinal) / 2,
+      y: y + (alto - altoFinal) / 2,
       width: anchoFinal,
       height: altoFinal,
     });
-
     return true;
   } catch (error) {
-    console.error(
-      "Error insertando imagen:",
-      url,
-      error
-    );
-
+    console.warn("Logo no disponible en PDF:", error?.message || "Error");
     return false;
   }
+}
+
+/**
+ * Hasta ocho descargas paralelas, sin descargar dos veces la misma URL.
+ * Se prepara la selección completa antes de ordenar filas.
+ * Las imágenes fallidas o duplicadas no cuentan para el diseño.
+ */
+async function prepararImagenesProductosPdf(productos, reportar) {
+  const tareas = [];
+  const fotos = productos.map((producto, productoIndex) => {
+    const urls = fotosProducto(producto);
+    urls.forEach((url, fotoIndex) => tareas.push({ productoIndex, fotoIndex, url }));
+    return new Array(urls.length).fill(null);
+  });
+  if (tareas.length === 0) return productos.map(p => ({ ...p, imagenes_pdf: [] }));
+
+  const cache = new Map();
+  let proxima = 0;
+  let completadas = 0;
+  let ultimoPorcentaje = 28;
+
+  async function trabajador() {
+    while (proxima < tareas.length) {
+      const tarea = tareas[proxima++];
+      if (!cache.has(tarea.url)) cache.set(tarea.url, descargarImagenOptimizada(tarea.url));
+      const jpeg = await cache.get(tarea.url);
+      fotos[tarea.productoIndex][tarea.fotoIndex] = jpeg;
+      completadas++;
+      const porcentaje = 28 + Math.round((completadas * 52) / tareas.length);
+      if (porcentaje > ultimoPorcentaje) {
+        ultimoPorcentaje = porcentaje;
+        reportar(porcentaje, "Comprobando imágenes: " + completadas + " de " + tareas.length);
+      }
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(8, tareas.length) }, () => trabajador())
+  );
+
+  return productos.map((producto, i) => {
+    const vistos = new Set();
+    const imagenes_pdf = fotos[i].filter((jpeg) => {
+      if (!jpeg) return false;
+      const digest = crypto.createHash("sha256").update(jpeg).digest("hex");
+      if (vistos.has(digest)) return false;
+      vistos.add(digest);
+      return true;
+    });
+    return { ...producto, imagenes_pdf };
+  });
 }
 
 /* =========================================================
@@ -321,71 +346,116 @@ function recortarTexto(
   )}...`;
 }
 
+
 /* =========================================================
-   FILAS DE PRODUCTO: UNA O DOS FOTOS, SIEMPRE ALINEADAS
+   LAYOUT: DOBLE FOTO O DOS PRODUCTOS DE UNA FOTO
 ========================================================= */
 
-async function dibujarProducto({
-  pdfDoc,
-  pagina,
-  producto,
-  y,
-  fuenteBold,
-}) {
-  const anchoPagina = pagina.getWidth();
-  const margen = 24;
-  const posiciones = posicionesFotosProducto(producto, anchoPagina);
-  const altoFoto = 194;
-  const yFoto = y + 34;
-
-  // Las dos imágenes mantienen la misma anchura; una sola se centra.
-  for (const foto of posiciones) {
-    pagina.drawRectangle({
-      x: foto.x,
-      y: yFoto - 4,
-      width: foto.ancho,
-      height: altoFoto + 8,
-      color: rgb(1, 1, 1),
-      borderColor: rgb(0.91, 0.89, 0.87),
-      borderWidth: 0.5,
-    });
-    await insertarImagen(
-      pdfDoc, pagina, foto.url,
-      foto.x + 4, yFoto,
-      foto.ancho - 8, altoFoto
-    );
-  }
-
+function dibujarNombrePrecio({ pagina, producto, x, y, ancho, fuenteBold, compacto }) {
+  const tamanoNombre = compacto ? 8.2 : 9;
+  const tamanoPrecio = compacto ? 9 : 10;
   const precio = formatoPrecio(producto.precio_pdf);
-  const tamanoNombre = 9;
-  const tamanoPrecio = 10;
-  const espacioPrecio = fuenteBold.widthOfTextAtSize(precio, tamanoPrecio);
-  const anchoNombreMax = anchoPagina - margen * 2 - espacioPrecio - 18;
+  const anchoPrecio = fuenteBold.widthOfTextAtSize(precio, tamanoPrecio);
+  let nombre = limpiarTextoPdf(producto.nombre || producto.referencia || "Producto");
+  const anchoMaxNombre = compacto ? ancho - 10 : ancho - anchoPrecio - 22;
 
-  // Recortamos por anchura física; el nombre nunca invade el precio.
-  let nombre = limpiarTextoPdf(producto.nombre || "Producto");
-  while (nombre.length > 3 && fuenteBold.widthOfTextAtSize(nombre, tamanoNombre) > anchoNombreMax) {
-    nombre = nombre.endsWith("...")
-      ? nombre.slice(0, -4) + "..."
-      : nombre.slice(0, -1) + "...";
+  if (fuenteBold.widthOfTextAtSize(nombre, tamanoNombre) > anchoMaxNombre) {
+    while (nombre.length > 3 &&
+      fuenteBold.widthOfTextAtSize(nombre + "...", tamanoNombre) > anchoMaxNombre) {
+      nombre = nombre.slice(0, -1);
+    }
+    nombre += "...";
   }
 
   pagina.drawText(nombre, {
-    x: margen + 2,
-    y: y + 10,
+    x: x + 4,
+    y: y + (compacto ? 19 : 10),
     size: tamanoNombre,
     font: fuenteBold,
     color: rgb(0.20, 0.20, 0.20),
   });
+
   pagina.drawText(precio, {
-    x: anchoPagina - margen - espacioPrecio - 2,
-    y: y + 9,
+    x: x + ancho - anchoPrecio - 4,
+    y: y + (compacto ? 5 : 9),
     size: tamanoPrecio,
     font: fuenteBold,
     color: rgb(0.12, 0.12, 0.12),
   });
 }
 
+async function dibujarFotoVerificada({ pdfDoc, pagina, jpeg, x, y, ancho, alto }) {
+  pagina.drawRectangle({
+    x, y: y - 4, width: ancho, height: alto + 8,
+    color: rgb(1, 1, 1),
+    borderColor: rgb(0.91, 0.89, 0.87),
+    borderWidth: 0.5,
+  });
+  const imagen = await pdfDoc.embedJpg(jpeg);
+  const dimensiones = imagen.scale(1);
+  const escala = Math.min((ancho - 8) / dimensiones.width, alto / dimensiones.height);
+  const anchoFinal = dimensiones.width * escala;
+  const altoFinal = dimensiones.height * escala;
+  pagina.drawImage(imagen, {
+    x: x + (ancho - anchoFinal) / 2,
+    y: y + (alto - altoFinal) / 2,
+    width: anchoFinal, height: altoFinal,
+  });
+}
+
+async function dibujarFilaProductosPdf({ pdfDoc, pagina, fila, y, fuenteBold }) {
+  const anchoPagina = pagina.getWidth();
+  const margen = 24;
+  const separacion = 10;
+  const anchoColumna = (anchoPagina - margen * 2 - separacion) / 2;
+  const altoFoto = 194;
+  const yFoto = y + 34;
+  const xColumna = (indice) => margen + indice * (anchoColumna + separacion);
+
+  if (fila.tipo === "dos") {
+    const producto = fila.productos[0];
+    for (let i = 0; i < 2; i++) {
+      await dibujarFotoVerificada({
+        pdfDoc, pagina,
+        jpeg: producto.imagenes_pdf[i],
+        x: xColumna(i), y: yFoto, ancho: anchoColumna, alto: altoFoto,
+      });
+    }
+    dibujarNombrePrecio({
+      pagina, producto, x: margen, y,
+      ancho: anchoPagina - margen * 2, fuenteBold, compacto: false,
+    });
+    return;
+  }
+
+  if (fila.tipo === "pareja") {
+    for (let i = 0; i < 2; i++) {
+      const producto = fila.productos[i];
+      await dibujarFotoVerificada({
+        pdfDoc, pagina,
+        jpeg: producto.imagenes_pdf[0],
+        x: xColumna(i), y: yFoto, ancho: anchoColumna, alto: altoFoto,
+      });
+      dibujarNombrePrecio({
+        pagina, producto, x: xColumna(i), y,
+        ancho: anchoColumna, fuenteBold, compacto: true,
+      });
+    }
+    return;
+  }
+
+  // Si queda solo uno, no se coloca a la izquierda: queda centrado.
+  const producto = fila.productos[0];
+  const xCentro = (anchoPagina - anchoColumna) / 2;
+  await dibujarFotoVerificada({
+    pdfDoc, pagina, jpeg: producto.imagenes_pdf[0],
+    x: xCentro, y: yFoto, ancho: anchoColumna, alto: altoFoto,
+  });
+  dibujarNombrePrecio({
+    pagina, producto, x: xCentro, y,
+    ancho: anchoColumna, fuenteBold, compacto: true,
+  });
+}
 
 /* =========================================================
    CREAR PORTADA PREMIUM DEL CATÁLOGO
@@ -1334,18 +1404,29 @@ reportarProgreso(28, "Portada preparada; organizando productos");
 
     let posicionEnPagina = 0;
 
-  /* ===============================================
-     PRODUCTOS CON FOTO EN EL ORDEN ORIGINAL
-     Tres fichas A4 por página, sin páginas vacías entre
-     grupos de una y dos fotos.
-  =============================================== */
+  /* =====================================================
+     Antes de dibujar, comprobar imagen real y organizar:
+     - dos fotos válidas: una referencia, ambas columnas
+     - una foto válida: parejas de referencias
+     - sobrante individual: centrado
+  ===================================================== */
 
-  const productosConFoto = productosCatalogo.filter(
-    (producto) => fotosProducto(producto).length > 0
+  const productosVerificados = await prepararImagenesProductosPdf(
+    productosCatalogo,
+    reportarProgreso
   );
-  let ultimoPorcentaje = 28;
 
-  for (let i = 0; i < productosConFoto.length; i++) {
+  const filas = organizarFilasProductosPdf(productosVerificados);
+  if (filas.length === 0) {
+    return NextResponse.json({
+      ok: false,
+      mensaje: "Las fotos de estos productos no se pudieron descargar. Comprueba los enlaces de las fotografías.",
+    }, { status: 422 });
+  }
+
+  let ultimoPorcentaje = 80;
+
+  for (let i = 0; i < filas.length; i++) {
     if (posicionEnPagina === 0) {
       pagina = pdfDoc.addPage([anchoPagina, altoPagina]);
       const hexFondo = String(tienda?.color_fondo || "#FFFFFF")
@@ -1367,23 +1448,18 @@ reportarProgreso(28, "Portada preparada; organizando productos");
     const y = altoPagina - margenSuperior - altoProducto -
       posicionEnPagina * (altoProducto + espacioVertical);
 
-    await dibujarProducto({
-      pdfDoc,
-      pagina,
-      producto: productosConFoto[i],
-      y,
-      fuenteBold,
+    await dibujarFilaProductosPdf({
+      pdfDoc, pagina, fila: filas[i], y, fuenteBold,
     });
 
     posicionEnPagina = (posicionEnPagina + 1) % 3;
 
-    // Porcentaje fundamentado en filas realmente procesadas.
-    const porcentaje = 28 + Math.round((i + 1) * 65 / productosConFoto.length);
-    if (porcentaje !== ultimoPorcentaje) {
+    const porcentaje = 80 + Math.round((i + 1) * 13 / filas.length);
+    if (porcentaje > ultimoPorcentaje) {
       ultimoPorcentaje = porcentaje;
       reportarProgreso(
         porcentaje,
-        `Fotografías procesadas: ${i + 1} de ${productosConFoto.length}`
+        "Organizando fichas: " + (i + 1) + " de " + filas.length
       );
     }
   }
