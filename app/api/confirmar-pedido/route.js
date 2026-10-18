@@ -1,7 +1,7 @@
 import {
   esRaAccesoriosVillavo,
   esFormaPagoLocalValida,
-  totalesRetiroLocal,
+  calcularTotalesVillavo,
 } from "../../../lib/catalogo/pagos-local.mjs";
 
 export async function POST(request) {
@@ -30,23 +30,77 @@ export async function POST(request) {
       return Response.json({ ok:false, error:"La tienda no está activa." }, { status:400 });
     }
     if (esRaAccesoriosVillavo(tiendaActual)) {
+      const modalidad = String(pedido?.modalidad_entrega || "").toUpperCase();
       const metodo = String(pedido?.pago?.forma_pago || "").toUpperCase();
-      if (!esFormaPagoLocalValida(metodo)) {
-        return Response.json({ ok:false,
-          error:"En RA Accesorios Villavo solo puedes elegir transferencia o efectivo en el local." }, { status:400 });
+
+      if (!["RECOGER","ENVIO"].includes(modalidad)) {
+        return Response.json({
+          ok: false,
+          error: "Elige si recogerás tu pedido o necesitas envío a domicilio.",
+        }, { status: 400 });
       }
-      const totales = totalesRetiroLocal(pedido?.productos);
+      if (!esFormaPagoLocalValida(metodo, modalidad)) {
+        return Response.json({
+          ok: false,
+          error: modalidad === "ENVIO"
+            ? "Para envíos de RA Accesorios Villavo únicamente aceptamos transferencia."
+            : "Para recoger en el local puedes pagar por transferencia o efectivo.",
+        }, { status: 400 });
+      }
+
+      let ciudadVerificada = null;
+      let tarifaEnvio = 0;
+      if (modalidad === "ENVIO") {
+        const ciudadId = String(pedido?.cliente?.ciudad_id || "").trim();
+        const direccion = String(pedido?.cliente?.direccion || "").trim();
+        if (!ciudadId || ciudadId.length > 150 || !direccion || direccion.length > 220) {
+          return Response.json({
+            ok: false,
+            error: "Para envío debes proporcionar una ciudad de la lista y una dirección de entrega.",
+          }, { status: 400 });
+        }
+        // Tarifa desde Supabase y no desde el navegador: impide omitir el flete.
+        const resCiudad = await fetch(
+          process.env.NEXT_PUBLIC_SUPABASE_URL +
+            "/rest/v1/ciudades_envio?select=ciudad_id,ciudad_departamento,tiempo_estimado,costo_envio" +
+            "&ciudad_id=eq." + encodeURIComponent(ciudadId) + "&limit=1",
+          { headers: { apikey: process.env.SUPABASE_SECRET_KEY,
+            Authorization: "Bearer " + process.env.SUPABASE_SECRET_KEY },
+            cache: "no-store" }
+        );
+        if (!resCiudad.ok) {
+          return Response.json({ok:false,error:"No pudimos consultar el costo del envío. Inténtalo nuevamente."}, {status:503});
+        }
+        ciudadVerificada = (await resCiudad.json())?.[0];
+        tarifaEnvio = Number(ciudadVerificada?.costo_envio);
+        if (!ciudadVerificada || !Number.isSafeInteger(tarifaEnvio) ||
+            tarifaEnvio < 0 || tarifaEnvio > 500000) {
+          return Response.json({ok:false,error:"Selecciona una ciudad que tenga una tarifa de envío válida."}, {status:400});
+        }
+      }
+
+      const totales = calcularTotalesVillavo(pedido?.productos, modalidad, tarifaEnvio);
       if (!totales) {
-        return Response.json({ ok:false, error:"Los importes del pedido no son válidos." }, { status:400 });
+        return Response.json({ok:false,error:"Los importes del pedido no son válidos."}, {status:400});
       }
       pedido = {
         ...pedido,
+        modalidad_entrega: modalidad,
         pago: { ...pedido.pago, forma_pago: metodo },
         valores: totales,
-        cliente: { ...pedido.cliente,
-          direccion: "RECOGEN EN LOCAL", ciudad_id: null,
+        cliente: modalidad === "RECOGER" ? {
+          ...pedido.cliente,
+          direccion: "RECOGEN EN LOCAL",
+          ciudad_id: null,
           ciudad_departamento: "Villavicencio, Meta",
-          tiempo_estimado: "Recoger en el local" },
+          tiempo_estimado: "Recoger en el local",
+        } : {
+          ...pedido.cliente,
+          direccion: String(pedido.cliente.direccion).trim(),
+          ciudad_id: ciudadVerificada.ciudad_id,
+          ciudad_departamento: ciudadVerificada.ciudad_departamento,
+          tiempo_estimado: ciudadVerificada.tiempo_estimado || "",
+        },
       };
     }
 
