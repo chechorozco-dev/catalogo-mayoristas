@@ -96,7 +96,7 @@ export default function CompartirCatalogo({ tienda, onVerCatalogo }) {
   );
   const enlaceWhatsapp = useMemo(() => enlaceChatWhatsapp(mensaje), [mensaje]);
   const dominioTienda = useMemo(() => {
-    try { return dominioTienda; }
+    try { return enlace ? new URL(enlace).host : "Tu enlace"; }
     catch { return "Tu enlace"; }
   }, [enlace]);
   const tema = {
