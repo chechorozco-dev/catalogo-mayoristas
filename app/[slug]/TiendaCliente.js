@@ -3790,6 +3790,25 @@ setErroresCompra((actual) => ({
       </strong>
     </div>
 
+    {esPuntoVillavo ? (
+      <div style={{
+        margin:"12px 0",padding:"13px",border:"1px solid #dce9dd",
+        borderRadius:"12px",background:"#f2f9f2"
+      }}>
+        <strong style={{display:"block",fontSize:"14px"}}>💬 Pago por acordar por WhatsApp</strong>
+        <p style={{margin:"4px 0",fontSize:"12px"}}>
+          Confirmaremos contigo el pago antes del despacho.
+        </p>
+        <div style={{
+          display:"flex",justifyContent:"space-between",gap:"10px",
+          fontSize:"14px",marginTop:"9px"
+        }}>
+          <span>Total del pedido con envío</span>
+          <strong>{formatoPrecio(totalPedido)}</strong>
+        </div>
+      </div>
+    ) : (
+      <>
     {/* COMPARACIÓN DE FORMAS DE PAGO */}
 
 <div className="comparacion-pagos">
@@ -3961,6 +3980,8 @@ setErroresCompra((actual) => ({
 {!esPuntoVillavo && <div className="aviso-descuento-transferencia">
   El descuento del 6% aplica únicamente a los productos, no al envío.
 </div>}
+      </>
+    )}
   </>
 )}
   </div>
@@ -4064,6 +4085,8 @@ setErroresCompra((actual) => ({
           <span>
             {!ciudadSeleccionada
               ? "Calcula tu envío"
+              : esPuntoVillavo
+                ? ciudadSeleccionada.ciudad_departamento + " · Pago por acordar"
               : !formaPago
                 ? ciudadSeleccionada.ciudad_departamento
                 : `${ciudadSeleccionada.ciudad_departamento} · ${
@@ -4081,9 +4104,11 @@ setErroresCompra((actual) => ({
         {ciudadSeleccionada && (
           <strong>
             {formatoPrecio(
-              formaPago === "TRANSFERENCIA"
-                ? totalTransferencia
-                : totalContraEntrega
+              esPuntoVillavo
+                ? totalPedido
+                : formaPago === "TRANSFERENCIA"
+                  ? totalTransferencia
+                  : totalContraEntrega
             )}
           </strong>
         )}
@@ -4104,7 +4129,7 @@ setErroresCompra((actual) => ({
       </span>
     </div>
 
-  ) : !formaPago ? (
+  ) : !esPuntoVillavo && !formaPago ? (
 
     <div className="continuar-pago-aviso">
       <strong>
@@ -4142,6 +4167,7 @@ setErroresCompra((actual) => ({
           setCarrito([]);
           setPedidoEnviado(false);
           setFormaPago("");
+          setModalidadEntrega("");
 
           setNombreCliente("");
           setCedulaCliente("");
@@ -4193,9 +4219,11 @@ setErroresCompra((actual) => ({
         </div>
 
         <div className="checkout-pago-elegido">
-          {formaPago === "TRANSFERENCIA"
-            ? "🏦 Transferencia"
-            : "📦 Contra entrega"}
+          {esPuntoVillavo
+            ? "💬 Pago por acordar por WhatsApp"
+            : formaPago === "TRANSFERENCIA"
+              ? "🏦 Transferencia"
+              : "📦 Contra entrega"}
         </div>
       </div>
 
@@ -4364,11 +4392,12 @@ setErroresCompra((actual) => ({
 
         <div>
           <span>Forma de pago</span>
-
           <strong>
-            {formaPago === "TRANSFERENCIA"
-              ? "Transferencia"
-              : "Contra entrega"}
+            {esPuntoVillavo
+              ? "Por acordar por WhatsApp"
+              : formaPago === "TRANSFERENCIA"
+                ? "Transferencia"
+                : "Contra entrega"}
           </strong>
         </div>
 
@@ -4403,9 +4432,11 @@ setErroresCompra((actual) => ({
 
           <strong>
             {formatoPrecio(
-              formaPago === "TRANSFERENCIA"
-                ? totalTransferencia
-                : totalContraEntrega
+              esPuntoVillavo
+                ? totalPedido
+                : formaPago === "TRANSFERENCIA"
+                  ? totalTransferencia
+                  : totalContraEntrega
             )}
           </strong>
         </div>
@@ -4423,7 +4454,7 @@ setErroresCompra((actual) => ({
       >
         {enviandoPedido
           ? "Confirmando pedido..."
-          : "Confirmar pedido"}
+          : esPuntoVillavo ? "Confirmar pedido para envío" : "Confirmar pedido"}
       </button>
 
     </div>
