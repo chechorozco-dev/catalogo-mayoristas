@@ -6,6 +6,7 @@ import FotoOptimizada from "../components/FotoOptimizada";
 import { limpiarTexto, formatoPrecio, limpiarWhatsapp, normalizarTelefonoColombia, obtenerColorTexto } from "../../lib/catalogo/formatos.mjs";
 import { productoPerteneceCategoria, obtenerTipoProducto } from "../../lib/catalogo/categorias.mjs";
 import GaleriaProducto from "./components/GaleriaProducto";
+import { fotosProducto } from "../../lib/catalogo/pdf-layout.mjs";
 
 const CATEGORIAS_PRINCIPALES = [
   "Todos",
@@ -995,12 +996,6 @@ const totalTransferencia =
   totalCarrito -
   descuentoTransferenciaVista +
   (costoEnvioFinal || 0);
-
-function fotosProducto(producto) {
-    if (!producto) return [];
-
-    return [producto.foto_url, producto.foto_url_2].filter(Boolean);
-  }
 
   // ========================================
   // FOTOS TARJETAS
@@ -2341,7 +2336,7 @@ try {
                     >{favoritosIds.has(String(producto.id)) ? "♥" : "♡"}</button>
                     {fotoActual ? (
                       <FotoOptimizada
-          width={640} height={640} sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" quality={85} priority={indiceProducto === 0}
+          width={640} height={640} sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" quality={85} priority={indiceProducto < 4}
                         className="producto-imagen"
                         src={fotoActual}
                         alt={producto.nombre}

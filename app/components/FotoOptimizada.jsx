@@ -2,16 +2,13 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { urlFotoParaVista } from "../../lib/catalogo/fotos-web.mjs";
 
 const HOST_IMAGENES = "hxvujossrzoqqnxxskzb.supabase.co";
 
-// Solo las imágenes públicas de nuestra cuenta de Supabase pasan por
-// el optimizador de Next.js. Los enlaces externos siguen funcionando
-// normalmente, sin bloquear Google Drive ni otros proveedores.
 function esFotoOptimizable(src) {
   try {
     const url = new URL(src);
-
     return (
       url.protocol === "https:" &&
       url.hostname === HOST_IMAGENES &&
@@ -23,13 +20,10 @@ function esFotoOptimizable(src) {
 }
 
 /**
- * Fotografías de catálogo:
- * - Se intenta primero la miniatura WebP optimizada y adaptable de Next.js.
- * - Si falla el optimizador, se muestra directamente la foto original de Supabase.
- * - Las fuentes externas siempre conservan su URL original.
- * - Si también falla la foto original, se respeta el onError del componente padre.
- *
- * El archivo almacenado no se modifica; se conserva lazy loading y su tamaño CSS.
+ * Supabase: miniaturas cacheadas en Next/Image.
+ * Google Drive: pedir w192/w384/w640 para miniaturas, w1200 en ampliación.
+ * Fallback controlado: si la miniatura falla, intentar URL original.
+ * En todos los casos evitamos imágenes rotas invisibles.
  */
 export default function FotoOptimizada({
   src,
@@ -45,24 +39,38 @@ export default function FotoOptimizada({
   ...resto
 }) {
   const origen = String(src || "").trim();
+  const miniatura = urlFotoParaVista(origen, width);
+  const [falloOptimizador, setFalloOptimizador] = useState("");
+  const [falloMiniatura, setFalloMiniatura] = useState("");
+  const [falloDefinitivo, setFalloDefinitivo] = useState("");
 
-  // Guardar la URL que falló permite volver a probar el optimizador
-  // automáticamente cuando cambie de fotografía, sin efectos ni parpadeos.
-  const [urlOptimizacionFallida, setUrlOptimizacionFallida] = useState("");
+  if (!miniatura || falloDefinitivo === origen) {
+    if (!origen) return null;
+    return (
+      <span
+        className={resto.className || ""}
+        role="img"
+        aria-label={alt || "Fotografía no disponible"}
+        onClick={resto.onClick}
+        style={{
+          display: "grid",
+          placeItems: "center",
+          textAlign: "center",
+          padding: "10px",
+          fontSize: "12px",
+          color: "#858585",
+          background: "#f6f6f6",
+          ...resto.style,
+        }}
+      >
+        Foto no disponible
+      </span>
+    );
+  }
 
-  if (!origen) return null;
-
-  const propiedades = {
-    src: origen,
-    alt,
-    width,
-    height,
-    decoding,
-    ...resto,
-  };
-
-  const usarOptimizador =
-    esFotoOptimizable(origen) && urlOptimizacionFallida !== origen;
+  const srcActual = falloMiniatura === origen ? origen : miniatura;
+  const propiedades = { src: srcActual, alt, width, height, decoding, ...resto };
+  const usarOptimizador = esFotoOptimizable(origen) && falloOptimizador !== origen;
 
   if (usarOptimizador) {
     return (
@@ -73,8 +81,8 @@ export default function FotoOptimizada({
         priority={priority}
         loading={priority ? undefined : loading}
         onError={() => {
-          // Evita mostrar un recuadro vacío si /_next/image está caído.
-          setUrlOptimizacionFallida(origen);
+          // La imagen original puede funcionar aunque el proxy falle.
+          setFalloOptimizador(origen);
         }}
       />
     );
@@ -85,7 +93,14 @@ export default function FotoOptimizada({
       {...propiedades}
       loading={priority ? "eager" : loading}
       fetchPriority={priority ? "high" : undefined}
-      onError={onError}
+      onError={(evento) => {
+        if (srcActual !== origen) {
+          setFalloMiniatura(origen);
+          return;
+        }
+        setFalloDefinitivo(origen);
+        onError?.(evento);
+      }}
     />
   );
 }
