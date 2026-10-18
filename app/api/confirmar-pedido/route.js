@@ -1,6 +1,7 @@
 import {
   esRaAccesoriosVillavo,
   esFormaPagoLocalValida,
+  PAGO_POR_ACORDAR,
   calcularTotalesVillavo,
 } from "../../../lib/catalogo/pagos-local.mjs";
 
@@ -39,12 +40,13 @@ export async function POST(request) {
           error: "Elige si recogerás tu pedido o necesitas envío a domicilio.",
         }, { status: 400 });
       }
+      // La tienda no solicita ni confirma pagos en el checkout.
+      // Rechazamos métodos antiguos (efectivo, transferencia, contraentrega)
+      // para impedir que se interpreten como pagos ya acordados.
       if (!esFormaPagoLocalValida(metodo, modalidad)) {
         return Response.json({
           ok: false,
-          error: modalidad === "ENVIO"
-            ? "Para envíos de RA Accesorios Villavo únicamente aceptamos transferencia."
-            : "Para recoger en el local puedes pagar por transferencia o efectivo.",
+          error: "La forma de pago se acordará por WhatsApp. Actualiza la página y confirma nuevamente.",
         }, { status: 400 });
       }
 
@@ -86,7 +88,7 @@ export async function POST(request) {
       pedido = {
         ...pedido,
         modalidad_entrega: modalidad,
-        pago: { ...pedido.pago, forma_pago: metodo },
+        pago: { ...pedido.pago, forma_pago: PAGO_POR_ACORDAR },
         valores: totales,
         cliente: modalidad === "RECOGER" ? {
           ...pedido.cliente,
