@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { fotosProducto, posicionesFotosProducto } from "../lib/catalogo/pdf-layout.mjs";
+import {
+  fotosProducto, posicionesFotosProducto, normalizarUrlFoto, organizarFilasProductosPdf,
+} from "../lib/catalogo/pdf-layout.mjs";
 import { recibirPdfConProgreso } from "../lib/catalogo/pdf-progress.mjs";
 
 test("dos fotografías ocupan columnas equilibradas", () => {
@@ -21,6 +23,56 @@ test("una fotografía queda centrada, incluso si solamente es la segunda", () =>
     assert.ok(Math.abs(posiciones[0].x - (595.28 - posiciones[0].ancho) / 2) < 0.01);
   }
   assert.deepEqual(fotosProducto({ foto_url: "null", foto_url_2: "" }), []);
+});
+
+
+test("Google Drive thumbnail sin ID no cuenta como segunda foto", () => {
+  const resultado = fotosProducto({
+    foto_url: "https://drive.google.com/thumbnail?id=1XfsrDpOExpEO0Lo_YK4iOCgTaPkrzhbu&sz=w1200",
+    foto_url_2: "https://drive.google.com/thumbnail?id=&sz=w1200",
+  });
+  assert.equal(resultado.length, 1);
+  assert.equal(normalizarUrlFoto("https://drive.google.com/thumbnail?id=&sz=w1200"), null);
+  assert.equal(normalizarUrlFoto("https://drive.google.com/uc?export=view&id="), null);
+  assert.equal(normalizarUrlFoto("mailto:test@example.com"), null);
+  assert.equal(fotosProducto({ foto_url: resultado[0], foto_url_2: resultado[0] }).length, 1);
+});
+
+test("tres productos de una foto producen una pareja y un producto centrado", () => {
+  const uno = { referencia: "AC1780", foto_url: "https://ejemplo.co/a.jpg",
+    foto_url_2: "https://drive.google.com/thumbnail?id=&sz=w1200" };
+  const dos = { referencia: "AC1778", foto_url: "https://ejemplo.co/b.jpg",
+    foto_url_2: "https://drive.google.com/thumbnail?id=&sz=w1200" };
+  const tres = { referencia: "AC1777", foto_url: "https://ejemplo.co/c.jpg" };
+  const filas = organizarFilasProductosPdf([uno,dos,tres]);
+  assert.deepEqual(filas.map((fila) => fila.tipo), ["pareja","solo"]);
+  assert.deepEqual(filas[0].productos.map((p) => p.referencia), ["AC1780", "AC1778"]);
+  assert.equal(filas[1].productos[0].referencia, "AC1777");
+});
+
+test("fotos descargadas reales determinan una foto aunque dos enlaces parecieran válidos", () => {
+  const a = { referencia: "A", foto_url: "https://ejemplo.co/a1.jpg",
+    foto_url_2: "https://ejemplo.co/a2.jpg", imagenes_pdf: [{bytes: new Uint8Array([1])}] };
+  const b = { referencia: "B", foto_url: "https://ejemplo.co/b1.jpg",
+    imagenes_pdf: [{bytes: new Uint8Array([2])}] };
+  const doble = { referencia: "C", imagenes_pdf: [{bytes: 1}, {bytes: 2}] };
+  const sinFoto = { referencia: "D", imagenes_pdf: [] };
+  const filas = organizarFilasProductosPdf([a, doble, sinFoto, b]);
+  assert.deepEqual(filas.map((fila) => fila.tipo), ["pareja", "dos"]);
+  assert.deepEqual(filas.flatMap(fila => fila.productos.map(p => p.referencia)), ["A","B","C"]);
+});
+
+test("las parejas no se separan aunque haya productos con dos fotos intercalados", () => {
+  const datos = [
+    {referencia: "A", foto_url: "https://ejemplo.co/a.jpg"},
+    {referencia: "B", foto_url: "https://ejemplo.co/b.jpg", foto_url_2:"https://ejemplo.co/b2.jpg"},
+    {referencia: "C", foto_url: "https://ejemplo.co/c.jpg"},
+    {referencia: "D", foto_url: "https://ejemplo.co/d.jpg"},
+    {referencia: "E", foto_url: "https://ejemplo.co/e.jpg"},
+  ];
+  const filas = organizarFilasProductosPdf(datos);
+  assert.deepEqual(filas.map(f => f.tipo), ["pareja", "dos", "pareja"]);
+  assert.deepEqual(filas.flatMap(f => f.productos.map(p=>p.referencia)).sort(),["A","B","C","D","E"]);
 });
 
 function respuestaPorPartes(partes) {
