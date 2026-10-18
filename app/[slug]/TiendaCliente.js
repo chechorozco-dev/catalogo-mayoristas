@@ -1631,8 +1631,11 @@ ciudad:
 // Actualiza la ficha maestra de este comprador SOLO si la compra se
 // confirmó y el WhatsApp del pedido pertenece a la sesión autenticada.
 // Un visitante o un pedido a nombre de otra persona nunca modifica fichas.
-if(perfilAutorizado?.whatsapp&&
-  normalizarTelefonoColombia(perfilAutorizado.whatsapp)===telefonoNormalizado){
+if(perfilAutorizado?.whatsapp&&(
+  normalizarTelefonoColombia(perfilAutorizado.whatsapp)===telefonoNormalizado||
+  (perfilAutorizado.telefono_llamadas&&
+    normalizarTelefonoColombia(perfilAutorizado.telefono_llamadas)===telefonoNormalizado)
+)){
   try{
     const saved=await fetch("/api/mi-perfil",{
       method:"PATCH",credentials:"same-origin",cache:"no-store",
