@@ -12,7 +12,7 @@ test("la selección PDF exige material y familia específica, no permite Nuevos 
   assert.equal(esSeleccionPdfValida("RODIO", ""), false);
   assert.ok(!TIPOS_PDF.some(x => ["Nuevos", "Todos los productos"].includes(x.id)));
   assert.equal(MATERIALES_PDF.length, 3);
-  assert.ok(MAX_PRODUCTOS_PDF <= 60);
+  assert.equal(MAX_PRODUCTOS_PDF, 150);
 });
 
 test("los aretes de rodio no incluyen acero ni otros tipos", () => {
