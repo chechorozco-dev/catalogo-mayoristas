@@ -37,6 +37,7 @@ const CATEGORIAS_MENU = [
 export default function TiendaCliente({
   tiendaId,
   tipoTienda = "CLIENTE",
+  esLocalVillavo = false,
   nombreTienda,
   logoUrl,
   whatsapp,
@@ -149,6 +150,8 @@ const esTiendaRA =
   String(tipoTienda || "")
     .trim()
     .toUpperCase() === "RA";
+
+const esPuntoVillavo = esTiendaRA && esLocalVillavo;
 
 const productosPermitidos = useMemo(() => {
   // La tienda principal RA ve TODOS los productos
@@ -951,12 +954,13 @@ useEffect(() => {
 
 // El 6% solamente aplica a los productos
 const descuentoTransferencia =
-  formaPago === "TRANSFERENCIA"
+  formaPago === "TRANSFERENCIA" && !esPuntoVillavo
     ? Math.round(totalCarrito * 0.06)
     : 0;
 
 // Valor normal del envío según la ciudad
 const costoEnvioNormal =
+  esPuntoVillavo ? 0 :
   ciudadSeleccionada?.costo_envio !== null &&
   ciudadSeleccionada?.costo_envio !== undefined
     ? Number(ciudadSeleccionada.costo_envio)
@@ -966,6 +970,7 @@ const costoEnvioNormal =
 // productos SUPERIORES a $400.000
 // y envío normal MENOR a $18.000
 const tieneEnvioGratis =
+  !esPuntoVillavo &&
   totalCarrito > 400000 &&
   costoEnvioNormal !== null &&
   costoEnvioNormal < 18000;
@@ -989,7 +994,7 @@ const totalContraEntrega =
 
 // DESCUENTO PARA MOSTRAR EN EL CARRITO
 const descuentoTransferenciaVista =
-  Math.round(totalCarrito * 0.06);
+  esPuntoVillavo ? 0 : Math.round(totalCarrito * 0.06);
 
 // TOTAL SI PAGA POR TRANSFERENCIA
 const totalTransferencia =
@@ -1354,6 +1359,7 @@ if (
     setCarrito([]);
   }
   function abrirCheckoutConPago(metodo) {
+  if (esPuntoVillavo && !["EFECTIVO","TRANSFERENCIA"].includes(metodo)) return;
   setFormaPago(metodo);
   setCheckoutMinimizado(false);
 
@@ -1412,17 +1418,17 @@ if (!/^573\d{9}$/.test(telefonoNormalizado)) {
     "Por favor ingresa un WhatsApp válido.";
 }
 
-if (!direccionCliente.trim()) {
+if (!esPuntoVillavo && !direccionCliente.trim()) {
   nuevosErrores.direccion =
     "Por favor completa tu dirección.";
 }
 
-if (!ciudadSeleccionada?.ciudad_id) {
+if (!esPuntoVillavo && !ciudadSeleccionada?.ciudad_id) {
   nuevosErrores.ciudad =
     "Por favor selecciona una ciudad de la lista.";
 }
 
-if (!formaPago) {
+if (!formaPago || (esPuntoVillavo && !["EFECTIVO","TRANSFERENCIA"].includes(formaPago))) {
   nuevosErrores.pago =
     "Por favor selecciona una forma de pago.";
 }
@@ -1469,17 +1475,17 @@ if (Object.keys(nuevosErrores).length > 0) {
 
       correo: correoCliente.trim(),
 
-      direccion: direccionCliente.trim(),
+      direccion: esPuntoVillavo ? "RECOGEN EN LOCAL" : direccionCliente.trim(),
 
       // MUY IMPORTANTE:
       // este es el ID EXACTO que viene de Supabase/AppSheet
-      ciudad_id: ciudadSeleccionada.ciudad_id,
+      ciudad_id: esPuntoVillavo ? null : ciudadSeleccionada.ciudad_id,
 
       ciudad_departamento:
-        ciudadSeleccionada.ciudad_departamento || "",
+        (esPuntoVillavo ? "Villavicencio, Meta" : ciudadSeleccionada.ciudad_departamento) || "",
 
       tiempo_estimado:
-        ciudadSeleccionada.tiempo_estimado || "",
+        (esPuntoVillavo ? "Recoger en el local" : ciudadSeleccionada.tiempo_estimado) || "",
     },
 
     pago: {
@@ -1490,9 +1496,9 @@ if (Object.keys(nuevosErrores).length > 0) {
       subtotal_productos: Number(totalCarrito),
 
       porcentaje_descuento:
-        formaPago === "TRANSFERENCIA" ? 6 : 0,
+        formaPago === "TRANSFERENCIA" && !esPuntoVillavo ? 6 : 0,
 
-      descuento: Number(
+      descuento: esPuntoVillavo ? 0 : Number(
         descuentoTransferencia
       ),
 
@@ -1508,7 +1514,7 @@ if (Object.keys(nuevosErrores).length > 0) {
           ? 0
           : Number(costoEnvioFinal),
 
-      total_pedido: Number(totalPedido),
+      total_pedido: esPuntoVillavo ? Number(totalCarrito) : Number(totalPedido),
     },
 
     productos: carrito.map((item) => ({
@@ -2846,6 +2852,7 @@ try {
 {String(tipoTienda || "")
   .trim()
   .toUpperCase() === "RA" &&
+  !esPuntoVillavo &&
   formularioCompraAbierto && (
     <div
       className="overlay compra-overlay"
@@ -3477,6 +3484,7 @@ setErroresCompra((actual) => ({
            {String(tipoTienda || "")
   .trim()
   .toUpperCase() === "RA" &&
+  !esPuntoVillavo &&
   !checkoutMinimizado && (
   <div
     style={{
@@ -3914,7 +3922,75 @@ setErroresCompra((actual) => ({
   .trim()
   .toUpperCase() === "RA" ? (
 
-  checkoutMinimizado ? (
+  esPuntoVillavo ? (
+    <div className="checkout-villavo" id="checkout-inline" style={{
+      padding:"16px", border:"1px solid #e2dfed", borderRadius:"14px",
+      background:"var(--color-fondo)", marginTop:"12px"
+    }}>
+      {pedidoEnviado ? (
+        <div role="status" style={{textAlign:"center",padding:"16px 8px"}}>
+          <strong style={{display:"block",fontSize:"20px"}}>✓ ¡Pedido recibido!</strong>
+          <p>Te esperamos en RA Accesorios Villavo. Confirmaremos tu pedido por WhatsApp.</p>
+          <button type="button" className="checkout-confirmar-btn"
+            onClick={() => {
+              setCarrito([]); setPedidoEnviado(false); setFormaPago("");
+              setNombreCliente(""); setTelefonoCliente(""); setCorreoCliente("");
+              setCarritoAbierto(false);
+            }}>Volver a la tienda</button>
+        </div>
+      ) : (
+        <>
+          <h3 style={{margin:"0 0 6px"}}>Recoge tu pedido en el local</h3>
+          <p style={{fontSize:"13px",lineHeight:1.5,color:"#67616e",margin:"0 0 15px"}}>
+            En RA Accesorios Villavo pagas el precio publicado, sin descuento adicional.
+            Puedes pagar por transferencia o en efectivo al recoger.
+          </p>
+          <div id="campo-pago" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginBottom:"14px"}}>
+            <button type="button" className={`forma-pago-opcion ${formaPago === "TRANSFERENCIA" ? "seleccionada":""}`}
+              aria-pressed={formaPago === "TRANSFERENCIA"}
+              onClick={() => abrirCheckoutConPago("TRANSFERENCIA")}>
+              🏦 Transferencia
+            </button>
+            <button type="button" className={`forma-pago-opcion ${formaPago === "EFECTIVO" ? "seleccionada":""}`}
+              aria-pressed={formaPago === "EFECTIVO"}
+              onClick={() => abrirCheckoutConPago("EFECTIVO")}>
+              💵 Efectivo en el local
+            </button>
+          </div>
+          {formaPago && (
+            <>
+              <label className="checkout-inline-campo" id="campo-nombre">
+                <span>Nombre completo</span>
+                {erroresCompra.nombre && <small className="checkout-error">{erroresCompra.nombre}</small>}
+                <input type="text" autoComplete="name" value={nombreCliente}
+                  placeholder="Tu nombre"
+                  onChange={e => setNombreCliente(e.target.value)} />
+              </label>
+              <label className="checkout-inline-campo" id="campo-telefono">
+                <span>WhatsApp</span>
+                {erroresCompra.telefono && <small className="checkout-error">{erroresCompra.telefono}</small>}
+                <input type="tel" inputMode="tel" autoComplete="tel" value={telefonoCliente}
+                  placeholder="Ej. 3101234567"
+                  onChange={e => setTelefonoCliente(e.target.value.replace(/\D/g,""))} />
+              </label>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 0",borderTop:"1px solid #e9e5ee"}}>
+                <span>Total a pagar</span>
+                <strong style={{fontSize:"18px"}}>{formatoPrecio(totalCarrito)}</strong>
+              </div>
+              <p style={{fontSize:"12px",color:"#666"}}>
+                Sin flete y sin descuento adicional · Retiro en RA Accesorios Villavo.
+              </p>
+              {erroresCompra.pago && <p role="alert">{erroresCompra.pago}</p>}
+              <button type="button" className="checkout-confirmar-btn" disabled={enviandoPedido}
+                onClick={confirmarPedido}>
+                {enviandoPedido ? "Confirmando pedido..." : "Confirmar pedido para recoger"}
+              </button>
+            </>
+          )}
+        </>
+      )}
+    </div>
+  ) : checkoutMinimizado ? (
 
     <button
       type="button"

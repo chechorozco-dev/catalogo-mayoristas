@@ -1,6 +1,54 @@
+import {
+  esRaAccesoriosVillavo,
+  esFormaPagoLocalValida,
+  totalesRetiroLocal,
+} from "../../../lib/catalogo/pagos-local.mjs";
+
 export async function POST(request) {
   try {
-    const pedido = await request.json();
+    let pedido = await request.json();
+
+    // La política de Villavo se verifica contra una tienda real en la base:
+    // no confiamos en ningún booleano o descuento recibido del navegador.
+    const tiendaId = String(pedido?.tienda_id || "").trim();
+    if (!/^[a-f0-9-]{36}$/i.test(tiendaId)) {
+      return Response.json({ ok: false, error: "Tienda del pedido inválida." }, { status: 400 });
+    }
+    const respuestaTienda = await fetch(
+      process.env.NEXT_PUBLIC_SUPABASE_URL +
+        "/rest/v1/tiendas?select=id,slug,tipo_tienda,negocio_id,activa&id=eq." +
+        encodeURIComponent(tiendaId) + "&limit=1",
+      { headers: { apikey: process.env.SUPABASE_SECRET_KEY,
+        Authorization: "Bearer " + process.env.SUPABASE_SECRET_KEY },
+        cache: "no-store" }
+    );
+    if (!respuestaTienda.ok) {
+      return Response.json({ ok:false, error:"No pudimos verificar la tienda. Inténtalo más tarde." }, { status:503 });
+    }
+    const tiendaActual = (await respuestaTienda.json())?.[0];
+    if (!tiendaActual?.activa) {
+      return Response.json({ ok:false, error:"La tienda no está activa." }, { status:400 });
+    }
+    if (esRaAccesoriosVillavo(tiendaActual)) {
+      const metodo = String(pedido?.pago?.forma_pago || "").toUpperCase();
+      if (!esFormaPagoLocalValida(metodo)) {
+        return Response.json({ ok:false,
+          error:"En RA Accesorios Villavo solo puedes elegir transferencia o efectivo en el local." }, { status:400 });
+      }
+      const totales = totalesRetiroLocal(pedido?.productos);
+      if (!totales) {
+        return Response.json({ ok:false, error:"Los importes del pedido no son válidos." }, { status:400 });
+      }
+      pedido = {
+        ...pedido,
+        pago: { ...pedido.pago, forma_pago: metodo },
+        valores: totales,
+        cliente: { ...pedido.cliente,
+          direccion: "RECOGEN EN LOCAL", ciudad_id: null,
+          ciudad_departamento: "Villavicencio, Meta",
+          tiempo_estimado: "Recoger en el local" },
+      };
+    }
 
     const rpcInventario = async (nombre, parametros) => {
       const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

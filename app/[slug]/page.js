@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import TiendaCliente from "./TiendaCliente";
+import { esRaAccesoriosVillavo } from "../../lib/catalogo/pagos-local.mjs";
 import { fetchSupabasePaginado, dividirEnBloques } from "../../lib/supabasePagination";
 
 export const dynamic = "force-dynamic";
@@ -1177,6 +1178,7 @@ created_at:
 
     <TiendaCliente
   tiendaId={tienda.id}
+  esLocalVillavo={esRaAccesoriosVillavo(tienda)}
 
   tipoTienda={
     tienda.tipo_tienda || "CLIENTE"
