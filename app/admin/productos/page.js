@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import FotoOptimizada from "../../components/FotoOptimizada";
 import { formatoPrecio } from "../../../lib/catalogo/formatos.mjs";
 import { recibirPdfConProgreso } from "../../../lib/catalogo/pdf-progress.mjs";
+import {
+  MATERIALES_PDF, TIPOS_PDF, MAX_PRODUCTOS_PDF, esSeleccionPdfValida,
+} from "../../../lib/catalogo/pdf-filtros.mjs";
 import { estadoPublicacionProducto, claveProducto } from "../../../lib/catalogo/publicacion.mjs";
 import { GaleriaProducto, VisorImagen } from "./components/GaleriasProducto";
 import EditorPrecios from "./components/EditorPrecios";
@@ -58,10 +61,9 @@ export default function ProductosMayoristaPage() {
   configuradorPdfAbierto,
   setConfiguradorPdfAbierto,
 ] = useState(false);
-   const [
-  categoriaPdf,
-  setCategoriaPdf,
-] = useState("Todos los productos");
+   const [materialPdf, setMaterialPdf] = useState("");
+   const [tipoPdf, setTipoPdf] = useState("");
+   const [partePdf, setPartePdf] = useState(1);
    const [
   generandoPdf,
   setGenerandoPdf,
@@ -1219,7 +1221,7 @@ async function publicarProductoAhora(productoId) {
   }
 
   async function descargarCatalogoPdf() {
-    if (generandoPdf) return;
+    if (generandoPdf || !esSeleccionPdfValida(materialPdf, tipoPdf)) return;
     setGenerandoPdf(true);
     setPorcentajePdf(0);
     setEtapaPdf("Preparando el catálogo");
@@ -1228,7 +1230,7 @@ async function publicarProductoAhora(productoId) {
       const response = await fetch("/api/catalogo-pdf?progreso=1", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ categoria: categoriaPdf }),
+        body: JSON.stringify({ material: materialPdf, tipo: tipoPdf, parte: partePdf }),
       });
       const blob = await recibirPdfConProgreso(response, ({ percent, etapa }) => {
         setPorcentajePdf(percent);
@@ -1238,7 +1240,10 @@ async function publicarProductoAhora(productoId) {
       const url = window.URL.createObjectURL(blob);
       const enlace = document.createElement("a");
       enlace.href = url;
-      enlace.download = "catalogo-productos.pdf";
+      const nombreMaterial = materialPdf.toLowerCase();
+      const nombreTipo = tipoPdf.toLowerCase().normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-");
+      enlace.download = `catalogo-${nombreMaterial}-${nombreTipo}-parte-${partePdf}.pdf`;
       document.body.appendChild(enlace);
       enlace.click();
       enlace.remove();
@@ -1584,6 +1589,9 @@ async function publicarProductoAhora(productoId) {
 .pdf-modal {
   width: 100%;
   max-width: 520px;
+  max-height: calc(100dvh - 36px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 
   background: white;
   border-radius: 20px;
@@ -1741,6 +1749,74 @@ async function publicarProductoAhora(productoId) {
 
 .pdf-category-select:focus {
   border-color: #6f45a0;
+}
+
+.pdf-category-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pdf-material-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.pdf-material-button {
+  min-height: 48px;
+  padding: 8px 5px;
+  border: 1px solid #ddd5df;
+  border-radius: 10px;
+  background: white;
+  font-size: 12px;
+  font-weight: 700;
+  color: #403748;
+  cursor: pointer;
+}
+
+.pdf-material-button.active {
+  color: #512b72;
+  border-color: #8153a0;
+  background: #f3eaf9;
+  box-shadow: inset 0 0 0 1px #8153a0;
+}
+
+.pdf-parte-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  max-width: 230px;
+}
+
+.pdf-parte-button {
+  width: 44px;
+  height: 44px;
+  border: 1px solid #dedede;
+  border-radius: 10px;
+  background: white;
+  font-size: 23px;
+  cursor: pointer;
+}
+
+.pdf-parte-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pdf-parte-input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  text-align: center;
+  border: 1px solid #dedede;
+  border-radius: 10px;
+  background: white;
+  font-weight: 700;
+}
+
+.pdf-generate-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .pdf-generate-button {
@@ -3820,30 +3896,74 @@ async function publicarProductoAhora(productoId) {
         </button>
       </div>
 <div className="pdf-category-section">
-  <strong className="pdf-category-title">
-    📂 Categoría del catálogo
-  </strong>
-
+  <strong className="pdf-category-title">1. Selecciona el material</strong>
   <p className="pdf-category-description">
-    Selecciona los productos que quieres incluir en este PDF.
+    Elige Rodio, Acero o los dos materiales.
   </p>
+  <div className="pdf-material-options" role="group" aria-label="Material del catálogo">
+    {MATERIALES_PDF.map((material) => (
+      <button
+        key={material.id}
+        type="button"
+        className={`pdf-material-button ${materialPdf === material.id ? "active" : ""}`}
+        aria-pressed={materialPdf === material.id}
+        onClick={() => {
+          setMaterialPdf(material.id);
+          setPartePdf(1);
+        }}
+      >
+        {material.nombre}
+      </button>
+    ))}
+  </div>
+</div>
 
+<div className="pdf-category-section">
+  <label htmlFor="pdf-tipo" className="pdf-category-title">
+    2. Selecciona el tipo de producto
+  </label>
+  <p className="pdf-category-description">
+    Solo aparecerán productos del material y tipo elegidos.
+  </p>
   <select
+    id="pdf-tipo"
     className="pdf-category-select"
-    value={categoriaPdf}
-    onChange={(e) =>
-      setCategoriaPdf(e.target.value)
-    }
+    value={tipoPdf}
+    disabled={!materialPdf}
+    onChange={(e) => {
+      setTipoPdf(e.target.value);
+      setPartePdf(1);
+    }}
+    required
   >
-  <option value="Nuevos">Nuevos</option>
-<option value="Aretes">Aretes</option>
-<option value="Candongas">Candongas</option>
-<option value="Juegos">Juegos</option>
-<option value="Pulseras">Pulseras</option>
-<option value="Anillos">Anillos</option>
-<option value="Topos y maxitopos">Topos y maxitopos</option>
-<option value="Tobilleras">Tobilleras</option>
+    <option value="">Selecciona una categoría</option>
+    {TIPOS_PDF.map((tipo) => (
+      <option key={tipo.id} value={tipo.id}>{tipo.nombre}</option>
+    ))}
   </select>
+</div>
+
+<div className="pdf-category-section">
+  <label className="pdf-category-title" htmlFor="pdf-parte">
+    3. Parte del catálogo
+  </label>
+  <p className="pdf-category-description">
+    Máximo {MAX_PRODUCTOS_PDF} productos por archivo para facilitar la descarga.
+    Si tienes más, descarga la parte 2, 3, etc.
+  </p>
+  <div className="pdf-parte-row">
+    <button type="button" className="pdf-parte-button"
+      disabled={partePdf <= 1}
+      onClick={() => setPartePdf((actual) => Math.max(1, actual - 1))}
+      aria-label="Parte anterior">−</button>
+    <input id="pdf-parte" type="number" inputMode="numeric" min="1" max="100"
+      className="pdf-parte-input" value={partePdf}
+      onChange={(e) => setPartePdf(Math.max(1, Math.min(100, Number(e.target.value) || 1)))} />
+    <button type="button" className="pdf-parte-button"
+      disabled={partePdf >= 100}
+      onClick={() => setPartePdf((actual) => Math.min(100, actual + 1))}
+      aria-label="Parte siguiente">+</button>
+  </div>
 </div>
       <div className="pdf-option">
         <div>
@@ -3873,7 +3993,10 @@ async function publicarProductoAhora(productoId) {
         <strong>Diseño del catálogo</strong>
 
         <p>
-          Usaremos 2 columnas, fotografías grandes y el precio de venta que hayas configurado.
+          Fotografías alineadas, precios de tu tienda e imágenes optimizadas para un archivo más liviano.
+          {esSeleccionPdfValida(materialPdf, tipoPdf)
+            ? ` Selección: ${materialPdf === "AMBOS" ? "Rodio y acero" : materialPdf} · ${tipoPdf} · Parte ${partePdf}.`
+            : " Debes elegir material y tipo para generar el PDF."}
         </p>
       </div>
 
@@ -3881,7 +4004,7 @@ async function publicarProductoAhora(productoId) {
   type="button"
   className="pdf-generate-button"
   onClick={descargarCatalogoPdf}
-  disabled={generandoPdf}
+  disabled={generandoPdf || !esSeleccionPdfValida(materialPdf, tipoPdf)}
 >
   📄 Generar catálogo PDF
 </button>

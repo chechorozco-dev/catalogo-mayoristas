@@ -8,6 +8,9 @@ import crypto from "crypto";
 import sharp from "sharp";
 import { fetchSupabasePaginado } from "../../../lib/supabasePagination";
 import { fotosProducto, posicionesFotosProducto } from "../../../lib/catalogo/pdf-layout.mjs";
+import {
+  esSeleccionPdfValida, productoCoincidePdf, MAX_PRODUCTOS_PDF,
+} from "../../../lib/catalogo/pdf-filtros.mjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -185,6 +188,7 @@ async function descargarImagen(url) {
   try {
    const response = await fetch(url, {
   cache: "no-store",
+  signal: AbortSignal.timeout(9000),
   headers: {
     Accept: "image/png,image/jpeg,image/jpg,*/*",
     "User-Agent": "Mozilla/5.0",
@@ -199,19 +203,13 @@ async function descargarImagen(url) {
       response.headers.get(
         "content-type"
       ) || "";
-console.log(
-  "IMAGEN DESCARGADA:",
-  url,
-  "TIPO:",
-  contentType
-);
-    const bytes =
-      await response.arrayBuffer();
+    const longitud = Number(response.headers.get("content-length") || 0);
+    if (longitud > 12 * 1024 * 1024) return null;
 
-    return {
-      bytes,
-      contentType,
-    };
+    const bytes = await response.arrayBuffer();
+    if (bytes.byteLength > 12 * 1024 * 1024) return null;
+
+    return { bytes };
   } catch (error) {
     console.error(
       "No se pudo descargar imagen:",
@@ -242,73 +240,19 @@ async function insertarImagen(
       return false;
     }
 
-    const {
-      bytes,
-      contentType,
-    } = imagenDescargada;
-
-   let imagenPdf = null;
-
-/* PNG */
-
-if (
-  contentType.includes("png") ||
-  String(url)
-    .toLowerCase()
-    .includes(".png")
-) {
-  imagenPdf =
-    await pdfDoc.embedPng(bytes);
-}
-
-/* JPG / JPEG */
-
-else if (
-  contentType.includes("jpeg") ||
-  contentType.includes("jpg") ||
-  String(url)
-    .toLowerCase()
-    .includes(".jpg") ||
-  String(url)
-    .toLowerCase()
-    .includes(".jpeg")
-) {
-  imagenPdf =
-    await pdfDoc.embedJpg(bytes);
-}
-
-/* WEBP */
-
-else if (
-  contentType.includes("webp") ||
-  String(url)
-    .toLowerCase()
-    .includes(".webp")
-) {
-  const pngConvertido =
-    await sharp(
-      Buffer.from(bytes)
-    )
-      .png()
+    // Reducimos cada imagen antes de incrustarla: un PNG o fotografía
+    // original de varios MB nunca llega sin comprimir al PDF final.
+    // El fondo blanco evita transparencia negra en imágenes con alpha.
+    const imagenOptimizada = await sharp(Buffer.from(imagenDescargada.bytes), {
+      limitInputPixels: 25_000_000,
+    })
+      .rotate()
+      .flatten({ background: "#ffffff" })
+      .resize({ width: 900, height: 900, fit: "inside", withoutEnlargement: true })
+      .jpeg({ quality: 79 })
       .toBuffer();
+    const imagenPdf = await pdfDoc.embedJpg(imagenOptimizada);
 
-  imagenPdf =
-    await pdfDoc.embedPng(
-      pngConvertido
-    );
-}
-
-/* OTROS FORMATOS */
-
-else {
-  console.error(
-    "FORMATO DE IMAGEN NO COMPATIBLE:",
-    contentType,
-    url
-  );
-
-  return false;
-}
     const dimensiones =
       imagenPdf.scale(1);
 
@@ -1042,11 +986,19 @@ async function generarCatalogoPdf(request, reportarProgreso = () => {}) {
     reportarProgreso(4, "Comprobando tu sesión");
     const body = await request.json().catch(() => ({}));
 
-    const categoriaPdf =
-      String(
-        body?.categoria ||
-          "Todos los productos"
-      ).trim();
+    const materialPdf = String(body?.material || "").trim();
+    const tipoPdf = String(body?.tipo || "").trim();
+    const partePdf = Number(body?.parte ?? 1);
+
+    // Bloquea exportaciones accidentales de toda la base o de «Nuevos».
+    if (!esSeleccionPdfValida(materialPdf, tipoPdf) ||
+        !Number.isSafeInteger(partePdf) || partePdf < 1 || partePdf > 100) {
+      return NextResponse.json({
+        ok: false,
+        mensaje: "Selecciona Rodio, Acero o Ambos y después un tipo de producto válido.",
+      }, { status: 400 });
+    }
+    const categoriaPdf = `${tipoPdf} - ${materialPdf === "AMBOS" ? "Rodio y acero" : materialPdf}`;
 
     /* ===============================================
        1. VERIFICAR SESIÓN
@@ -1302,164 +1254,20 @@ let productosFiltrados = (productos || []).filter(
   }
 );
 
-/* FILTRAR SEGÚN LA CATEGORÍA ELEGIDA */
+/* Ambos filtros se aplican a la vez. No existe descarga global. */
+productosFiltrados = productosFiltrados
+  .filter((producto) => productoCoincidePdf(producto, materialPdf, tipoPdf))
+  .filter((producto) => fotosProducto(producto).length > 0);
 
-if (categoriaPdf === "Accesorios en Rodio") {
-  productosFiltrados = productosFiltrados.filter(
-    (producto) => {
-      const texto = normalizar(
-        `${producto.nombre || ""} ${producto.referencia || ""} ${producto.categoria || ""}`
-      );
-
-      return texto.includes("rodio");
-    }
-  );
-}
-
-if (categoriaPdf === "Accesorios en Acero") {
-  productosFiltrados = productosFiltrados.filter(
-    (producto) => {
-      const texto = normalizar(
-        `${producto.nombre || ""} ${producto.referencia || ""} ${producto.categoria || ""}`
-      );
-
-      return texto.includes("acero");
-    }
-  );
-}
-
-if (categoriaPdf === "Aretes") {
-  productosFiltrados = productosFiltrados.filter(
-    (producto) => {
-      const texto = normalizar(producto.nombre);
-
-      return (
-        texto.includes("arete") ||
-        texto.includes("aretes")
-      );
-    }
-  );
-}
-
-if (categoriaPdf === "Candongas") {
-  productosFiltrados = productosFiltrados.filter(
-    (producto) =>
-      normalizar(producto.nombre).includes("candonga")
-  );
-}
-
-if (categoriaPdf === "Collares") {
-  productosFiltrados = productosFiltrados.filter(
-    (producto) => {
-      const texto = normalizar(producto.nombre);
-
-      return (
-        texto.includes("collar") ||
-        texto.includes("cadena")
-      );
-    }
-  );
-}
-/* JUEGOS */
-
-if (categoriaPdf === "Juegos") {
-  productosFiltrados = productosFiltrados.filter(
-    (producto) => {
-      const texto = normalizar(
-        `${producto.nombre || ""} ${producto.categoria || ""}`
-      );
-
-      return (
-        texto.includes("juego") ||
-        texto.includes("juegos")
-      );
-    }
-  );
-}
-
-/* TOBILLERAS */
-
-if (categoriaPdf === "Tobilleras") {
-  productosFiltrados = productosFiltrados.filter(
-    (producto) => {
-      const texto = normalizar(
-        `${producto.nombre || ""} ${producto.categoria || ""}`
-      );
-
-      return (
-        texto.includes("tobillera") ||
-        texto.includes("tobilleras")
-      );
-    }
-  );
-}
-
-
-if (categoriaPdf === "Pulseras") {
-  productosFiltrados = productosFiltrados.filter(
-    (producto) =>
-      normalizar(producto.nombre).includes("pulsera")
-  );
-}
-
-if (categoriaPdf === "Anillos") {
-  productosFiltrados = productosFiltrados.filter(
-    (producto) =>
-      normalizar(producto.nombre).includes("anillo")
-  );
-}
-
-if (categoriaPdf === "Topos y maxitopos") {
-  productosFiltrados = productosFiltrados.filter(
-    (producto) => {
-      const texto = normalizar(producto.nombre);
-
-      return (
-        texto.includes("topo") ||
-        texto.includes("maxitopo")
-      );
-    }
-  );
-}
-
-/*
-  POR AHORA:
-  "Todos los productos" no aplica filtro adicional.
-
-  Dejamos "Nuevos" para después porque necesitamos
-  manejarlo por fecha y no quiero mezclar ese cambio
-  con esta primera prueba.
-*/
-function tieneFotoReal(valor) {
-  if (valor === null || valor === undefined) {
-    return false;
-  }
-
-  const texto =
-    String(valor).trim();
-
-  if (
-    texto === "" ||
-    texto.toLowerCase() === "null" ||
-    texto.toLowerCase() === "undefined"
-  ) {
-    return false;
-  }
-
-  return (
-    texto.startsWith("http://") ||
-    texto.startsWith("https://")
-  );
-}
+const inicioParte = (partePdf - 1) * MAX_PRODUCTOS_PDF;
 const productosCatalogo = productosFiltrados
+  .slice(inicioParte, inicioParte + MAX_PRODUCTOS_PDF)
   .map((producto) => ({
     ...producto,
-
     precio_pdf: mapaPrecios.has(String(producto.id))
       ? mapaPrecios.get(String(producto.id))
       : Number(producto.precio_detal || 0),
-  }))
-  .slice(0, 150);
+  }));
     if (
       productosCatalogo.length === 0
     ) {
@@ -1467,7 +1275,7 @@ const productosCatalogo = productosFiltrados
         {
           ok: false,
           mensaje:
-            "No tienes productos visibles para generar el catálogo.",
+            "No hay productos con fotografías para esta selección y parte. Prueba otra categoría o la parte anterior.",
         },
         {
           status: 400,
