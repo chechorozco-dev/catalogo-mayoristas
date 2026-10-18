@@ -599,7 +599,7 @@ useEffect(() => {
   if (!sesionCarrito) return;
   if (!tiendaId) return;
   if (!visitanteId) return;
-  if (formularioCompraAbierto || formaPago) return;
+  if (formularioCompraAbierto || formaPago || (esPuntoVillavo && modalidadEntrega)) return;
   if (pedidoEnviado) return;
 
   // No creamos seguimiento mientras
@@ -656,7 +656,7 @@ useEffect(() => {
 // ========================================
 
 useEffect(() => {
-  if (!formularioCompraAbierto && !formaPago) return;
+  if (!formularioCompraAbierto && !formaPago && !esPuntoVillavo) return;
   if (!carritoCargado) return;
   if (!sesionCarrito) return;
   if (!tiendaId) return;
@@ -700,7 +700,7 @@ ciudad:
   ciudadSeleccionada
     ?.ciudad_departamento || "",
           forma_pago:
-            formaPago || "",
+            (esPuntoVillavo ? "POR_ACORDAR" : formaPago) || "",
         }),
       });
     } catch (error) {
@@ -1433,19 +1433,20 @@ if (!retiroVillavo && !ciudadSeleccionada?.ciudad_id) {
     "Por favor selecciona una ciudad de la lista.";
 }
 
-if (!formaPago ||
-    (esPuntoVillavo && !["RECOGER","ENVIO"].includes(modalidadEntrega)) ||
-    (envioVillavo && formaPago !== "TRANSFERENCIA") ||
-    (retiroVillavo && !["EFECTIVO","TRANSFERENCIA"].includes(formaPago))) {
-  nuevosErrores.pago =
-    "Por favor selecciona una forma de pago.";
+if (esPuntoVillavo && !["RECOGER", "ENVIO"].includes(modalidadEntrega)) {
+  nuevosErrores.modalidad = "Elige recoger en el local o recibir un envío.";
+}
+if (!esPuntoVillavo && !formaPago) {
+  nuevosErrores.pago = "Por favor selecciona una forma de pago.";
 }
 
 setErroresCompra(nuevosErrores);
 
 if (Object.keys(nuevosErrores).length > 0) {
   const primerCampo =
-    nuevosErrores.nombre
+    nuevosErrores.modalidad
+      ? "campo-modalidad-villavo"
+      : nuevosErrores.nombre
       ? "campo-nombre"
       : nuevosErrores.telefono
         ? "campo-telefono"
@@ -1498,7 +1499,8 @@ if (Object.keys(nuevosErrores).length > 0) {
     },
 
     pago: {
-      forma_pago: formaPago,
+      // Medio de pago pendiente: se confirmará personalmente por WhatsApp.
+      forma_pago: esPuntoVillavo ? "POR_ACORDAR" : formaPago,
     },
 
     valores: {
@@ -1630,7 +1632,7 @@ ciudad:
     ?.ciudad_departamento || "",
 
       forma_pago:
-        formaPago || "",
+        (esPuntoVillavo ? "POR_ACORDAR" : formaPago) || "",
     }),
   });
 } catch (errorSeguimiento) {
@@ -3491,7 +3493,7 @@ setErroresCompra((actual) => ({
             {carrito.length > 0 && (
               <div className="carrito-pie">
            {esPuntoVillavo && (
-             <section aria-label="¿Cómo quieres recibir tu pedido?" style={{
+             <section id="campo-modalidad-villavo" aria-label="¿Cómo quieres recibir tu pedido?" style={{
                padding:"14px",borderRadius:"14px",background:"#f8f5ff",
                border:"1px solid #e6dcf7",marginBottom:"12px"
              }}>
@@ -3516,11 +3518,14 @@ setErroresCompra((actual) => ({
                      setErroresCompra(actual => ({...actual,pago:"",ciudad:"",direccion:""}));
                    }}>🚚 Enviar a mi dirección</button>
                </div>
+               {erroresCompra.modalidad && (
+                 <p role="alert" style={{fontSize:"12px",color:"#b3261e"}}>{erroresCompra.modalidad}</p>
+               )}
                <p style={{margin:"9px 0 0",fontSize:"12px",color:"#6b6474"}}>
                  {modalidadEntrega === "RECOGER"
-                   ? "Sin costo de envío. Puedes pagar por transferencia o en efectivo al recoger."
+                   ? "Sin costo de envío. Confirmaremos contigo por WhatsApp cómo realizar el pago."
                    : modalidadEntrega === "ENVIO"
-                     ? "Selecciona tu ciudad y dirección. Para despacho, pagas por transferencia."
+                     ? "Indica tu ciudad y dirección. Acordaremos el pago por WhatsApp antes del despacho."
                      : "Elige una opción para continuar."}
                </p>
              </section>
@@ -3981,7 +3986,7 @@ setErroresCompra((actual) => ({
           <p>Te esperamos en RA Accesorios Villavo. Confirmaremos tu pedido por WhatsApp.</p>
           <button type="button" className="checkout-confirmar-btn"
             onClick={() => {
-              setCarrito([]); setPedidoEnviado(false); setFormaPago("");
+              setCarrito([]); setPedidoEnviado(false); setFormaPago(""); setModalidadEntrega("");
               setNombreCliente(""); setTelefonoCliente(""); setCorreoCliente("");
               setCarritoAbierto(false);
             }}>Volver a la tienda</button>
@@ -3990,23 +3995,15 @@ setErroresCompra((actual) => ({
         <>
           <h3 style={{margin:"0 0 6px"}}>Recoge tu pedido en el local</h3>
           <p style={{fontSize:"13px",lineHeight:1.5,color:"#67616e",margin:"0 0 15px"}}>
-            En RA Accesorios Villavo pagas el precio publicado, sin descuento adicional.
-            Puedes pagar por transferencia o en efectivo al recoger.
+            Tu pedido se reserva para recoger en el local. Te contactaremos por WhatsApp
+            para acordar el medio de pago. No se aplica ningún descuento adicional.
           </p>
-          <div id="campo-pago" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginBottom:"14px"}}>
-            <button type="button" className={`forma-pago-opcion ${formaPago === "TRANSFERENCIA" ? "seleccionada":""}`}
-              aria-pressed={formaPago === "TRANSFERENCIA"}
-              onClick={() => abrirCheckoutConPago("TRANSFERENCIA")}>
-              🏦 Transferencia
-            </button>
-            <button type="button" className={`forma-pago-opcion ${formaPago === "EFECTIVO" ? "seleccionada":""}`}
-              aria-pressed={formaPago === "EFECTIVO"}
-              onClick={() => abrirCheckoutConPago("EFECTIVO")}>
-              💵 Efectivo en el local
-            </button>
+          <div role="note" style={{
+            borderRadius:"10px",padding:"12px",marginBottom:"14px",
+            background:"#f0f7f0",color:"#35583b",fontSize:"13px"
+          }}>
+            💬 <strong>Pago por acordar por WhatsApp.</strong>
           </div>
-          {formaPago && (
-            <>
               <label className="checkout-inline-campo" id="campo-nombre">
                 <span>Nombre completo</span>
                 {erroresCompra.nombre && <small className="checkout-error">{erroresCompra.nombre}</small>}
@@ -4033,8 +4030,6 @@ setErroresCompra((actual) => ({
                 onClick={confirmarPedido}>
                 {enviandoPedido ? "Confirmando pedido..." : "Confirmar pedido para recoger"}
               </button>
-            </>
-          )}
         </>
       )}
     </div>
