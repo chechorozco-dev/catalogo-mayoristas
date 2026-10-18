@@ -40,7 +40,7 @@ test("para retiro local no hay flete ni descuento por transferencia", () => {
 
 test("el API consulta tienda real y bloquea métodos no admitidos antes de escribir", () => {
   const chequeo=api.indexOf("if (esRaAccesoriosVillavo(tiendaActual))");
-  const write=api.indexOf('"/rest/v1/pedidos?select=id,numero_pedido"');
+  const write=api.indexOf("/rest/v1/pedidos?select=id,numero_pedido");
   const firstRpc=api.indexOf('"ra_solo_ra_verificar"');
   assert.ok(chequeo>=0 && chequeo<write);
   assert.ok(chequeo<firstRpc);
