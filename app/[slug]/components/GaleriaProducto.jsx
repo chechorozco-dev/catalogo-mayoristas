@@ -2,16 +2,14 @@
 
 import { useEffect } from "react";
 import FotoOptimizada from "../../components/FotoOptimizada";
+import { fotosProducto } from "../../../lib/catalogo/pdf-layout.mjs";
 
 export default function GaleriaProducto({
   producto,
   indiceFoto,
   setIndiceFoto,
 }) {
-  const fotos = [
-    producto?.foto_url,
-    producto?.foto_url_2,
-  ].filter(Boolean);
+  const fotos = fotosProducto(producto);
 
   useEffect(() => {
     if (indiceFoto >= fotos.length) {
