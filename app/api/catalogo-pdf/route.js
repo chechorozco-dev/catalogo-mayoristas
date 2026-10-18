@@ -988,11 +988,8 @@ async function generarCatalogoPdf(request, reportarProgreso = () => {}) {
 
     const materialPdf = String(body?.material || "").trim();
     const tipoPdf = String(body?.tipo || "").trim();
-    const partePdf = Number(body?.parte ?? 1);
-
     // Bloquea exportaciones accidentales de toda la base o de «Nuevos».
-    if (!esSeleccionPdfValida(materialPdf, tipoPdf) ||
-        !Number.isSafeInteger(partePdf) || partePdf < 1 || partePdf > 100) {
+    if (!esSeleccionPdfValida(materialPdf, tipoPdf)) {
       return NextResponse.json({
         ok: false,
         mensaje: "Selecciona Rodio, Acero o Ambos y después un tipo de producto válido.",
@@ -1259,9 +1256,8 @@ productosFiltrados = productosFiltrados
   .filter((producto) => productoCoincidePdf(producto, materialPdf, tipoPdf))
   .filter((producto) => fotosProducto(producto).length > 0);
 
-const inicioParte = (partePdf - 1) * MAX_PRODUCTOS_PDF;
 const productosCatalogo = productosFiltrados
-  .slice(inicioParte, inicioParte + MAX_PRODUCTOS_PDF)
+  .slice(0, MAX_PRODUCTOS_PDF)
   .map((producto) => ({
     ...producto,
     precio_pdf: mapaPrecios.has(String(producto.id))
@@ -1275,7 +1271,7 @@ const productosCatalogo = productosFiltrados
         {
           ok: false,
           mensaje:
-            "No hay productos con fotografías para esta selección y parte. Prueba otra categoría o la parte anterior.",
+            "No hay productos con fotografías para esta selección. Prueba otro material o tipo de producto.",
         },
         {
           status: 400,
