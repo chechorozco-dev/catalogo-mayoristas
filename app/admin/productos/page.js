@@ -3602,6 +3602,37 @@ async function publicarProductoAhora(productoId) {
             padding-left: 0;
           }
         }
+
+        /* Customer-only overrides: keep master and public catalog styles intact. */
+        .customer-products {background:#f6f6f2;color:#282b27}
+        .customer-products .top {background:white;border:1px solid #e0e5dc;border-radius:18px;padding:22px}
+        .customer-products .top h1 {font-size:28px;line-height:1.2}
+        .customer-products .top p {font-size:14px;line-height:1.6;max-width:580px}
+        .customer-products .top-buttons {flex-wrap:wrap;gap:8px}
+        .customer-products .top-buttons button {min-height:44px}
+        .customer-products .back-button {border:1px solid #cbd5c4;color:#315b48;min-width:0}
+        .customer-products .filter-area {background:#f6f6f2}
+        .customer-products .search {font-size:16px;min-width:0}
+        .customer-products .category-button {background:#315b48}
+        .customer-products .customer-results {display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+        .customer-products .customer-results button {border:1px solid #cbd5c4;border-radius:9px;background:white;color:#315b48;padding:10px 14px;min-height:44px;cursor:pointer}
+        .customer-products button:focus-visible,.customer-products input:focus-visible {outline:3px solid #447659;outline-offset:3px}
+        .customer-products .edit-price-new {width:auto;min-width:60px;min-height:44px;font-size:12px;padding:8px;border-radius:8px}
+        .customer-products .price-input-new input {font-size:16px;min-height:44px}
+        .customer-products .price-editor-actions-new {flex-wrap:wrap}
+        .customer-products .price-editor-actions-new button {min-height:44px}
+        @media(min-width:1001px){.customer-products .products{grid-template-columns:repeat(3,minmax(0,1fr))}}
+        @media(max-width:600px){
+          .customer-products .top {padding:18px}
+          .customer-products .top h1 {font-size:25px}
+          .customer-products .top-buttons {display:grid;grid-template-columns:1fr 1fr;width:100%}
+          .customer-products .top-buttons button {width:100%;margin:0;padding:10px 8px;font-size:12px;min-width:0}
+          .customer-products .back-button {grid-column:1 / -1;justify-content:center}
+          .customer-products .filter-area {grid-template-columns:minmax(0,1fr)}
+          .customer-products .search {width:100%}
+          .customer-products .category-button {justify-self:start}
+          .customer-products .info {font-size:13px;line-height:1.6}
+        }
       `}</style>
 
       {/* ===================================================
@@ -3902,7 +3933,7 @@ async function publicarProductoAhora(productoId) {
           PÁGINA
       =================================================== */}
 
-      <main className="page">
+      <main className="page customer-products">
         <div className="container">
 
           {/* ENCABEZADO */}
@@ -3914,7 +3945,7 @@ async function publicarProductoAhora(productoId) {
               </h1>
 
               <p>
-                Consulta tu costo, precio sugerido y arma tu pedido.
+                Organiza tu catálogo: ajusta precios, elige qué mostrar y prepara tu pedido.
               </p>
             </div>
 
@@ -3963,7 +3994,7 @@ async function publicarProductoAhora(productoId) {
     </span>
   </button>
 
-  {/* REGRESAR */}
+  {/* Mi tienda */}
   <button
     type="button"
     className="back-button"
@@ -3976,7 +4007,7 @@ async function publicarProductoAhora(productoId) {
     </span>
 
     <span>
-      REGRESAR
+      Mi tienda
     </span>
   </button>
 
@@ -3999,6 +4030,7 @@ async function publicarProductoAhora(productoId) {
             <input
               type="text"
               className="search"
+              aria-label="Buscar productos por nombre o referencia"
               placeholder="Buscar por referencia, producto o variante..."
               value={busqueda}
               onChange={(e) =>
@@ -4009,8 +4041,10 @@ async function publicarProductoAhora(productoId) {
             />
           </div>
 
-          <div className="selected-category">
-            {categoriaActiva}
+          <div className="selected-category customer-results" role="status">
+            <span>{categoriaActiva} · {productosFiltrados.length} productos</span>
+            {(busqueda || categoriaActiva !== "Todos los productos") && <button type="button"
+              onClick={() => {setBusqueda("");setCategoriaActiva("Todos los productos");}}>Limpiar filtros</button>}
           </div>
 
           <div className="info">
@@ -4083,7 +4117,7 @@ async function publicarProductoAhora(productoId) {
             {productosFiltrados.length ===
             0 ? (
               <div className="empty">
-                No encontramos productos con estos filtros.
+                No encontramos productos. Prueba otra referencia o pulsa «Limpiar filtros».
               </div>
             ) : (
               productosFiltrados.map(
@@ -4268,6 +4302,7 @@ async function publicarProductoAhora(productoId) {
 
   <button
     type="button"
+    aria-pressed={producto.visible !== false}
     className={
       producto.visible !== false
         ? "visibility-control visibility-on"
@@ -4334,6 +4369,8 @@ async function publicarProductoAhora(productoId) {
                               <button
                                 type="button"
                                 className="variants-button"
+                                aria-expanded={abiertas}
+                                aria-controls={`variantes-${producto.id}`}
                                 onClick={() =>
                                   alternarVariantes(
                                     producto.id
@@ -4444,6 +4481,7 @@ async function publicarProductoAhora(productoId) {
                                                   : "variant-cart-button"
                                               }
                                               title="Agregar esta variante al pedido"
+                                              aria-label={"Agregar " + variante.nombre_variante + " al pedido"}
                                               onClick={(
                                                 e
                                               ) => {

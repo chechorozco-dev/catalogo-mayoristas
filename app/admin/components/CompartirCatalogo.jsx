@@ -47,11 +47,9 @@ export default function CompartirCatalogo({
 
         textarea.select();
 
-        document.execCommand(
-          "copy"
-        );
-
+        const copiadoCorrectamente = document.execCommand("copy");
         textarea.remove();
+        if (!copiadoCorrectamente) throw new Error("No se pudo copiar");
 
         setCopiado(true);
 

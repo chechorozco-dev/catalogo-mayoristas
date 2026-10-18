@@ -29,6 +29,7 @@ export default function BloquePrecios({
   }, [precioNumero, editando]);
 
   async function guardarPrecio() {
+    if (guardando) return;
     const precioGuardar = Number(
       String(nuevoPrecio)
         .replace(/\./g, "")
@@ -37,6 +38,7 @@ export default function BloquePrecios({
     );
 
     if (
+      !String(nuevoPrecio).trim() ||
       !Number.isFinite(precioGuardar) ||
       precioGuardar < 0
     ) {
@@ -138,6 +140,7 @@ export default function BloquePrecios({
               type="button"
               className="edit-price-new"
               title="Editar precio de venta"
+              aria-label="Editar precio de venta"
               onClick={() => {
                 setNuevoPrecio(
                   String(Math.round(precioNumero))
@@ -147,7 +150,7 @@ export default function BloquePrecios({
                 setEditando(true);
               }}
             >
-              ✏️
+              Editar
             </button>
           )}
         </div>
@@ -164,6 +167,8 @@ export default function BloquePrecios({
 
               <input
                 type="number"
+                aria-label="Precio de venta en pesos"
+                aria-invalid={Boolean(errorPrecio)}
                 min="0"
                 step="100"
                 inputMode="numeric"
@@ -209,7 +214,7 @@ export default function BloquePrecios({
             </div>
 
             {errorPrecio && (
-              <p className="price-error-new">
+              <p className="price-error-new" role="alert">
                 {errorPrecio}
               </p>
             )}
