@@ -6,7 +6,7 @@ import FotoOptimizada from "../../components/FotoOptimizada";
 import { formatoPrecio } from "../../../lib/catalogo/formatos.mjs";
 import { recibirPdfConProgreso } from "../../../lib/catalogo/pdf-progress.mjs";
 import {
-  MATERIALES_PDF, TIPOS_PDF, MAX_PRODUCTOS_PDF, esSeleccionPdfValida,
+  MATERIALES_PDF, TIPOS_PDF, esSeleccionPdfValida,
 } from "../../../lib/catalogo/pdf-filtros.mjs";
 import { estadoPublicacionProducto, claveProducto } from "../../../lib/catalogo/publicacion.mjs";
 import { GaleriaProducto, VisorImagen } from "./components/GaleriasProducto";
@@ -63,7 +63,6 @@ export default function ProductosMayoristaPage() {
 ] = useState(false);
    const [materialPdf, setMaterialPdf] = useState("");
    const [tipoPdf, setTipoPdf] = useState("");
-   const [partePdf, setPartePdf] = useState(1);
    const [
   generandoPdf,
   setGenerandoPdf,
@@ -1230,7 +1229,7 @@ async function publicarProductoAhora(productoId) {
       const response = await fetch("/api/catalogo-pdf?progreso=1", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ material: materialPdf, tipo: tipoPdf, parte: partePdf }),
+        body: JSON.stringify({ material: materialPdf, tipo: tipoPdf }),
       });
       const blob = await recibirPdfConProgreso(response, ({ percent, etapa }) => {
         setPorcentajePdf(percent);
@@ -1243,7 +1242,7 @@ async function publicarProductoAhora(productoId) {
       const nombreMaterial = materialPdf.toLowerCase();
       const nombreTipo = tipoPdf.toLowerCase().normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-");
-      enlace.download = `catalogo-${nombreMaterial}-${nombreTipo}-parte-${partePdf}.pdf`;
+      enlace.download = `catalogo-${nombreMaterial}-${nombreTipo}.pdf`;
       document.body.appendChild(enlace);
       enlace.click();
       enlace.remove();
@@ -1779,39 +1778,6 @@ async function publicarProductoAhora(productoId) {
   border-color: #8153a0;
   background: #f3eaf9;
   box-shadow: inset 0 0 0 1px #8153a0;
-}
-
-.pdf-parte-row {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  max-width: 230px;
-}
-
-.pdf-parte-button {
-  width: 44px;
-  height: 44px;
-  border: 1px solid #dedede;
-  border-radius: 10px;
-  background: white;
-  font-size: 23px;
-  cursor: pointer;
-}
-
-.pdf-parte-button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.pdf-parte-input {
-  flex: 1;
-  min-width: 0;
-  height: 44px;
-  text-align: center;
-  border: 1px solid #dedede;
-  border-radius: 10px;
-  background: white;
-  font-weight: 700;
 }
 
 .pdf-generate-button:disabled {
@@ -3907,10 +3873,7 @@ async function publicarProductoAhora(productoId) {
         type="button"
         className={`pdf-material-button ${materialPdf === material.id ? "active" : ""}`}
         aria-pressed={materialPdf === material.id}
-        onClick={() => {
-          setMaterialPdf(material.id);
-          setPartePdf(1);
-        }}
+        onClick={() => setMaterialPdf(material.id)}
       >
         {material.nombre}
       </button>
@@ -3930,10 +3893,7 @@ async function publicarProductoAhora(productoId) {
     className="pdf-category-select"
     value={tipoPdf}
     disabled={!materialPdf}
-    onChange={(e) => {
-      setTipoPdf(e.target.value);
-      setPartePdf(1);
-    }}
+    onChange={(e) => setTipoPdf(e.target.value)}
     required
   >
     <option value="">Selecciona una categoría</option>
@@ -3943,28 +3903,6 @@ async function publicarProductoAhora(productoId) {
   </select>
 </div>
 
-<div className="pdf-category-section">
-  <label className="pdf-category-title" htmlFor="pdf-parte">
-    3. Parte del catálogo
-  </label>
-  <p className="pdf-category-description">
-    Máximo {MAX_PRODUCTOS_PDF} productos por archivo para facilitar la descarga.
-    Si tienes más, descarga la parte 2, 3, etc.
-  </p>
-  <div className="pdf-parte-row">
-    <button type="button" className="pdf-parte-button"
-      disabled={partePdf <= 1}
-      onClick={() => setPartePdf((actual) => Math.max(1, actual - 1))}
-      aria-label="Parte anterior">−</button>
-    <input id="pdf-parte" type="number" inputMode="numeric" min="1" max="100"
-      className="pdf-parte-input" value={partePdf}
-      onChange={(e) => setPartePdf(Math.max(1, Math.min(100, Number(e.target.value) || 1)))} />
-    <button type="button" className="pdf-parte-button"
-      disabled={partePdf >= 100}
-      onClick={() => setPartePdf((actual) => Math.min(100, actual + 1))}
-      aria-label="Parte siguiente">+</button>
-  </div>
-</div>
       <div className="pdf-option">
         <div>
           <strong>👁️ Productos de mi catálogo</strong>
@@ -3995,7 +3933,7 @@ async function publicarProductoAhora(productoId) {
         <p>
           Fotografías alineadas, precios de tu tienda e imágenes optimizadas para un archivo más liviano.
           {esSeleccionPdfValida(materialPdf, tipoPdf)
-            ? ` Selección: ${materialPdf === "AMBOS" ? "Rodio y acero" : materialPdf} · ${tipoPdf} · Parte ${partePdf}.`
+            ? ` Selección: ${materialPdf === "AMBOS" ? "Rodio y acero" : materialPdf} · ${tipoPdf}.`
             : " Debes elegir material y tipo para generar el PDF."}
         </p>
       </div>
