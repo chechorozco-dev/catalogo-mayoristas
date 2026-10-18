@@ -7,6 +7,7 @@ import {
 import crypto from "crypto";
 import sharp from "sharp";
 import { fetchSupabasePaginado } from "../../../lib/supabasePagination";
+import { fotosProducto, posicionesFotosProducto } from "../../../lib/catalogo/pdf-layout.mjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -377,231 +378,71 @@ function recortarTexto(
 }
 
 /* =========================================================
-   PRODUCTO CON DOS FOTOS
+   FILAS DE PRODUCTO: UNA O DOS FOTOS, SIEMPRE ALINEADAS
 ========================================================= */
 
-async function dibujarProductoDosFotos({
+async function dibujarProducto({
   pdfDoc,
   pagina,
   producto,
   y,
   fuenteBold,
 }) {
+  const anchoPagina = pagina.getWidth();
   const margen = 24;
-  const espacio = 6;
+  const posiciones = posicionesFotosProducto(producto, anchoPagina);
+  const altoFoto = 194;
+  const yFoto = y + 34;
 
-  const anchoPagina =
-    pagina.getWidth();
-
-  const anchoDisponible =
-    anchoPagina - margen * 2;
-
-  const anchoFoto =
-    (anchoDisponible - espacio) / 2;
-
-  const altoFoto = 235;
-
-  const x1 = margen;
-
-  const x2 =
-    margen +
-    anchoFoto +
-    espacio;
-
-  /* FOTO 1 */
-
-  await insertarImagen(
-    pdfDoc,
-    pagina,
-    producto.foto_url,
-    x1,
-    y,
-    anchoFoto,
-    altoFoto
-  );
-
-  /* FOTO 2 */
-
-  await insertarImagen(
-    pdfDoc,
-    pagina,
-    producto.foto_url_2,
-    x2,
-    y,
-    anchoFoto,
-    altoFoto
-  );
-
-  /* DATOS */
-
-  const nombre =
-    recortarTexto(
-      producto.nombre ||
-        "Producto",
-      40
+  // Las dos imágenes mantienen la misma anchura; una sola se centra.
+  for (const foto of posiciones) {
+    pagina.drawRectangle({
+      x: foto.x,
+      y: yFoto - 4,
+      width: foto.ancho,
+      height: altoFoto + 8,
+      color: rgb(1, 1, 1),
+      borderColor: rgb(0.91, 0.89, 0.87),
+      borderWidth: 0.5,
+    });
+    await insertarImagen(
+      pdfDoc, pagina, foto.url,
+      foto.x + 4, yFoto,
+      foto.ancho - 8, altoFoto
     );
+  }
 
-  const precio =
-    formatoPrecio(
-      producto.precio_pdf
-    );
+  const precio = formatoPrecio(producto.precio_pdf);
+  const tamanoNombre = 9;
+  const tamanoPrecio = 10;
+  const espacioPrecio = fuenteBold.widthOfTextAtSize(precio, tamanoPrecio);
+  const anchoNombreMax = anchoPagina - margen * 2 - espacioPrecio - 18;
 
-  /* NOMBRE */
+  // Recortamos por anchura física; el nombre nunca invade el precio.
+  let nombre = limpiarTextoPdf(producto.nombre || "Producto");
+  while (nombre.length > 3 && fuenteBold.widthOfTextAtSize(nombre, tamanoNombre) > anchoNombreMax) {
+    nombre = nombre.endsWith("...")
+      ? nombre.slice(0, -4) + "..."
+      : nombre.slice(0, -1) + "...";
+  }
 
-  pagina.drawText(
-    nombre,
-    {
-      x: x1 + 9,
-      y: y + 9,
-      size: 7,
-      font: fuenteBold,
-      color: rgb(
-        0.20,
-        0.20,
-        0.20
-      ),
-    }
-  );
-
-  /* PRECIO */
-
-  pagina.drawText(
-    precio,
-    {
-      x:
-        x2 +
-        anchoFoto -
-        72,
-      y: y + 9,
-      size: 10,
-      font: fuenteBold,
-      color: rgb(
-        0.12,
-        0.12,
-        0.12
-      ),
-    }
-  );
+  pagina.drawText(nombre, {
+    x: margen + 2,
+    y: y + 10,
+    size: tamanoNombre,
+    font: fuenteBold,
+    color: rgb(0.20, 0.20, 0.20),
+  });
+  pagina.drawText(precio, {
+    x: anchoPagina - margen - espacioPrecio - 2,
+    y: y + 9,
+    size: tamanoPrecio,
+    font: fuenteBold,
+    color: rgb(0.12, 0.12, 0.12),
+  });
 }
 
 
-/* =========================================================
-   PRODUCTO CON UNA SOLA FOTO
-========================================================= */
-
-async function dibujarProductoUnaFoto({
-  pdfDoc,
-  pagina,
-  producto,
-  y,
-  fuenteBold,
-}) {
-
-  /* PRUEBA TEMPORAL */
-
-  pagina.drawText(
-    "UNA SOLA FOTO",
-    {
-      x: 230,
-      y: y + 220,
-      size: 14,
-      font: fuenteBold,
-      color: rgb(1, 0, 0),
-    }
-  );
-
-  const anchoPagina =
-    pagina.getWidth();
-
-  /*
-    La foto tendrá un área grande,
-    pero NO se deformará.
-
-    Dejamos 55 puntos de margen
-    a cada lado.
-  */
-
-  const margenLateral = 55;
-
-  const anchoArea =
-    anchoPagina -
-    margenLateral * 2;
-
-  const altoArea = 235;
-
-  const foto =
-    producto.foto_url ||
-    producto.foto_url_2;
-
-  /*
-    FOTO ÚNICA
-
-    insertarImagen usa Math.min,
-    por lo que mantiene la proporción
-    y la centra automáticamente.
-  */
-
-  await insertarImagen(
-    pdfDoc,
-    pagina,
-    foto,
-    margenLateral,
-    y,
-    anchoArea,
-    altoArea
-  );
-
-  /* DATOS */
-
-  const nombre =
-    recortarTexto(
-      producto.nombre ||
-        "Producto",
-      45
-    );
-
-  const precio =
-    formatoPrecio(
-      producto.precio_pdf
-    );
-
-  /* NOMBRE */
-
-  pagina.drawText(
-    nombre,
-    {
-      x: margenLateral + 9,
-      y: y + 9,
-      size: 7,
-      font: fuenteBold,
-      color: rgb(
-        0.20,
-        0.20,
-        0.20
-      ),
-    }
-  );
-
-  /* PRECIO */
-
-  pagina.drawText(
-    precio,
-    {
-      x:
-        anchoPagina -
-        margenLateral -
-        72,
-      y: y + 9,
-      size: 10,
-      font: fuenteBold,
-      color: rgb(
-        0.12,
-        0.12,
-        0.12
-      ),
-    }
-  );
-}
 /* =========================================================
    CREAR PORTADA PREMIUM DEL CATÁLOGO
    VERSIÓN SEGURA - SIN drawSvgPath
@@ -1196,8 +1037,9 @@ function crearPaginaProductos() {
    POST
 ========================================================= */
 
-export async function POST(request) {
+async function generarCatalogoPdf(request, reportarProgreso = () => {}) {
   try {
+    reportarProgreso(4, "Comprobando tu sesión");
     const body = await request.json().catch(() => ({}));
 
     const categoriaPdf =
@@ -1330,6 +1172,8 @@ const esTiendaRA =
   String(tienda?.tipo_tienda || "")
     .trim()
     .toUpperCase() === "RA";
+    reportarProgreso(12, "Consultando productos de tu tienda");
+
     /* ===============================================
        3. PRODUCTOS GLOBALES
     =============================================== */
@@ -1631,6 +1475,8 @@ const productosCatalogo = productosFiltrados
       );
     }
 
+    reportarProgreso(24, "Organizando las fotografías");
+
     /* ===============================================
        7. CREAR PDF
     =============================================== */
@@ -1658,6 +1504,7 @@ await crearPortadaCatalogo({
   fuente,
   fuenteBold,
 });
+reportarProgreso(28, "Portada preparada; organizando productos");
 
     /*
       A4:
@@ -1684,163 +1531,61 @@ await crearPortadaCatalogo({
     let posicionEnPagina = 0;
 
   /* ===============================================
-   SEPARAR PRODUCTOS
-=============================================== */
+     PRODUCTOS CON FOTO EN EL ORDEN ORIGINAL
+     Tres fichas A4 por página, sin páginas vacías entre
+     grupos de una y dos fotos.
+  =============================================== */
 
-const productosDosFotos =
-  productosCatalogo.filter(
-    (producto) =>
-      tieneFotoReal(producto.foto_url) &&
-      tieneFotoReal(producto.foto_url_2)
+  const productosConFoto = productosCatalogo.filter(
+    (producto) => fotosProducto(producto).length > 0
   );
+  let ultimoPorcentaje = 28;
 
-const productosUnaFoto =
-  productosCatalogo.filter(
-    (producto) =>
-      tieneFotoReal(producto.foto_url) &&
-      !tieneFotoReal(producto.foto_url_2)
-  );
-/* ===============================================
-   PRIMERO: PRODUCTOS CON DOS FOTOS
-=============================================== */
+  for (let i = 0; i < productosConFoto.length; i++) {
+    if (posicionEnPagina === 0) {
+      pagina = pdfDoc.addPage([anchoPagina, altoPagina]);
+      const hexFondo = String(tienda?.color_fondo || "#FFFFFF")
+        .replace("#", "").trim();
+      const colorFondoPagina = /^[0-9A-Fa-f]{6}$/.test(hexFondo)
+        ? rgb(
+            parseInt(hexFondo.slice(0, 2), 16) / 255,
+            parseInt(hexFondo.slice(2, 4), 16) / 255,
+            parseInt(hexFondo.slice(4, 6), 16) / 255
+          )
+        : rgb(1, 1, 1);
+      pagina.drawRectangle({
+        x: 0, y: 0,
+        width: anchoPagina, height: altoPagina,
+        color: colorFondoPagina,
+      });
+    }
 
-pagina = null;
-posicionEnPagina = 0;
+    const y = altoPagina - margenSuperior - altoProducto -
+      posicionEnPagina * (altoProducto + espacioVertical);
 
-for (
-  let i = 0;
-  i < productosDosFotos.length;
-  i++
-) {
-if (posicionEnPagina === 0) {
-  pagina = pdfDoc.addPage([
-    anchoPagina,
-    altoPagina,
-  ]);
+    await dibujarProducto({
+      pdfDoc,
+      pagina,
+      producto: productosConFoto[i],
+      y,
+      fuenteBold,
+    });
 
-  const hexFondo = String(
-    tienda?.color_fondo || "#FFFFFF"
-  )
-    .replace("#", "")
-    .trim();
+    posicionEnPagina = (posicionEnPagina + 1) % 3;
 
-  let colorFondoPagina = rgb(1, 1, 1);
-
-  if (/^[0-9A-Fa-f]{6}$/.test(hexFondo)) {
-    colorFondoPagina = rgb(
-      parseInt(hexFondo.slice(0, 2), 16) / 255,
-      parseInt(hexFondo.slice(2, 4), 16) / 255,
-      parseInt(hexFondo.slice(4, 6), 16) / 255
-    );
-  }
-
-  pagina.drawRectangle({
-    x: 0,
-    y: 0,
-    width: anchoPagina,
-    height: altoPagina,
-    color: colorFondoPagina,
-  });
-}
-
-  const y =
-    altoPagina -
-    margenSuperior -
-    altoProducto -
-    posicionEnPagina *
-      (
-        altoProducto +
-        espacioVertical
+    // Porcentaje fundamentado en filas realmente procesadas.
+    const porcentaje = 28 + Math.round((i + 1) * 65 / productosConFoto.length);
+    if (porcentaje !== ultimoPorcentaje) {
+      ultimoPorcentaje = porcentaje;
+      reportarProgreso(
+        porcentaje,
+        `Fotografías procesadas: ${i + 1} de ${productosConFoto.length}`
       );
-
-await dibujarProductoDosFotos({
-    pdfDoc,
-    pagina,
-    producto:
-      productosDosFotos[i],
-    y,
-    fuente,
-    fuenteBold,
-  });
-
-  posicionEnPagina++;
-
-  if (posicionEnPagina === 3) {
-    posicionEnPagina = 0;
-  }
-}
-
-/* ===============================================
-   DESPUÉS: PRODUCTOS CON UNA SOLA FOTO
-
-   Siempre comienzan en una página nueva.
-=============================================== */
-
-pagina = null;
-posicionEnPagina = 0;
-
-for (
-  let i = 0;
-  i < productosUnaFoto.length;
-  i++
-) {
-if (posicionEnPagina === 0) {
-  pagina = pdfDoc.addPage([
-    anchoPagina,
-    altoPagina,
-  ]);
-
-  const hexFondo = String(
-    tienda?.color_fondo || "#FFFFFF"
-  )
-    .replace("#", "")
-    .trim();
-
-  let colorFondoPagina = rgb(1, 1, 1);
-
-  if (/^[0-9A-Fa-f]{6}$/.test(hexFondo)) {
-    colorFondoPagina = rgb(
-      parseInt(hexFondo.slice(0, 2), 16) / 255,
-      parseInt(hexFondo.slice(2, 4), 16) / 255,
-      parseInt(hexFondo.slice(4, 6), 16) / 255
-    );
+    }
   }
 
-  pagina.drawRectangle({
-    x: 0,
-    y: 0,
-    width: anchoPagina,
-    height: altoPagina,
-    color: colorFondoPagina,
-  });
-}
+  reportarProgreso(95, "Guardando las páginas del catálogo");
 
-  const y =
-    altoPagina -
-    margenSuperior -
-    altoProducto -
-    posicionEnPagina *
-      (
-        altoProducto +
-        espacioVertical
-      );
-
- await dibujarProductoUnaFoto({
-    pdfDoc,
-    pagina,
-    producto:
-      productosUnaFoto[i],
-    y,
-    fuente,
-    fuenteBold,
-  });
-
-  posicionEnPagina++;
-
-  if (posicionEnPagina === 3) {
-    posicionEnPagina = 0;
-  }
-}
 
     /* ===============================================
        8. METADATOS
@@ -1867,6 +1612,7 @@ if (posicionEnPagina === 0) {
       await pdfDoc.save({
         useObjectStreams: true,
       });
+    reportarProgreso(99, "Preparando la descarga");
 
     return new Response(
       Buffer.from(pdfBytes),
@@ -1903,4 +1649,65 @@ if (posicionEnPagina === 0) {
       }
     );
   }
+}
+
+
+/* =========================================================
+   DESCARGA CON PROGRESO: eventos JSON + PDF binario
+   La respuesta tradicional application/pdf permanece disponible.
+========================================================= */
+
+export async function POST(request) {
+  if (new URL(request.url).searchParams.get("progreso") !== "1") {
+    return generarCatalogoPdf(request);
+  }
+
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    start(controller) {
+      const enviar = (evento) => {
+        if (!request.signal.aborted) {
+          controller.enqueue(encoder.encode(JSON.stringify(evento) + "\n"));
+        }
+      };
+
+      // No esperar esta promesa en start: el navegador recibe los
+      // porcentajes mientras se generan las páginas en el servidor.
+      void (async () => {
+        try {
+          const respuesta = await generarCatalogoPdf(
+            request,
+            (percent, etapa) => enviar({ type: "progress", percent, etapa })
+          );
+          if (!respuesta.ok) {
+            const datos = await respuesta.json().catch(() => ({}));
+            enviar({
+              type: "error",
+              mensaje: datos.mensaje || "No pudimos generar el catálogo PDF.",
+            });
+            return;
+          }
+
+          const pdf = new Uint8Array(await respuesta.arrayBuffer());
+          enviar({ type: "pdf", length: pdf.byteLength });
+          if (!request.signal.aborted) controller.enqueue(pdf);
+        } catch (error) {
+          console.error("Error transmitiendo el catálogo PDF:", error);
+          try {
+            enviar({ type: "error", mensaje: "No pudimos generar el catálogo PDF." });
+          } catch {}
+        } finally {
+          try { controller.close(); } catch {}
+        }
+      })();
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "application/octet-stream",
+      "Cache-Control": "no-store, no-transform",
+      "X-Accel-Buffering": "no",
+    },
+  });
 }
