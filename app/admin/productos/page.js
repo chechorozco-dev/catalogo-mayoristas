@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import FotoOptimizada from "../../components/FotoOptimizada";
 import { formatoPrecio } from "../../../lib/catalogo/formatos.mjs";
+import { recibirPdfConProgreso } from "../../../lib/catalogo/pdf-progress.mjs";
 import { estadoPublicacionProducto, claveProducto } from "../../../lib/catalogo/publicacion.mjs";
 import { GaleriaProducto, VisorImagen } from "./components/GaleriasProducto";
 import EditorPrecios from "./components/EditorPrecios";
@@ -65,6 +66,8 @@ export default function ProductosMayoristaPage() {
   generandoPdf,
   setGenerandoPdf,
 ] = useState(false);
+  const [porcentajePdf, setPorcentajePdf] = useState(0);
+  const [etapaPdf, setEtapaPdf] = useState("Preparando el catálogo");
 
   const [visor, setVisor] =
     useState(null);
@@ -1215,6 +1218,39 @@ async function publicarProductoAhora(productoId) {
     });
   }
 
+  async function descargarCatalogoPdf() {
+    if (generandoPdf) return;
+    setGenerandoPdf(true);
+    setPorcentajePdf(0);
+    setEtapaPdf("Preparando el catálogo");
+
+    try {
+      const response = await fetch("/api/catalogo-pdf?progreso=1", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ categoria: categoriaPdf }),
+      });
+      const blob = await recibirPdfConProgreso(response, ({ percent, etapa }) => {
+        setPorcentajePdf(percent);
+        setEtapaPdf(etapa);
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      const enlace = document.createElement("a");
+      enlace.href = url;
+      enlace.download = "catalogo-productos.pdf";
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+      window.setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      console.error("Error generando PDF:", error);
+      window.alert(error.message || "No pudimos generar el catálogo PDF.");
+    } finally {
+      setGenerandoPdf(false);
+    }
+  }
+
   /* =======================================================
      CARGANDO
   ======================================================= */
@@ -1309,23 +1345,23 @@ async function publicarProductoAhora(productoId) {
 }
 
 .pdf-loading-progress {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 42%;
+  height: 100%;
   border-radius: 999px;
   background: #6f45a0;
-  animation: pdfLoading 1.15s ease-in-out infinite;
+  transition: width 0.2s ease-out;
 }
 
-@keyframes pdfLoading {
-  0% {
-    left: -42%;
-  }
+.pdf-loading-percent {
+  display: block;
+  margin-top: 13px;
+  font-size: 25px;
+  color: #6f45a0;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
 
-  100% {
-    left: 100%;
-  }
+.pdf-loading-etapa {
+  min-height: 42px;
 }
 
         .page {
@@ -3844,61 +3880,8 @@ async function publicarProductoAhora(productoId) {
      <button
   type="button"
   className="pdf-generate-button"
-  onClick={async () => {
-      setGenerandoPdf(true);
-    try {
-    const response = await fetch("/api/catalogo-pdf", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    categoria: categoriaPdf,
-  }),
-});
-
-      if (!response.ok) {
-        const data = await response
-          .json()
-          .catch(() => ({}));
-
-        throw new Error(
-          data.mensaje ||
-            "No pudimos generar el catálogo PDF."
-        );
-      }
-
-      const blob = await response.blob();
-
-      const url =
-        window.URL.createObjectURL(blob);
-
-      const enlace =
-        document.createElement("a");
-
-      enlace.href = url;
-      enlace.download =
-        "catalogo-productos.pdf";
-
-      document.body.appendChild(enlace);
-
-      enlace.click();
-      enlace.remove();
-
-      window.setTimeout(() => {
-        window.URL.revokeObjectURL(url);
-      }, 1000);
-    } catch (error) {
-  console.error("Error generando PDF:", error);
-
-  window.alert(
-    error.message ||
-      "No pudimos generar el catálogo PDF."
-  );
-} finally {
-  setGenerandoPdf(false);
-}
-  }}
+  onClick={descargarCatalogoPdf}
+  disabled={generandoPdf}
 >
   📄 Generar catálogo PDF
 </button>
@@ -3914,13 +3897,20 @@ async function publicarProductoAhora(productoId) {
 
       <h3>Preparando tu catálogo</h3>
 
-      <p>
-        Estamos organizando los productos,
-        precios y fotografías.
+      <p className="pdf-loading-etapa" role="status" aria-live="polite">
+        {etapaPdf}
       </p>
 
-      <div className="pdf-loading-bar">
-        <div className="pdf-loading-progress" />
+      <strong className="pdf-loading-percent">{porcentajePdf}%</strong>
+      <div
+        className="pdf-loading-bar"
+        role="progressbar"
+        aria-label="Progreso de generación del catálogo PDF"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={porcentajePdf}
+      >
+        <div className="pdf-loading-progress" style={{ width: `${porcentajePdf}%` }} />
       </div>
 
       <span>
