@@ -340,6 +340,8 @@ const [cedulaCliente, setCedulaCliente] = useState("");
 const [telefonoCliente, setTelefonoCliente] = useState("");
 const [correoCliente, setCorreoCliente] = useState("");
 const [direccionCliente, setDireccionCliente] = useState("");
+const [perfilAutorizado, setPerfilAutorizado] = useState(null);
+const [cargandoPerfilAutorizado, setCargandoPerfilAutorizado] = useState(false);
   const [erroresCompra, setErroresCompra] = useState({});
 
 // FORMA DE PAGO
@@ -357,6 +359,43 @@ const [busquedaCiudad, setBusquedaCiudad] = useState("");
   useState(false);
 const [cargandoCiudades, setCargandoCiudades] =
   useState(false);
+
+// El perfil solo se consulta cuando se abre el checkout; el servidor valida
+// la cookie firmada y el negocio de la tienda antes de mostrar datos personales.
+useEffect(()=>{
+ if(!formularioCompraAbierto||!tiendaId||String(tipoTienda).toUpperCase()!=="RA")
+  return;
+ let active=true;
+ setPerfilAutorizado(null);
+ setCargandoPerfilAutorizado(true);
+ (async()=>{
+  try{
+   const res=await fetch("/api/mi-perfil?tienda_id="+encodeURIComponent(tiendaId),{
+      cache:"no-store",credentials:"same-origin"
+   });
+   if(!res.ok)return; // Un visitante puede comprar sin sesión; no filtramos datos.
+   const result=await res.json();
+   if(!active||!result.ok||!result.profile)return;
+   const profile=result.profile;
+   setPerfilAutorizado(profile);
+   setNombreCliente(current=>current||profile.nombre||"");
+   setCedulaCliente(current=>current||profile.cedula||"");
+   setTelefonoCliente(current=>current||profile.telefono_llamadas||profile.whatsapp||"");
+   setCorreoCliente(current=>current||profile.correo||"");
+   setDireccionCliente(current=>current||profile.direccion||"");
+  }catch(error){console.warn("No se pudo cargar la ficha guardada.");}
+  finally{if(active)setCargandoPerfilAutorizado(false);}
+ })();
+ return()=>{active=false;};
+},[formularioCompraAbierto,tiendaId,tipoTienda]);
+
+// La lista de ciudades puede llegar después de la ficha del cliente.
+useEffect(()=>{
+ if(!formularioCompraAbierto||!perfilAutorizado?.ciudad_id||!ciudadesEnvio.length)
+   return;
+ const matched=ciudadesEnvio.find(city=>city.ciudad_id===perfilAutorizado.ciudad_id);
+ if(matched)setCiudadSeleccionada(current=>current||matched);
+},[formularioCompraAbierto,perfilAutorizado,ciudadesEnvio]);
 
   const [carrito, setCarrito] = useState([]);
 const [carritoCargado, setCarritoCargado] = useState(false);
@@ -1587,6 +1626,28 @@ ciudad:
     "Error marcando carrito como completado:",
     errorSeguimiento
   );
+}
+
+// Actualiza la ficha maestra de este comprador SOLO si la compra se
+// confirmó y el WhatsApp del pedido pertenece a la sesión autenticada.
+// Un visitante o un pedido a nombre de otra persona nunca modifica fichas.
+if(perfilAutorizado?.whatsapp&&
+  normalizarTelefonoColombia(perfilAutorizado.whatsapp)===telefonoNormalizado){
+  try{
+    const saved=await fetch("/api/mi-perfil",{
+      method:"PATCH",credentials:"same-origin",cache:"no-store",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        tienda_id:tiendaId,nombre:nombreCliente.trim(),
+        cedula:cedulaCliente.trim(),direccion:direccionCliente.trim(),
+        correo:correoCliente.trim(),ciudad_id:ciudadSeleccionada?.ciudad_id||"",
+        telefono_llamadas:telefonoNormalizado
+      })
+    });
+    if(!saved.ok)console.warn("El pedido fue confirmado, pero no se actualizó la ficha.");
+  }catch(error){
+    console.warn("Ficha de cliente pendiente de actualizar tras pedido confirmado.");
+  }
 }
 
 // El pedido sí fue confirmado correctamente
