@@ -363,7 +363,7 @@ const [cargandoCiudades, setCargandoCiudades] =
 // El perfil solo se consulta cuando se abre el checkout; el servidor valida
 // la cookie firmada y el negocio de la tienda antes de mostrar datos personales.
 useEffect(()=>{
- if(!formularioCompraAbierto||!tiendaId||String(tipoTienda).toUpperCase()!=="RA")
+ if((!formularioCompraAbierto&&!carritoAbierto)||!tiendaId||String(tipoTienda).toUpperCase()!=="RA")
   return;
  let active=true;
  setPerfilAutorizado(null);
@@ -387,15 +387,15 @@ useEffect(()=>{
   finally{if(active)setCargandoPerfilAutorizado(false);}
  })();
  return()=>{active=false;};
-},[formularioCompraAbierto,tiendaId,tipoTienda]);
+},[formularioCompraAbierto,carritoAbierto,tiendaId,tipoTienda]);
 
 // La lista de ciudades puede llegar después de la ficha del cliente.
 useEffect(()=>{
- if(!formularioCompraAbierto||!perfilAutorizado?.ciudad_id||!ciudadesEnvio.length)
+ if((!formularioCompraAbierto&&!carritoAbierto)||!perfilAutorizado?.ciudad_id||!ciudadesEnvio.length)
    return;
  const matched=ciudadesEnvio.find(city=>city.ciudad_id===perfilAutorizado.ciudad_id);
  if(matched)setCiudadSeleccionada(current=>current||matched);
-},[formularioCompraAbierto,perfilAutorizado,ciudadesEnvio]);
+},[formularioCompraAbierto,carritoAbierto,perfilAutorizado,ciudadesEnvio]);
 
   const [carrito, setCarrito] = useState([]);
 const [carritoCargado, setCarritoCargado] = useState(false);
