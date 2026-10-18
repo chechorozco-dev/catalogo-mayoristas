@@ -360,6 +360,13 @@ const [busquedaCiudad, setBusquedaCiudad] = useState("");
 const [cargandoCiudades, setCargandoCiudades] =
   useState(false);
 
+// Estas tres variables deben existir ANTES de evaluar las dependencias
+// de useEffect. Antes se declaraban después y la tienda pública fallaba
+// con ReferenceError al inicializar el componente.
+const [carrito, setCarrito] = useState([]);
+const [carritoCargado, setCarritoCargado] = useState(false);
+const [carritoAbierto, setCarritoAbierto] = useState(false);
+
 // El perfil solo se consulta cuando se abre el checkout; el servidor valida
 // la cookie firmada y el negocio de la tienda antes de mostrar datos personales.
 useEffect(()=>{
@@ -397,9 +404,7 @@ useEffect(()=>{
  if(matched)setCiudadSeleccionada(current=>current||matched);
 },[formularioCompraAbierto,carritoAbierto,perfilAutorizado,ciudadesEnvio]);
 
-  const [carrito, setCarrito] = useState([]);
-const [carritoCargado, setCarritoCargado] = useState(false);
-const [carritoAbierto, setCarritoAbierto] = useState(false);
+
 
 // ========================================
 // SEGUIMIENTO DEL CARRITO
