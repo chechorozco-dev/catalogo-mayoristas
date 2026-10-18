@@ -21,7 +21,7 @@ test("solo la tienda principal física local-2 utiliza pagos de Villavo", () => 
 });
 
 test("Villavo acepta exclusivamente transferencia y efectivo", () => {
-  assert.deepEqual(["TRANSFERENCIA", "EFECTIVO"].map(esFormaPagoLocalValida), [true,true]);
+  assert.deepEqual(["TRANSFERENCIA", "EFECTIVO"].map(pago => esFormaPagoLocalValida(pago)), [true,true]);
   for (const pago of ["CONTRA_ENTREGA","PAGO EN CASA","CONTADO","","OTRO"]) {
     assert.equal(esFormaPagoLocalValida(pago), false);
   }
