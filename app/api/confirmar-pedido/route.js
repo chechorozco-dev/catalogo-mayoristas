@@ -493,6 +493,34 @@ for (const item of productosRecibidos) {
       );
     }
 
+    // Aviso a RA WhatsApp Lab: cola interna después de confirmar con Make.
+    // Solo la web RA principal genera push. No afecta la compra ni el
+    // inventario si la infraestructura de notificaciones está caída.
+    if(tiendaActual.slug==="mayoristas-ra"&&tiendaActual.tipo_tienda==="RA"){
+      try {
+        const total=Number(pedidoCompleto.valores?.total_pedido || 0);
+        const response=await fetch(
+          process.env.NEXT_PUBLIC_SUPABASE_URL+
+          "/rest/v1/ra_webpush_events?on_conflict=pedido_id",{
+          method:"POST",cache:"no-store",
+          headers:{
+           apikey:process.env.SUPABASE_SECRET_KEY,
+           "Content-Type":"application/json",
+           Prefer:"resolution=ignore-duplicates,return=minimal"
+          },
+          body:JSON.stringify({
+           pedido_id:"CATALOGO_"+pedidoCreado.id,
+           tienda_id:tiendaActual.id,
+           nombre_cliente:String(pedidoCompleto.cliente?.nombre||"").slice(0,150),
+           total:Number.isFinite(total)&&total>=0?total:0
+          })
+        });
+        if(!response.ok)console.error("No fue posible guardar alerta push:",response.status);
+      }catch(e){
+        console.error("Fallo no crítico en alerta push:",e instanceof Error?e.name:"Error");
+      }
+    }
+
     // Enviar a Make exitosamente confirma el pedido.
     // Descontar SOLO_RA de forma atómica e idempotente (por pedido_id).
     // Stock 0 desaparece del catálogo público, sin borrar el registro.
