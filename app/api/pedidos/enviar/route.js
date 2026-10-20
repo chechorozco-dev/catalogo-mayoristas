@@ -527,7 +527,7 @@ if (!tiendaId) {
 }
 
 const tiendas = await supabaseGet(
-  `tiendas?select=id,tipo_tienda&id=eq.${encodeURIComponent(
+  `tiendas?select=id,tipo_tienda,slug&id=eq.${encodeURIComponent(
     tiendaId
   )}&limit=1`
 );
@@ -982,6 +982,39 @@ if (
         },
         502
       );
+    }
+
+    /* -----------------------------------------------------
+       11.1 COLA DE AVISOS INTERNOS (NO AFECTA LA COMPRA)
+
+       Sólo después de que Make confirma el pedido. El navegador del
+       comprador nunca envía una notificación directamente. La cola de
+       RA WhatsApp Lab sólo escucha la tienda principal, no Villavo.
+       Si falla la cola, el pedido ya registrado NO se reenvía a Make.
+    ----------------------------------------------------- */
+    if(esTiendaRA && tienda.slug === "mayoristas-ra") {
+      try {
+        const push = await fetch(
+          `${SUPABASE_URL}/rest/v1/ra_webpush_events?on_conflict=pedido_id`,{
+            method:"POST",cache:"no-store",
+            headers:{
+              apikey:SUPABASE_KEY,
+              "Content-Type":"application/json",
+              Prefer:"resolution=ignore-duplicates,return=minimal"
+            },
+            body:JSON.stringify({
+              pedido_id:pedidoId,
+              tienda_id:tiendaId,
+              nombre_cliente:String(cliente.nombre||datosSesion.nombre||"").slice(0,150),
+              total:totalProductos
+            })
+          }
+        );
+        if(!push.ok)console.error("No se guardó la alerta web:",push.status);
+      } catch (error) {
+        console.error("No fue posible registrar aviso web:",
+          error instanceof Error ? error.name : "Error");
+      }
     }
 
     /* -----------------------------------------------------
