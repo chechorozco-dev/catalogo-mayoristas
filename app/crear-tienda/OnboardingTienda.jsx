@@ -44,11 +44,10 @@ export default function OnboardingTienda(){
   const [foto,setFoto]=useState(null);
   const [fotoUrl,setFotoUrl]=useState("");
   const [mensaje,setMensaje]=useState("");
-  const [dominio,setDominio]=useState("mi-catalogo-accesorios.vercel.app");
+  const dominio="mi-catalogo-accesorios.vercel.app";
 
   useEffect(()=>{
     let active=true;
-    setDominio(window.location.host);
     (async()=>{
       try{
         const res=await fetch("/api/auth/sesion",{cache:"no-store",credentials:"same-origin"});
