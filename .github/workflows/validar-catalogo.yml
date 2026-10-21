@@ -27,3 +27,5 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Ejecutar pruebas
         run: npm test
+      - name: Comprobar que Next.js compila
+        run: npm run build
