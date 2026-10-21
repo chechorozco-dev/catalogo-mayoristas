@@ -1,5 +1,5 @@
 import { NextResponse, after } from "next/server";
-import { registrarCodigoWati } from "../../../lib/integraciones/watiConfig.mjs";
+import { registrarCodigoWati } from "../../../../lib/integraciones/watiConfig.mjs";
 import crypto from "crypto";
 
 function limpiarTelefono(valor) {
