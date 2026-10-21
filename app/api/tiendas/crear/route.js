@@ -1,5 +1,5 @@
 import { NextResponse, after } from "next/server";
-import { enviarBienvenidaWati } from "../../../lib/integraciones/watiConfig.mjs";
+import { enviarBienvenidaWati } from "../../../../lib/integraciones/watiConfig.mjs";
 import { cookies } from "next/headers";
 import crypto from "crypto";
 
