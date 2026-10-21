@@ -32,5 +32,5 @@ jobs:
           # URL y clave sintéticas solo para compilar páginas que importan Supabase.
           # Nunca hacen consultas ni se utilizan credenciales reales en CI.
           NEXT_PUBLIC_SUPABASE_URL: https://ejemplo.supabase.co
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: clave-sintetica-para-compilacion
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: clave-sintetica-para-compilacion
         run: npm run build
