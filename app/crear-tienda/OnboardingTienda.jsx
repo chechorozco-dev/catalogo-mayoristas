@@ -1,7 +1,7 @@
 "use client";
 import {useEffect,useMemo,useState} from "react";
 import {useRouter} from "next/navigation";
-import {PALETAS_TIENDA,crearSlugVistaPrevia,colorDeTexto} from "@/lib/paletasTienda.mjs";
+import {PALETAS_TIENDA,crearSlugVistaPrevia,colorDeTexto} from "../../lib/paletasTienda.mjs";
 import "./crear-tienda.css";
 
 async function prepararFoto(file) {
