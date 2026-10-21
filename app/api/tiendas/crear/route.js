@@ -124,16 +124,6 @@ export async function POST(request) {
     const authSessionSecret =
       process.env.AUTH_SESSION_SECRET;
 
-    // WATI
-    const watiEndpoint =
-      process.env.WATI_API_ENDPOINT;
-
-    const watiToken =
-      process.env.WATI_API_TOKEN;
-
-    const watiChannelNumber =
-      process.env.WATI_CHANNEL_NUMBER;
-
     if (
       !supabaseUrl ||
       !supabaseSecretKey ||
@@ -533,141 +523,10 @@ const colorFondo =
     }
 
     // =========================================
-    // 9. ENVIAR BIENVENIDA POR WATI
+    // 9. NO ENVIAR CONFIRMACIÓN POR WHATSAPP
     // =========================================
-
-    /*
-      IMPORTANTE:
-
-      La tienda YA está creada y vinculada
-      antes de llegar a este punto.
-
-      Si WATI presenta algún problema,
-      NO eliminamos la tienda ni devolvemos
-      un error al cliente.
-    */
-
-    if (
-      watiEndpoint &&
-      watiToken &&
-      watiChannelNumber &&
-      cliente.telefono
-    ) {
-      try {
-        const authorization =
-          watiToken
-            .trim()
-            .toLowerCase()
-            .startsWith("bearer ")
-            ? watiToken.trim()
-            : `Bearer ${watiToken.trim()}`;
-
-        const baseWati =
-          watiEndpoint.replace(
-            /\/+$/,
-            ""
-          );
-
-        const telefonoWati =
-          String(
-            cliente.telefono || ""
-          ).replace(/\D/g, "");
-
-       const enlaceTienda =
-  `https://mi-catalogo-accesorios.vercel.app/${slug}`;
-
-        const urlWati =
-          `${baseWati}/api/v1/sendTemplateMessage` +
-          `?whatsappNumber=${encodeURIComponent(
-            telefonoWati
-          )}`;
-
-        const watiResponse =
-          await fetch(
-            urlWati,
-            {
-              method: "POST",
-
-              headers: {
-                Authorization:
-                  authorization,
-
-                "Content-Type":
-                  "application/json",
-              },
-
-              body: JSON.stringify({
-                template_name:
-                  "tienda_cliente_nueva",
-
-                broadcast_name:
-                  "creacion_de_tienda",
-
-                channel_number:
-                  watiChannelNumber,
-
-             parameters: [
-  {
-    name: "1",
-    value: nombreTienda,
-  },
-  {
-    name: "2",
-    value: slug,
-  },
-],
-
-                /*
-                  BOTÓN DINÁMICO
-
-                  La plantilla tiene:
-
-                  https://mi-catalogo-accesorios.vercel.app/{{1}}
-
-                  Por eso solamente enviamos
-                  el slug al botón.
-                */
-                buttons: [
-                  {
-                    type: "url",
-                    index: "0",
-                    parameters: [
-                      {
-                        type: "text",
-                        text: slug,
-                      },
-                    ],
-                  },
-                ],
-              }),
-            }
-          );
-
-        const watiTexto =
-          await watiResponse.text();
-
-        if (!watiResponse.ok) {
-          console.error(
-            "La tienda fue creada, pero WATI no pudo enviar la bienvenida:",
-            watiResponse.status,
-            watiTexto
-          );
-        } else {
-          console.log(
-            "Plantilla tienda_creada enviada correctamente."
-          );
-        }
-      } catch (errorWati) {
-        console.error(
-          "La tienda fue creada, pero ocurrió un error enviando la bienvenida por WATI:",
-          errorWati
-        );
-      }
-    } else {
-      console.warn(
-        "La tienda fue creada, pero faltan variables de WATI para enviar la bienvenida."
-      );
-    }
+    // La confirmación se presenta en la web al crear la tienda.
+    // No enviar plantillas de WATI al cliente desde este flujo.
 
     // =========================================
     // 10. ACTUALIZAR SESIÓN CON tienda_id
