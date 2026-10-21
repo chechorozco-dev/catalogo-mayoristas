@@ -37,3 +37,18 @@ test("registro mantiene las APIs de creación y logo existentes",()=>{
   assert.match(source,/setMensaje\("Tu tienda sí quedó creada/);
   assert.match(source,/aria-pressed/);
 });
+
+test("iPhone muestra foto inmediatamente y mensajes junto al selector",()=>{
+  const source=readFileSync(new URL("../app/crear-tienda/OnboardingTienda.jsx",import.meta.url),"utf8");
+  const css=readFileSync(new URL("../app/crear-tienda/crear-tienda.css",import.meta.url),"utf8");
+  const callback=source.split("async function elegirFoto(event)")[1].split("async function subirLogo()")[0];
+  assert.ok(callback.indexOf("setFotoUrl(URL.createObjectURL(original))")>=0);
+  assert.ok(callback.indexOf("setFotoUrl(URL.createObjectURL(original))") <
+    callback.indexOf("await prepararFoto(original)"),"la vista se muestra antes de la conversión");
+  assert.match(source,/htmlFor="ra-setup-photo-file"/);
+  assert.match(source,/id="ra-setup-photo-file"/);
+  assert.match(source,/ra-setup-photo-ready/);
+  assert.match(source,/ra-setup-photo-error/);
+  assert.match(source,/image\/jpeg","image\/png","image\/webp"/);
+  assert.match(css,/ra-setup-photo-input:focus-visible/);
+});
