@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
+import { enviarBienvenidaWati } from "../../../../lib/integraciones/watiConfig.mjs";
 import { cookies } from "next/headers";
 import crypto from "crypto";
 
@@ -523,10 +524,11 @@ const colorFondo =
     }
 
     // =========================================
-    // 9. NO ENVIAR CONFIRMACIÓN POR WHATSAPP
+    // 9. BIENVENIDA OPCIONAL CONTROLADA DESDE WHATSAPP LAB
     // =========================================
-    // La confirmación se presenta en la web al crear la tienda.
-    // No enviar plantillas de WATI al cliente desde este flujo.
+    // La confirmación en pantalla sigue siendo suficiente.
+    // El envío opcional solo ocurre si Supabase indica "activo".
+    // Su ejecución asíncrona se programa DESPUÉS de crear la sesión.
 
     // =========================================
     // 10. ACTUALIZAR SESIÓN CON tienda_id
@@ -607,6 +609,12 @@ const colorFondo =
       maxAge:
         duracionSesion,
     });
+
+    // No retrasar ni invalidar la tienda por un aviso opcional.
+    after(() => enviarBienvenidaWati({
+      tiendaId:tienda.id,telefono:cliente.telefono,
+      nombreTienda,slug
+    }));
 
     return response;
   } catch (error) {

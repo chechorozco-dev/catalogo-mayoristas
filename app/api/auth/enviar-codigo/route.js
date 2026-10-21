@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
+import { registrarCodigoWati } from "../../../../lib/integraciones/watiConfig.mjs";
 import crypto from "crypto";
 
 function limpiarTelefono(valor) {
@@ -403,6 +404,7 @@ if (codigosUltimas24Horas >= 10) {
       await watiResponse.text();
 
     if (!watiResponse.ok) {
+      after(()=>registrarCodigoWati("ERROR",watiResponse.status));
       console.error(
         "Error enviando código por WATI:",
         watiResponse.status,
@@ -438,6 +440,8 @@ if (codigosUltimas24Horas >= 10) {
     // ==========================================
     // 8. TODO CORRECTO
     // ==========================================
+
+    after(()=>registrarCodigoWati("ENVIADO",watiResponse.status));
 
     return NextResponse.json({
       ok: true,
