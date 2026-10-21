@@ -5,27 +5,44 @@ import {PALETAS_TIENDA,crearSlugVistaPrevia,colorDeTexto} from "../../lib/paleta
 import "./crear-tienda.css";
 
 async function prepararFoto(file) {
-  if(!file.type.startsWith("image/"))throw Error("Selecciona una foto válida.");
-  if(file.size>20*1024*1024)throw Error("Elige una imagen menor de 20 MB.");
+  const tipo=String(file.type||"").toLowerCase();
+  const extension=/\.(jpe?g|png|webp|heic|heif)$/i.test(file.name||"");
+  if(!tipo.startsWith("image/")&&!extension)throw Error("Selecciona una foto JPG, PNG, WEBP o HEIC.");
+  if(!file.size)throw Error("La foto está vacía. Elige otra imagen.");
+  if(file.size>20*1024*1024)throw Error("Elige una foto menor de 20 MB.");
   const local=URL.createObjectURL(file);
   try {
     const img=await new Promise((resolve,reject)=>{
       const el=new Image();
       el.onload=()=>resolve(el);
-      el.onerror=()=>reject(Error("No pudimos leer la foto. Usa JPG o PNG."));
+      el.onerror=()=>reject(Error("Tu navegador no pudo abrir la foto. Prueba con JPG o PNG."));
       el.src=local;
     });
-    const factor=Math.min(1,900/Math.max(img.naturalWidth,img.naturalHeight));
+    const w=img.naturalWidth,h=img.naturalHeight;
+    if(!w||!h)throw Error("No encontramos las dimensiones de esta foto.");
+    const factor=Math.min(1,900/Math.max(w,h));
     const canvas=document.createElement("canvas");
-    canvas.width=Math.max(1,Math.round(img.naturalWidth*factor));
-    canvas.height=Math.max(1,Math.round(img.naturalHeight*factor));
+    canvas.width=Math.max(1,Math.round(w*factor));
+    canvas.height=Math.max(1,Math.round(h*factor));
     const ctx=canvas.getContext("2d");
-    if(!ctx)throw Error("No se pudo procesar la foto.");
+    if(!ctx)throw Error("No se pudo procesar la foto en este navegador.");
     ctx.drawImage(img,0,0,canvas.width,canvas.height);
-    const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/webp",0.82));
-    if(!blob||blob.type!=="image/webp")throw Error("No se pudo convertir la foto. Prueba con JPG o PNG.");
-    if(blob.size>5*1024*1024)throw Error("La imagen sigue siendo demasiado pesada.");
-    return new File([blob],"foto-tienda.webp",{type:"image/webp"});
+    // Safari y navegadores dentro de WhatsApp no siempre generan WEBP.
+    // Aceptamos JPEG/PNG como respaldo, ambos compatibles con el servidor.
+    for(const formato of ["image/webp","image/jpeg","image/png"]){
+      const blob=await new Promise(resolve=>{
+        try {canvas.toBlob(resolve,formato,0.82);} catch {resolve(null);}
+      });
+      if(!blob||!["image/webp","image/jpeg","image/png"].includes(blob.type))continue;
+      if(blob.size>5*1024*1024)continue;
+      const ext=blob.type==="image/webp"?"webp":blob.type==="image/png"?"png":"jpg";
+      return new File([blob],"logo-tienda."+ext,{type:blob.type});
+    }
+    // Si el archivo original ya es admitido por Supabase, no lo descartamos.
+    if(file.size<=5*1024*1024&&["image/jpeg","image/png","image/webp"].includes(tipo)){
+      return file;
+    }
+    throw Error("No fue posible comprimir esta imagen. Intenta con una foto JPG o PNG.");
   } finally {URL.revokeObjectURL(local);}
 }
 
@@ -43,6 +60,7 @@ export default function OnboardingTienda(){
   const [fondo,setFondo]=useState(PALETAS_TIENDA[0].fondo);
   const [foto,setFoto]=useState(null);
   const [fotoUrl,setFotoUrl]=useState("");
+  const [errorFoto,setErrorFoto]=useState("");
   const [mensaje,setMensaje]=useState("");
   const dominio="mi-catalogo-accesorios.vercel.app";
 
@@ -71,16 +89,30 @@ export default function OnboardingTienda(){
   const textoBoton=colorDeTexto(principal);
 
   async function elegirFoto(event){
-    const original=event.target.files?.[0];
-    event.target.value="";
+    const input=event.currentTarget;
+    const original=input.files?.[0];
     if(!original)return;
-    setPreparandoFoto(true);setMensaje("");
+    setPreparandoFoto(true);
+    setErrorFoto("");
+    setMensaje("");
+    setFoto(null);
     try{
+      // Mostrar inmediatamente la imagen elegida, antes de convertirla.
+      // El indicador superior y la vista previa comparten fotoUrl.
+      setFotoUrl(URL.createObjectURL(original));
       const procesada=await prepararFoto(original);
-      setFoto(procesada);
+      // Mostrar también el archivo que realmente quedará listo para guardar.
       setFotoUrl(URL.createObjectURL(procesada));
-    }catch(err){setMensaje(err instanceof Error?err.message:"No pudimos leer la imagen.");}
-    finally{setPreparandoFoto(false);}
+      setFoto(procesada);
+    }catch(err){
+      setFoto(null);
+      setFotoUrl("");
+      setErrorFoto(err instanceof Error?err.message:"No pudimos leer la foto. Prueba con JPG o PNG.");
+    }finally{
+      setPreparandoFoto(false);
+      // Se limpia al finalizar, no mientras iOS está leyendo el archivo.
+      input.value="";
+    }
   }
 
   async function subirLogo(){
@@ -155,13 +187,17 @@ export default function OnboardingTienda(){
                 <span aria-hidden="true">🏪</span>}
             </div>
             <div className="ra-setup-photo-actions">
-              <label className="ra-setup-pick-photo">
-                <input type="file" accept="image/*" aria-label="Subir foto o logo de mi tienda"
-                  disabled={creando||preparandoFoto||creada} onChange={e=>void elegirFoto(e)}/>
+              <input id="ra-setup-photo-file" className="ra-setup-photo-input"
+                type="file" accept="image/*,.heic,.heif" aria-label="Elegir foto o logo de mi tienda"
+                disabled={creando||preparandoFoto||creada} onChange={e=>void elegirFoto(e)}/>
+              <label className="ra-setup-pick-photo" htmlFor="ra-setup-photo-file">
                 {preparandoFoto?"Preparando foto…":foto?"Cambiar foto":"Subir foto"}
               </label>
               {foto&&!creada&&<button className="ra-setup-remove-photo" type="button"
-                disabled={creando} onClick={()=>{setFoto(null);setFotoUrl("");}}>Quitar foto</button>}
+                disabled={creando} onClick={()=>{setFoto(null);setFotoUrl("");setErrorFoto("");}}>Quitar foto</button>}
+              {preparandoFoto&&<p className="ra-setup-photo-status" role="status">Procesando tu foto, espera un momento…</p>}
+              {foto&&!preparandoFoto&&<p className="ra-setup-photo-ready" role="status">✓ Foto lista. Ya aparece en la vista previa y se guardará al crear tu tienda.</p>}
+              {errorFoto&&<p className="ra-setup-photo-error" role="alert">{errorFoto}</p>}
               <small>Opcional. Puedes cambiarla después desde tu administrador.</small>
             </div>
           </div>

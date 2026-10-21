@@ -27,8 +27,18 @@
 .ra-setup-photo-actions{display:flex;flex-direction:column;align-items:flex-start;gap:7px;min-width:0}
 .ra-setup-pick-photo{position:relative;background:#ede5ff;color:#6636d4;border-radius:10px;padding:12px 17px;
  font-size:14px;font-weight:800;cursor:pointer;text-align:center;overflow:hidden;min-width:140px}
-.ra-setup-pick-photo input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;font-size:0}
-.ra-setup-pick-photo:focus-within{outline:3px solid #9f82f8;outline-offset:2px}
+/* iOS/WhatsApp: no cubrir la etiqueta con input transparente.
+   La asociación htmlFor abre el selector nativo de Fotos/Archivos. */
+.ra-setup-photo-input{position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+ overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.ra-setup-photo-input:focus-visible+.ra-setup-pick-photo{outline:3px solid #9f82f8;outline-offset:2px}
+.ra-setup-photo-input:disabled+.ra-setup-pick-photo{opacity:.55;cursor:wait}
+.ra-setup-photo-status,.ra-setup-photo-ready,.ra-setup-photo-error{
+ margin:2px 0 0;line-height:1.45;font-size:12px;max-width:290px
+}
+.ra-setup-photo-status{color:#5758a1}
+.ra-setup-photo-ready{color:#1e815a;font-weight:750}
+.ra-setup-photo-error{color:#a6352a;font-weight:750}
 .ra-setup-photo-actions small{font-size:11px;line-height:1.45;color:#81899a}
 .ra-setup-remove-photo{background:none;border:0;padding:3px 0;color:#a84950;font-size:12px;cursor:pointer}
 .ra-setup-screenreader{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
