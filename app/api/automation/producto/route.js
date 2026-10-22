@@ -1,3 +1,4 @@
+import { consultarControlProductos } from "../../../../lib/integraciones/productosControl.mjs";
 import { registrarActividadWeb } from "../../../../lib/integraciones/actividad.mjs";
 import { NextResponse, after } from "next/server";
 import {
@@ -628,6 +629,25 @@ async function procesarPOST(request) {
     }
 
     delete body.__ra_oidc;
+
+    // Pausa compartida que ADMIN MAESTRO puede cambiar desde RA WhatsApp Lab.
+    // Se verifica DESPUÉS de autenticar el origen y ANTES de escribir productos.
+    // Un error de consulta NO debe anular una pausa que ya fue solicitada.
+    let control;
+    try {
+      control = await consultarControlProductos();
+    } catch {
+      return NextResponse.json({ok:false,
+       mensaje:"La sincronización está temporalmente indisponible. Reintenta esta referencia cuando se restablezca el servicio.",
+       codigo:"RA_CONTROL_NO_DISPONIBLE"},{status:503,
+       headers:{"Retry-After":"120","Cache-Control":"no-store"}});
+    }
+    if (!control.activo) {
+      return NextResponse.json({ok:false,
+       mensaje:"Sincronización de productos pausada por el administrador. No se modificó ninguna referencia. Debes reenviar la actualización cuando se reactive.",
+       codigo:"RA_SYNC_PAUSADA"},{status:503,
+       headers:{"Retry-After":"300","Cache-Control":"no-store"}});
+    }
 
     const supabaseUrl =
       process.env
