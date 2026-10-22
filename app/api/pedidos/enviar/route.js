@@ -1,3 +1,4 @@
+import {revisarPedidosMake,registrarResultadoMake} from "../../../../lib/integraciones/pedidosMakeControl.mjs";
 import { registrarActividadWeb } from "../../../../lib/integraciones/actividad.mjs";
 import { NextResponse, after } from "next/server";
 import crypto from "crypto";
@@ -412,6 +413,21 @@ async function procesarPOST(request) {
     }
 
     const datosSesion = obtenerDatosSesion(sesion);
+
+    // Antes de recibir un pedido, comprobar la pausa de su salida a Make.
+    // Nunca generar identificadores o llamar al proveedor mientras esté pausado.
+    try {
+      const makeControl=await revisarPedidosMake("web-pedidos-make");
+      if(!makeControl.activo)return responder({
+        ok:false,codigo:"MAKE_PEDIDOS_PAUSADO",
+        mensaje:"El servicio de pedidos se encuentra en mantenimiento. No se registró la compra. Inténtalo más tarde."
+      },503);
+    }catch{
+      return responder({
+        ok:false,codigo:"MAKE_CONTROL_INDISPONIBLE",
+        mensaje:"No pudimos comprobar el servicio de pedidos. No se registró la compra. Inténtalo de nuevo."
+      },503);
+    }
 
     /* -----------------------------------------------------
        3. LEER BODY
@@ -951,20 +967,24 @@ if (
        11. ENVIAR A MAKE
     ----------------------------------------------------- */
 
-    const makeResponse = await fetch(
-      MAKE_WEBHOOK_URL,
-      {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify(payloadMake),
-
-        cache: "no-store",
-      }
-    );
+    let makeResponse;
+    try{
+      makeResponse = await fetch(
+        MAKE_WEBHOOK_URL,
+        {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify(payloadMake),
+          cache:"no-store"
+        }
+      );
+      after(()=>registrarResultadoMake("web-pedidos-make",makeResponse.status));
+    }catch{
+      after(()=>registrarResultadoMake("web-pedidos-make",0));
+      return responder({ok:false,
+        mensaje:"No se pudo conectar con el servicio de pedidos. No se confirmó el envío. Inténtalo de nuevo."
+      },502);
+    }
 
     const makeTexto = await makeResponse.text();
 

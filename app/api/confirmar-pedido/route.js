@@ -1,3 +1,4 @@
+import {revisarPedidosMake,registrarResultadoMake} from "../../../lib/integraciones/pedidosMakeControl.mjs";
 import { registrarActividadWeb } from "../../../lib/integraciones/actividad.mjs";
 import { after } from "next/server";
 import {
@@ -31,6 +32,20 @@ async function procesarPOST(request) {
     const tiendaActual = (await respuestaTienda.json())?.[0];
     if (!tiendaActual?.activa) {
       return Response.json({ ok:false, error:"La tienda no está activa." }, { status:400 });
+    }
+    // Preflight ANTES de crear pedidos, reservar/consumir inventario o invocar Make.
+    // Un proceso pausado NO debe fabricar un pedido aparentemente confirmado.
+    try {
+      const makeControl = await revisarPedidosMake("web-confirmar-pedido");
+      if(!makeControl.activo)return Response.json({
+        ok:false,codigo:"MAKE_PEDIDOS_PAUSADO",
+        error:"Los pedidos de esta tienda están temporalmente en mantenimiento. No se registró la compra. Inténtalo más tarde."
+      },{status:503,headers:{"Retry-After":"120","Cache-Control":"no-store"}});
+    } catch {
+      return Response.json({
+        ok:false,codigo:"MAKE_CONTROL_INDISPONIBLE",
+        error:"No pudimos comprobar el estado del servicio de pedidos. No se registró la compra. Inténtalo nuevamente."
+      },{status:503,headers:{"Retry-After":"120","Cache-Control":"no-store"}});
     }
     if (esRaAccesoriosVillavo(tiendaActual)) {
       const modalidad = String(pedido?.modalidad_entrega || "").toUpperCase();
@@ -466,20 +481,23 @@ for (const item of productosRecibidos) {
     // 5. ENVIAR PEDIDO A MAKE
     // ========================================
 
-    const respuestaMake = await fetch(
-      "https://hook.us2.make.com/wax9zylhd6f1qp6yvth29pw5y3kppdhw",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
-        body: JSON.stringify(
-          pedidoCompleto
-        ),
-        cache: "no-store",
-      }
-    );
+    let respuestaMake;
+    try {
+      // Mantener el destino ya operativo sin modificar la integración existente.
+      respuestaMake = await fetch(
+        "https://hook.us2.make.com/wax9zylhd6f1qp6yvth29pw5y3kppdhw",
+        {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify(pedidoCompleto),
+          cache:"no-store",
+        }
+      );
+      after(()=>registrarResultadoMake("web-confirmar-pedido",respuestaMake.status));
+    } catch {
+      after(()=>registrarResultadoMake("web-confirmar-pedido",0));
+      throw new Error("No hubo respuesta del servicio de pedidos.");
+    }
 
     if (!respuestaMake.ok) {
       const errorMake =
