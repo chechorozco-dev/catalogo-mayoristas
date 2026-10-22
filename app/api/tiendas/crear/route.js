@@ -1,3 +1,4 @@
+import { registrarActividadWeb } from "../../../../lib/integraciones/actividad.mjs";
 import { NextResponse, after } from "next/server";
 import { enviarBienvenidaWati } from "../../../../lib/integraciones/watiConfig.mjs";
 import { cookies } from "next/headers";
@@ -110,7 +111,7 @@ function crearSlug(texto) {
     .replace(/^-|-$/g, "");
 }
 
-export async function POST(request) {
+async function procesarPOST(request) {
   try {
     // =========================================
     // 1. VARIABLES
@@ -633,4 +634,11 @@ const colorFondo =
       { status: 500 }
     );
   }
+}
+
+/** Solo diagnóstico: jamás frena la petición del cliente ni contiene datos personales. */
+export async function POST(request) {
+  const response = await procesarPOST(request);
+  after(() => registrarActividadWeb("web-crear-tienda", response.status));
+  return response;
 }

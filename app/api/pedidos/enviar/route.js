@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { registrarActividadWeb } from "../../../../lib/integraciones/actividad.mjs";
+import { NextResponse, after } from "next/server";
 import crypto from "crypto";
 
 export const dynamic = "force-dynamic";
@@ -372,7 +373,7 @@ function pesos(valor) {
    POST
 ========================================================= */
 
-export async function POST(request) {
+async function procesarPOST(request) {
   try {
     /* -----------------------------------------------------
        1. VERIFICAR CONFIGURACIÓN
@@ -1060,4 +1061,11 @@ if (
       500
     );
   }
+}
+
+/** Solo diagnóstico: jamás frena la petición del cliente ni contiene datos personales. */
+export async function POST(request) {
+  const response = await procesarPOST(request);
+  after(() => registrarActividadWeb("web-pedidos-make", response.status));
+  return response;
 }

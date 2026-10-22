@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { registrarActividadWeb } from "../../../../lib/integraciones/actividad.mjs";
+import { NextResponse, after } from "next/server";
 import {
   obtenerPrecioMayoristaWebhook,
   obtenerNombreProductoWebhook,
@@ -595,7 +596,7 @@ export async function GET() {
   });
 }
 
-export async function POST(request) {
+async function procesarPOST(request) {
   try {
     const body =
       await request.json();
@@ -1145,4 +1146,11 @@ export async function POST(request) {
       }
     );
   }
+}
+
+/** Solo diagnóstico: jamás frena la petición del cliente ni contiene datos personales. */
+export async function POST(request) {
+  const response = await procesarPOST(request);
+  after(() => registrarActividadWeb("web-productos-appsheet", response.status));
+  return response;
 }
