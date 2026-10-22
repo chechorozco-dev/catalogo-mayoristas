@@ -1,3 +1,5 @@
+import { registrarActividadWeb } from "../../../lib/integraciones/actividad.mjs";
+import { after } from "next/server";
 import {
   esRaAccesoriosVillavo,
   esFormaPagoLocalValida,
@@ -5,7 +7,7 @@ import {
   calcularTotalesVillavo,
 } from "../../../lib/catalogo/pagos-local.mjs";
 
-export async function POST(request) {
+async function procesarPOST(request) {
   try {
     let pedido = await request.json();
 
@@ -575,4 +577,11 @@ for (const item of productosRecibidos) {
       }
     );
   }
+}
+
+/** Solo diagnóstico: jamás frena la petición del cliente ni contiene datos personales. */
+export async function POST(request) {
+  const response = await procesarPOST(request);
+  after(() => registrarActividadWeb("web-confirmar-pedido", response.status));
+  return response;
 }
