@@ -33,9 +33,13 @@ const AUTH_SESSION_SECRET =
    UTILIDADES
 ========================================================= */
 
-function formatoPrecio(valor) {
-  return `$ ${Math.round(Number(valor || 0))
-    .toLocaleString("es-CO")}`;
+function formatoPrecio(valor, moneda = "COP") {
+  if (moneda === "USD") {
+    return "US$ " + Number(valor || 0).toLocaleString("en-US", {
+      minimumFractionDigits: 2, maximumFractionDigits: 2,
+    });
+  }
+  return `$ ${Math.round(Number(valor || 0)).toLocaleString("es-CO")}`;
 }
 
 function base64UrlDecode(valor) {
@@ -354,7 +358,7 @@ function recortarTexto(
 function dibujarNombrePrecio({ pagina, producto, x, y, ancho, fuenteBold, compacto }) {
   const tamanoNombre = compacto ? 8.2 : 9;
   const tamanoPrecio = compacto ? 9 : 10;
-  const precio = formatoPrecio(producto.precio_pdf);
+  const precio = formatoPrecio(producto.precio_pdf, producto.moneda);
   const anchoPrecio = fuenteBold.widthOfTextAtSize(precio, tamanoPrecio);
   let nombre = limpiarTextoPdf(producto.nombre || producto.referencia || "Producto");
   const anchoMaxNombre = compacto ? ancho - 10 : ancho - anchoPrecio - 22;
@@ -1162,7 +1166,7 @@ async function generarCatalogoPdf(request, reportarProgreso = () => {}) {
 
 const tiendaResponse =
   await supabaseFetch(
-    `tiendas?id=eq.${tiendaId}&select=id,nombre_tienda,whatsapp,logo_url,color_principal,color_fondo,instagram,facebook,tiktok,tipo_tienda&limit=1`
+    `tiendas?id=eq.${tiendaId}&select=id,nombre_tienda,whatsapp,logo_url,color_principal,color_fondo,instagram,facebook,tiktok,tipo_tienda,moneda&limit=1`
   );
 
 const tiendas =
@@ -1256,7 +1260,7 @@ const esTiendaRA =
 
     const preciosResponse =
       await supabaseFetch(
-        `precios_tienda?tienda_id=eq.${tiendaId}&variante_id=is.null&select=producto_id,precio_sugerido&order=producto_id.asc`,
+        `precios_tienda?tienda_id=eq.${tiendaId}&variante_id=is.null&select=producto_id,precio_sugerido,actualizado_en,id&order=actualizado_en.desc,id.desc`,
         { paginar: true }
       );
 
@@ -1270,15 +1274,9 @@ const esTiendaRA =
       const fila of
       precios || []
     ) {
-      mapaPrecios.set(
-        String(
-          fila.producto_id
-        ),
-        Number(
-          fila.precio_sugerido ||
-            0
-        )
-      );
+      if (!mapaPrecios.has(String(fila.producto_id))) {
+        mapaPrecios.set(String(fila.producto_id), Number(fila.precio_sugerido));
+      }
     }
 
     /* ===============================================
@@ -1323,6 +1321,8 @@ let productosFiltrados = (productos || []).filter(
 
 /* Ambos filtros se aplican a la vez. No existe descarga global. */
 productosFiltrados = productosFiltrados
+  // No etiquetar importes COP como USD si faltan precios propios.
+  .filter((producto) => esTiendaRA || tienda.moneda !== "USD" || (mapaPrecios.has(String(producto.id)) && mapaPrecios.get(String(producto.id)) > 0))
   .filter((producto) => productoCoincidePdf(producto, materialPdf, tipoPdf))
   .filter((producto) => fotosProducto(producto).length > 0);
 
@@ -1333,6 +1333,7 @@ const productosCatalogo = productosFiltrados
     precio_pdf: mapaPrecios.has(String(producto.id))
       ? mapaPrecios.get(String(producto.id))
       : Number(producto.precio_detal || 0),
+    moneda: esTiendaRA ? "COP" : (tienda.moneda === "USD" ? "USD" : "COP"),
   }));
     if (
       productosCatalogo.length === 0
