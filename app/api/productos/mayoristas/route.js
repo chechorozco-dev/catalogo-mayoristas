@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { fetchSupabasePaginado, dividirEnBloques } from "../../../../lib/supabasePagination";
+import { normalizarMoneda } from "../../../../lib/catalogo/monedas.mjs";
 
 export const dynamic = "force-dynamic";
 
@@ -342,7 +343,7 @@ export async function GET(request) {
 const tiendas =
   await supabaseRequest(
     `tiendas` +
-      `?select=id,creado_en,tipo_tienda,negocio_id,activa` +
+      `?select=id,creado_en,tipo_tienda,negocio_id,activa,moneda` +
       `&id=eq.${encodeURIComponent(
         cliente.tienda_id
       )}` +
@@ -460,6 +461,29 @@ if (Array.isArray(visibilidadData)) {
   }
 );
 }
+    // Los precios del cliente están en una tabla distinta del precio RA.
+    // Se prioriza la última edición de su tienda (también si es 0).
+    const preciosTienda = await supabaseRequest(
+      `precios_tienda?select=producto_id,variante_id,precio_sugerido,actualizado_en,id` +
+      `&tienda_id=eq.${encodeURIComponent(cliente.tienda_id)}` +
+      `&negocio_id=eq.${encodeURIComponent(tienda.negocio_id)}` +
+      `&order=actualizado_en.desc,id.desc`,
+      { paginar: true }
+    );
+    const mapaPrecios = new Map();
+    for (const fila of preciosTienda || []) {
+      const clave = String(fila.producto_id) + ":" +
+        (fila.variante_id == null ? "" : String(fila.variante_id));
+      if (!mapaPrecios.has(clave) && Number.isFinite(Number(fila.precio_sugerido))) {
+        mapaPrecios.set(clave, Number(fila.precio_sugerido));
+      }
+    }
+    function precioPersonalizado(productoId, varianteId = null) {
+      const clave = String(productoId) + ":" +
+        (varianteId == null ? "" : String(varianteId));
+      return mapaPrecios.has(clave) ? mapaPrecios.get(clave) : null;
+    }
+
     // =====================================
     // 5. IDs DE PRODUCTOS CON VARIANTES
     // =====================================
@@ -573,6 +597,7 @@ if (Array.isArray(visibilidadData)) {
                       variante.precio_minimo ||
                         0
                     ),
+                  precio_personalizado: precioPersonalizado(producto.id, variante.id),
 
                   infoimagen:
                     variante.infoimagen ||
@@ -638,6 +663,7 @@ nombre:
               Number(
                 producto.precio_detal || 0
               ),
+            precio_personalizado: precioPersonalizado(producto.id),
 
             precio_minimo:
               Number(
@@ -677,6 +703,7 @@ nombre:
 
       tipo_tienda:
         tienda.tipo_tienda || "CLIENTE",
+      moneda: normalizarMoneda(tienda.moneda),
     },
 
     total:
