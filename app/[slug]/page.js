@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import TiendaCliente from "./TiendaCliente";
 import { esRaAccesoriosVillavo } from "../../lib/catalogo/pagos-local.mjs";
+import { precioVentaTienda } from "../../lib/catalogo/monedas.mjs";
 import { fetchSupabasePaginado, dividirEnBloques } from "../../lib/supabasePagination";
 
 export const dynamic = "force-dynamic";
@@ -142,7 +143,7 @@ export default async function TiendaPage({
   } = await supabase
     .from("tiendas")
    .select(
-  "id,nombre_tienda,slug,whatsapp,logo_url,color_principal,color_fondo,mensaje_portada,instagram,facebook,tiktok,tipo_tienda,creado_en,negocio_id"
+  "id,nombre_tienda,slug,whatsapp,logo_url,color_principal,color_fondo,mensaje_portada,instagram,facebook,tiktok,tipo_tienda,creado_en,negocio_id,moneda"
 )
     .eq("slug", slug)
     .eq("activa", true)
@@ -841,17 +842,12 @@ if (!producto.created_at) {
                 // Si no tiene, precio_detal.
                 // ===============================
 
-                const precioFinal =
-                  esTiendaRA
-                    ? Number(
-                        variante.costo || 0
-                      )
-                    : precioPersonalizado !== null
-                      ? precioPersonalizado
-                      : Number(
-                          variante.precio_detal ||
-                            0
-                        );
+                const precioFinal = precioVentaTienda({
+                  precioBase: esTiendaRA ? variante.costo : variante.precio_detal,
+                  personalizado: precioPersonalizado,
+                  moneda: tienda.moneda,
+                  esRa: esTiendaRA,
+                });
 
                 // IMPORTANTE:
                 // Aquí NO devolvemos "costo".
@@ -936,17 +932,18 @@ activo:
         // Si no tiene, precio_detal.
         // =====================================
 
-        const precioProductoNormal =
-          esTiendaRA
-            ? Number(
-                producto.costo || 0
-              )
-            : precioPersonalizadoProducto !== null
-              ? precioPersonalizadoProducto
-              : Number(
-                  producto.precio_detal ||
-                    0
-                );
+        const precioProductoNormal = precioVentaTienda({
+          precioBase: esTiendaRA ? producto.costo : producto.precio_detal,
+          personalizado: precioPersonalizadoProducto,
+          moneda: tienda.moneda,
+          esRa: esTiendaRA,
+        });
+
+        // Un importe base COP nunca debe aparecer como USD en la tienda.
+        if (!esTiendaRA && tienda.moneda === "USD" &&
+            !producto.tiene_variantes && precioProductoNormal === null) {
+          return null;
+        }
 
         // No presentar productos con variantes si ninguna opción tiene precio.
         if (producto.tiene_variantes === true && !tieneVariantes) {
@@ -1188,6 +1185,7 @@ created_at:
 
     <TiendaCliente
   tiendaId={tienda.id}
+  moneda={esTiendaRA ? "COP" : tienda.moneda || "COP"}
   esMayoristaPrincipal={esMayoristaPrincipal}
   esLocalVillavo={esRaAccesoriosVillavo(tienda)}
 
