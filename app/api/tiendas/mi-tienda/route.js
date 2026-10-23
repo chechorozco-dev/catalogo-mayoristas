@@ -243,7 +243,7 @@ export async function GET() {
       await fetch(
         `${supabaseUrl}/rest/v1/tiendas?id=eq.${encodeURIComponent(
           cliente.tienda_id
-        )}&activa=eq.true&select=id,nombre_tienda,slug,whatsapp,logo_url,color_principal,color_fondo,mensaje_portada,instagram,facebook,tiktok,activa,creado_en`,
+        )}&activa=eq.true&select=id,nombre_tienda,slug,whatsapp,logo_url,color_principal,color_fondo,mensaje_portada,instagram,facebook,tiktok,activa,creado_en,moneda`,
         {
           method: "GET",
           headers,
@@ -372,7 +372,7 @@ export async function PATCH(request) {
       await fetch(
         `${supabaseUrl}/rest/v1/clientes_autorizados?id=eq.${encodeURIComponent(
           sesion.cliente_id
-        )}&activo=eq.true&select=id,tienda_id`,
+        )}&activo=eq.true&select=id,tienda_id,negocio_id`,
         {
           method: "GET",
           headers,
@@ -413,6 +413,51 @@ export async function PATCH(request) {
 
     const body =
       await request.json();
+
+    // Solo actualiza la moneda de la tienda del cliente autenticado.
+    // Nunca convierte los precios existentes.
+    if (body && Object.keys(body).length === 1 && Object.hasOwn(body, "moneda")) {
+      const moneda = String(body.moneda || "").toUpperCase();
+      if (!["COP", "USD"].includes(moneda)) {
+        return NextResponse.json({ ok: false, mensaje: "Moneda no válida." }, { status: 400 });
+      }
+      const filtroTienda = `id=eq.${encodeURIComponent(cliente.tienda_id)}&negocio_id=eq.${encodeURIComponent(cliente.negocio_id)}`;
+      const tiendaActualResponse = await fetch(
+        `${supabaseUrl}/rest/v1/tiendas?${filtroTienda}&select=id,tipo_tienda,activa,moneda&limit=1`,
+        { headers, cache: "no-store" }
+      );
+      if (!tiendaActualResponse.ok) {
+        return NextResponse.json({ ok: false, mensaje: "No se pudo verificar la tienda." }, { status: 500 });
+      }
+      const tiendaActual = (await tiendaActualResponse.json())?.[0];
+      if (!tiendaActual || tiendaActual.activa !== true) {
+        return NextResponse.json({ ok: false, mensaje: "Tienda no encontrada." }, { status: 404 });
+      }
+      if (String(tiendaActual.tipo_tienda || "").toUpperCase() === "RA" && moneda !== "COP") {
+        return NextResponse.json({ ok: false, mensaje: "La tienda mayorista principal utiliza COP." }, { status: 403 });
+      }
+      const respuesta = await fetch(
+        `${supabaseUrl}/rest/v1/tiendas?${filtroTienda}`,
+        {
+          method: "PATCH",
+          headers: { ...headers, Prefer: "return=representation" },
+          body: JSON.stringify({ moneda }),
+          cache: "no-store",
+        }
+      );
+      if (!respuesta.ok) {
+        return NextResponse.json({ ok: false, mensaje: "No pudimos cambiar la moneda." }, { status: 500 });
+      }
+      const tiendaActualizada = (await respuesta.json())?.[0];
+      if (!tiendaActualizada) {
+        return NextResponse.json({ ok: false, mensaje: "No se actualizó la tienda." }, { status: 500 });
+      }
+      return NextResponse.json({
+        ok: true,
+        mensaje: "Moneda guardada. Los importes existentes no han sido convertidos.",
+        tienda: { id: tiendaActualizada.id, moneda: tiendaActualizada.moneda },
+      });
+    }
 
     const colorPrincipal =
       String(
