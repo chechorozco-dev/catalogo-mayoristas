@@ -43,6 +43,8 @@ export default function ProductosMayoristaPage() {
 
   const [cargando, setCargando] =
     useState(true);
+  const [guardandoMoneda, setGuardandoMoneda] = useState(false);
+  const [errorMoneda, setErrorMoneda] = useState("");
 
   const [error, setError] =
     useState("");
@@ -894,6 +896,33 @@ if (
     setCategoriaActiva(categoria);
     setMenuAbierto(false);
   }
+  async function cambiarMonedaTienda(monedaNueva) {
+    const monedaAnterior = tiendaActual?.moneda || "COP";
+    if (monedaAnterior === monedaNueva || guardandoMoneda) return;
+    const mensaje = "La moneda cambiará para toda tu tienda. Los importes guardados NO se convierten automáticamente. " +
+      "Por ejemplo, 24 pasará a mostrarse como US$ 24.00, no como US$ 2.40. " +
+      "Los productos sin precio personalizado no se publicarán en USD hasta que les asignes un precio. ¿Continuar?";
+    if (!window.confirm(mensaje)) return;
+    setGuardandoMoneda(true);
+    setErrorMoneda("");
+    try {
+      const respuesta = await fetch("/api/tiendas/mi-tienda", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ moneda: monedaNueva }),
+      });
+      const datos = await respuesta.json();
+      if (!respuesta.ok || !datos.ok) {
+        throw new Error(datos.mensaje || "No pudimos cambiar la moneda.");
+      }
+      setTiendaActual((actual) => ({ ...actual, moneda: datos.tienda?.moneda || monedaNueva }));
+    } catch (error) {
+      setErrorMoneda(error.message || "No pudimos cambiar la moneda.");
+    } finally {
+      setGuardandoMoneda(false);
+    }
+  }
+
   function actualizarPrecioPersonalizado(
     productoId,
     varianteId,
@@ -915,8 +944,6 @@ if (
         ) {
           return {
             ...producto,
-            precio_detal:
-              Number(nuevoPrecio),
             precio_personalizado:
               Number(nuevoPrecio),
           };
@@ -938,11 +965,6 @@ if (
                     Number(varianteId)
                       ? {
                           ...variante,
-
-                          precio_detal:
-                            Number(
-                              nuevoPrecio
-                            ),
 
                           precio_personalizado:
                             Number(
@@ -4098,6 +4120,26 @@ async function publicarProductoAhora(productoId) {
               onClick={() => {setBusqueda("");setCategoriaActiva("Todos los productos");}}>Limpiar filtros</button>}
           </div>
 
+          {String(tiendaActual?.tipo_tienda || "").toUpperCase() !== "RA" && (
+            <div className="info" style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+              <label htmlFor="moneda-tienda" style={{ fontWeight: 700 }}>Moneda de mis precios de venta</label>
+              <select
+                id="moneda-tienda"
+                value={tiendaActual?.moneda === "USD" ? "USD" : "COP"}
+                disabled={guardandoMoneda}
+                onChange={(e) => cambiarMonedaTienda(e.target.value)}
+                style={{ padding: "10px", borderRadius: 8, border: "1px solid #bbb", fontWeight: 700 }}
+              >
+                <option value="COP">COP — Pesos colombianos</option>
+                <option value="USD">USD — Dólares estadounidenses</option>
+              </select>
+              <small style={{ width: "100%" }}>
+                Tu costo de compra sigue expresado en COP. Los precios de venta son de tu tienda; al cambiar la moneda no hacemos conversiones automáticas.
+                {tiendaActual?.moneda === "USD" ? " Los productos sin precio USD definido no se muestran a tus compradores." : ""}
+              </small>
+              {errorMoneda && <p role="alert" style={{ color: "#a33" }}>{errorMoneda}</p>}
+            </div>
+          )}
           <div className="info">
             <strong>
               💡 Información para tu negocio
@@ -4215,16 +4257,12 @@ async function publicarProductoAhora(productoId) {
                           producto.costo || 0
                         );
 
-                  const precioPrincipal =
-                    primeraVariante
-                      ? Number(
-                          primeraVariante.precio_detal ||
-                            0
-                        )
-                      : Number(
-                          producto.precio_detal ||
-                            0
-                        );
+                  const monedaVenta = tiendaActual?.moneda === "USD" ? "USD" : "COP";
+                  const precioPrincipal = primeraVariante
+                    ? (primeraVariante.precio_personalizado ??
+                        (monedaVenta === "USD" ? null : Number(primeraVariante.precio_detal || 0)))
+                    : (producto.precio_personalizado ??
+                        (monedaVenta === "USD" ? null : Number(producto.precio_detal || 0)));
 
                   const abiertas =
                     variantesAbiertas[
@@ -4398,6 +4436,7 @@ async function publicarProductoAhora(productoId) {
                           <EditorPrecios
   costo={costoPrincipal}
   precio={precioPrincipal}
+  moneda={monedaVenta}
   productoId={producto.id}
   varianteId={null}
   onPrecioActualizado={(nuevoPrecio) =>
@@ -4457,11 +4496,8 @@ async function publicarProductoAhora(productoId) {
                                           0
                                       );
 
-                                    const precio =
-                                      Number(
-                                        variante.precio_detal ||
-                                          0
-                                      );
+                                    const precio = variante.precio_personalizado ??
+                                      (monedaVenta === "USD" ? null : Number(variante.precio_detal || 0));
 
                               
 
@@ -4586,6 +4622,7 @@ async function publicarProductoAhora(productoId) {
 <EditorPrecios
   costo={costo}
   precio={precio}
+                                            moneda={monedaVenta}
   productoId={producto.id}
   varianteId={variante.id}
   onPrecioActualizado={(nuevoPrecio) =>
