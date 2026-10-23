@@ -13,17 +13,18 @@ export default function BloquePrecios({
   onPrecioActualizado,
 }) {
   const costoNumero = Number(costo || 0);
-  const precioNumero = Number(precio || 0);
+  const precioPendiente = precio === null || precio === undefined;
+  const precioNumero = precioPendiente ? null : Number(precio);
   const esUsd = moneda === "USD";
 
   const [editando, setEditando] = useState(false);
-  const [nuevoPrecio, setNuevoPrecio] = useState(String(precioNumero));
+  const [nuevoPrecio, setNuevoPrecio] = useState(precioPendiente ? "" : String(precioNumero));
   const [guardando, setGuardando] = useState(false);
   const [errorPrecio, setErrorPrecio] = useState("");
 
   useEffect(() => {
-    if (!editando) setNuevoPrecio(String(precioNumero));
-  }, [precioNumero, editando]);
+    if (!editando) setNuevoPrecio(precioPendiente ? "" : String(precioNumero));
+  }, [precioNumero, precioPendiente, editando]);
 
   async function guardarPrecio() {
     if (guardando) return;
@@ -62,7 +63,7 @@ export default function BloquePrecios({
   }
 
   function cancelarEdicion() {
-    setNuevoPrecio(String(precioNumero));
+    setNuevoPrecio(precioPendiente ? "" : String(precioNumero));
     setErrorPrecio("");
     setEditando(false);
   }
@@ -84,7 +85,7 @@ export default function BloquePrecios({
               title="Editar precio de venta"
               aria-label="Editar precio de venta"
               onClick={() => {
-                setNuevoPrecio(String(precioNumero));
+                setNuevoPrecio(precioPendiente ? "" : String(precioNumero));
                 setErrorPrecio("");
                 setEditando(true);
               }}
@@ -94,7 +95,7 @@ export default function BloquePrecios({
           )}
         </div>
         {!editando ? (
-          <strong className="sale-price-new">{formatoPrecio(precioNumero, moneda)}</strong>
+          <strong className="sale-price-new">{precioPendiente ? "Pendiente de definir precio" : formatoPrecio(precioNumero, moneda)}</strong>
         ) : (
           <div className="price-editor-new">
             <div className="price-input-new">
