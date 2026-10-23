@@ -162,12 +162,12 @@ test("retiro rechaza elección anticipada de efectivo o transferencia", async ()
   for (const metodo of ["EFECTIVO", "TRANSFERENCIA"]) {
     const { respuesta, fake } = await ejecutarConFetchFalso(metodo, false, "RECOGER");
     assert.equal(respuesta.status, 400);
-    assert.equal(fake.llamadas.length, 1);
+    assert.equal(fake.llamadas.filter((x) => x.metodo === "POST").length, 0);
   }
 });
 
 test("el servidor exige el estado POR_ACORDAR para pedidos Villavo", async () => {
   const { respuesta, fake } = await ejecutarConFetchFalso("", false, "RECOGER");
   assert.equal(respuesta.status, 400);
-  assert.equal(fake.llamadas.length, 1);
+  assert.equal(fake.llamadas.filter((x) => x.metodo === "POST").length, 0);
 });
