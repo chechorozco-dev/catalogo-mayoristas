@@ -1,6 +1,20 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { POST } from "../app/api/confirmar-pedido/route.js";
+// La ruta real se ejecuta con servicios simulados; nunca contacta Next
+// ni servicios externos desde las pruebas.
+import { registerHooks } from "node:module";
+registerHooks({
+  resolve(specifier, context, nextResolve) {
+    if (specifier === "next/server") {
+      return {
+        url: "data:text/javascript,export%20function%20after%28callback%29%7B%7D",
+        shortCircuit: true,
+      };
+    }
+    return nextResolve(specifier, context);
+  },
+});
+const { POST } = await import("../app/api/confirmar-pedido/route.js");
 import { LOCAL_VILLAVO_ID } from "../lib/catalogo/pagos-local.mjs";
 
 const LOCAL = {
@@ -34,6 +48,10 @@ function stubFetch(permitirPedido = false) {
     llamadas.push({direccion,metodo:opciones.method || "GET"});
     if (direccion.includes("/rest/v1/tiendas?")) {
       return Response.json([LOCAL]);
+    }
+    // Control de integración Make: permitir únicamente en la prueba simulada.
+    if (direccion.includes("/rest/v1/ra_web_integracion_controles?")) {
+      return Response.json([{ activo: true, version: 1 }]);
     }
     if (direccion.includes("/rest/v1/ciudades_envio?")) {
       return Response.json([{ciudad_id:"VILLAVICENCIO\\META\\COL",ciudad_departamento:"VILLAVICENCIO, META",costo_envio:"15000.00",tiempo_estimado:"DE 1 A 2 DÍAS"}]);
@@ -77,7 +95,7 @@ test("contraentrega es rechazada antes de crear un pedido o llamar a Make", asyn
   const {respuesta,fake}=await ejecutarConFetchFalso("CONTRA_ENTREGA", false);
   assert.equal(respuesta.status,400);
   assert.equal((await respuesta.json()).ok,false);
-  assert.equal(fake.llamadas.length,1);
+  assert.equal(fake.llamadas.filter((x) => x.metodo === "POST").length, 0);
   assert.equal(fake.payloadMake,null);
 });
 
@@ -106,7 +124,7 @@ test("envío rechaza métodos elegidos antes de hablar por WhatsApp", async () =
   for (const formaPago of ["EFECTIVO","TRANSFERENCIA","CONTRA_ENTREGA","PAGO EN CASA"]) {
     const {respuesta,fake} = await ejecutarConFetchFalso(formaPago,false,"ENVIO");
     assert.equal(respuesta.status,400);
-    assert.equal(fake.llamadas.length,1);
+    assert.equal(fake.llamadas.filter((x) => x.metodo === "POST").length, 0);
   }
 });
 
@@ -115,7 +133,7 @@ test("envío requiere dirección y ciudad real de la lista", async () => {
     cliente: {nombre:"Test",direccion:"",ciudad_id:""},
   });
   assert.equal(respuesta.status,400);
-  assert.equal(fake.llamadas.length,1);
+  assert.equal(fake.llamadas.filter((x) => x.metodo === "POST").length, 0);
 });
 
 test("pedido de envío Villavo lleva costo de transporte real y 0% descuento", async () => {
@@ -137,7 +155,7 @@ test("pedido de envío Villavo lleva costo de transporte real y 0% descuento", a
 test("no se acepta pedido Villavo sin elegir recoger o enviar", async () => {
   const {respuesta,fake}=await ejecutarConFetchFalso("POR_ACORDAR",false,"");
   assert.equal(respuesta.status,400);
-  assert.equal(fake.llamadas.length,1);
+  assert.equal(fake.llamadas.filter((x) => x.metodo === "POST").length, 0);
 });
 
 test("retiro rechaza elección anticipada de efectivo o transferencia", async () => {
