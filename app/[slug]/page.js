@@ -212,6 +212,7 @@ export default async function TiendaPage({
         "costo",
         "activo",
         "solo_ra",
+        "cant",
         "created_at",
         "tiene_variantes",
       ].join(",") +
@@ -543,6 +544,8 @@ if (!producto.created_at) {
 }
   // SOLO_RA: las unidades apartadas se ocultan durante 48 horas.
   // Si el control de reservas falla, no mostrar exclusivas por seguridad.
+  const esMayoristaPrincipal = tienda.slug === "mayoristas-ra" && tienda.tipo_tienda === "RA";
+  const disponibilidadSoloRa = new Map();
   let idsSoloRaDisponibles = [];
   if (tienda.slug === "mayoristas-ra" && tienda.tipo_tienda === "RA") {
     try {
@@ -561,6 +564,9 @@ if (!producto.created_at) {
       );
       if (!respuesta.ok) throw new Error(await respuesta.text());
       const disponibles = await respuesta.json();
+      for (const fila of disponibles) {
+        disponibilidadSoloRa.set(Number(fila.producto_id), fila.disponible);
+      }
       idsSoloRaDisponibles = disponibles
         .filter((fila) => Number(fila.disponible) > 0)
         .map((fila) => Number(fila.producto_id));
@@ -964,6 +970,10 @@ activo:
         return {
           id: producto.id,
           solo_ra: producto.solo_ra === true,
+          // Existencias públicas únicamente para la tienda mayorista principal.
+          cantidad_disponible: esMayoristaPrincipal
+            ? (producto.solo_ra ? disponibilidadSoloRa.get(Number(producto.id)) ?? null : producto.cant)
+            : null,
 
           referencia:
             primeraVariante?.referencia ||
@@ -1178,6 +1188,7 @@ created_at:
 
     <TiendaCliente
   tiendaId={tienda.id}
+  esMayoristaPrincipal={esMayoristaPrincipal}
   esLocalVillavo={esRaAccesoriosVillavo(tienda)}
 
   tipoTienda={

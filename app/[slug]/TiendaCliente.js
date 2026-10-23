@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import FotoOptimizada from "../components/FotoOptimizada";
 import { limpiarTexto, formatoPrecio, limpiarWhatsapp, normalizarTelefonoColombia, obtenerColorTexto } from "../../lib/catalogo/formatos.mjs";
 import { productoPerteneceCategoria, obtenerTipoProducto } from "../../lib/catalogo/categorias.mjs";
+import AvisoDisponibilidad from "./components/AvisoDisponibilidad";
 import GaleriaProducto from "./components/GaleriaProducto";
 import { fotosProducto } from "../../lib/catalogo/pdf-layout.mjs";
 
@@ -38,6 +39,7 @@ export default function TiendaCliente({
   tiendaId,
   tipoTienda = "CLIENTE",
   esLocalVillavo = false,
+  esMayoristaPrincipal = false,
   nombreTienda,
   logoUrl,
   whatsapp,
@@ -2502,6 +2504,9 @@ try {
       )}`
     : formatoPrecio(producto.precio)}
 </div>
+                    {esMayoristaPrincipal && (
+                      <AvisoDisponibilidad cantidad={producto.cantidad_disponible} />
+                    )}
                   </div>
                 </article>
                            );
@@ -2677,6 +2682,10 @@ try {
                   productoSeleccionado.precio
                 )}
               </div>
+
+              {esMayoristaPrincipal && (
+                <AvisoDisponibilidad cantidad={productoModal.cantidad_disponible} />
+              )}
 
               <div className="acciones-producto-modal">
                 <button type="button" onClick={() => alternarFavorito(productoModal.id)}>
@@ -3389,6 +3398,12 @@ setErroresCompra((actual) => ({
                 ×
               </button>
             </div>
+
+            {esMayoristaPrincipal && carrito.length > 0 && (
+              <div style={{ padding: "0 18px" }}>
+                <AvisoDisponibilidad recordatorio />
+              </div>
+            )}
 
             {carrito.length > 0 && (
               <div className="vaciar-contenedor">
