@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { fetchSupabasePaginado } from "../../../lib/supabasePagination";
+import { normalizarMoneda, redondearPrecio } from "../../../lib/catalogo/monedas.mjs";
 
 export const dynamic = "force-dynamic";
 
@@ -202,7 +203,7 @@ async function obtenerCliente(request) {
   // El negocio se obtiene del registro de la tienda, no del navegador.
   // Impide mezclar precios entre RA Accesorios y otros locales.
   const tiendas = await consultarSupabase(
-    `tiendas?select=id,negocio_id,activa&id=eq.${encodeURIComponent(cliente.tienda_id)}&limit=1`
+    `tiendas?select=id,negocio_id,activa,moneda&id=eq.${encodeURIComponent(cliente.tienda_id)}&limit=1`
   );
   const tienda = Array.isArray(tiendas) ? tiendas[0] : null;
   if (
@@ -213,7 +214,7 @@ async function obtenerCliente(request) {
     return null;
   }
 
-  return { ...cliente, negocio_id: tienda.negocio_id };
+  return { ...cliente, negocio_id: tienda.negocio_id, moneda: normalizarMoneda(tienda.moneda) };
 }
 
 /* =========================================================
@@ -253,6 +254,7 @@ export async function GET(request) {
         Array.isArray(precios)
           ? precios
           : [],
+      moneda: cliente.moneda,
     });
   } catch (error) {
     console.error(
@@ -353,7 +355,8 @@ export async function POST(request) {
 
     if (
       !Number.isFinite(precioSugerido) ||
-      precioSugerido < 0
+      precioSugerido < 0 ||
+      precioSugerido > 1000000000
     ) {
       return NextResponse.json(
         {
@@ -458,7 +461,7 @@ export async function POST(request) {
         varianteId,
 
       precio_sugerido:
-        Math.round(precioSugerido),
+        redondearPrecio(precioSugerido, cliente.moneda),
 
       actualizado_en:
         new Date().toISOString(),
