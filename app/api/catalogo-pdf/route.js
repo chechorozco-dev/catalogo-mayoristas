@@ -1322,7 +1322,7 @@ let productosFiltrados = (productos || []).filter(
 /* Ambos filtros se aplican a la vez. No existe descarga global. */
 productosFiltrados = productosFiltrados
   // No etiquetar importes COP como USD si faltan precios propios.
-  .filter((producto) => esTiendaRA || tienda.moneda !== "USD" || mapaPrecios.has(String(producto.id)))
+  .filter((producto) => esTiendaRA || tienda.moneda !== "USD" || (mapaPrecios.has(String(producto.id)) && mapaPrecios.get(String(producto.id)) > 0))
   .filter((producto) => productoCoincidePdf(producto, materialPdf, tipoPdf))
   .filter((producto) => fotosProducto(producto).length > 0);
 
