@@ -9,11 +9,11 @@ export default function AvisoDisponibilidad({ cantidad, recordatorio = false }) 
       border: "1px solid #f2dfb6", fontSize: 11, lineHeight: 1.4,
     }}>
       <strong style={{ display: "block", fontSize: 12, marginBottom: 3 }}>
-        {recordatorio ? "Tu carrito no garantiza disponibilidad" : "Pocas unidades disponibles"}
+        {recordatorio ? "Confirma tu pedido a tiempo" : "Pocas unidades disponibles"}
       </strong>
       <span>
-        Agregar al carrito no garantiza que el producto quede separado.
-        Puede agotarse antes de confirmar tu pedido.
+        Confirma tu pedido antes de que se agote.
+        Agregarlo al carrito no garantiza que el producto quede separado.
       </span>
     </div>
   );
