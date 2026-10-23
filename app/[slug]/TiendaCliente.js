@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import FotoOptimizada from "../components/FotoOptimizada";
-import { limpiarTexto, formatoPrecio, limpiarWhatsapp, normalizarTelefonoColombia, obtenerColorTexto } from "../../lib/catalogo/formatos.mjs";
+import { limpiarTexto, formatoPrecio as formatoPrecioMoneda, limpiarWhatsapp, normalizarTelefonoColombia, obtenerColorTexto } from "../../lib/catalogo/formatos.mjs";
 import { productoPerteneceCategoria, obtenerTipoProducto } from "../../lib/catalogo/categorias.mjs";
 import AvisoDisponibilidad from "./components/AvisoDisponibilidad";
 import GaleriaProducto from "./components/GaleriaProducto";
@@ -37,6 +37,7 @@ const CATEGORIAS_MENU = [
 ];
 export default function TiendaCliente({
   tiendaId,
+  moneda = "COP",
   tipoTienda = "CLIENTE",
   esLocalVillavo = false,
   esMayoristaPrincipal = false,
@@ -54,6 +55,7 @@ export default function TiendaCliente({
   idsSoloRaDisponibles = [],
 }) {
   const router = useRouter();
+  const formatoPrecio = (valor) => formatoPrecioMoneda(valor, moneda);
   const reservasEnCurso = useRef(new Set());
 
   // Detectar cambios de existencias entre compradores, incluyendo liberación
