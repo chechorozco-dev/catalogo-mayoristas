@@ -698,11 +698,12 @@ async function procesarPOST(request) {
       }
     }
 
-    // Referencia del proveedor: solo se sincroniza con el maestro privado RA.
+    // Referencia del proveedor: AppSheet también envía la clave "ref prov".
+    // Solo se sincroniza con el maestro privado RA.
     // Un valor ausente o en blanco no borra la referencia guardada.
     const referenciaProveedorRaw = eliminar ? undefined : obtener(
       body, "referencia_proveedor", "REFERENCIA_PROVEEDOR",
-      "REFERENCIA PROVEEDOR", "referenciaProveedor"
+      "REFERENCIA PROVEEDOR", "referenciaProveedor", "ref prov", "REF PROV"
     );
     let referenciaProveedor;
     if (referenciaProveedorRaw !== undefined && referenciaProveedorRaw !== null &&

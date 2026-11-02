@@ -94,8 +94,9 @@ El endpoint existente `POST /api/automation/producto` acepta opcionalmente
 `costo_compra`, `COSTO_COMPRA` o `COSTO_REAL` en el body autenticado del
 webhook; nunca agrega esta información a `public.productos`.
 
-También admite `referencia_proveedor`, `REFERENCIA_PROVEEDOR` o
-`REFERENCIA PROVEEDOR`. El dato se guarda **solo en**
+También admite `referencia_proveedor`, `REFERENCIA_PROVEEDOR`,
+`REFERENCIA PROVEEDOR`, `referenciaProveedor`, `ref prov` o `REF PROV`.
+El dato se guarda **solo en**
 `ra_productos_principal.referencia_proveedor` (privado), sin cambiar la
 referencia RA ni incluirlo en `public.productos`. Campo opcional: si no llega
 su valor o está vacío, se conserva el anterior.
@@ -107,6 +108,20 @@ la autenticación):
 ```json
 "referencia_proveedor": "<<[REFERENCIA PROVEEDOR]>>"
 ```
+
+Si la columna se llama `REF PROVEEDOR`, se puede conservar el body de
+AppSheet con esta clave exacta:
+
+```json
+"ref prov": "<<[REF PROVEEDOR]>>"
+```
+
+RA WhatsApp Lab reenvía este dato desde `POST /api/automations/product` al
+receptor `POST /api/automation/producto`. Se guarda tanto al crear como al
+actualizar productos, incluso si no cambian los campos públicos. Se recibe
+como texto (máximo 160 caracteres), conservando ceros iniciales y guiones;
+solo se recortan los espacios de los extremos. No se recuperan referencias
+de envíos anteriores que no incluían el dato: hace falta reenviarlo.
 
 En Productos RA Principal también puede editarse manualmente este dato y el
 de cada variante. No implica conciliación automática con la DIAN, que necesitará
