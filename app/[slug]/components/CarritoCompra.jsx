@@ -100,7 +100,6 @@ export default function CarritoCompra({
   const [vaciar, setVaciar] = useState(false);
   const [operacion, setOperacion] = useState(null);
   const [resumenEnviado, setResumenEnviado] = useState(null);
-  const [opcionalesAbiertos, setOpcionalesAbiertos] = useState(false);
   const panel = useRef(null);
   const contenido = useRef(null);
   const titulo = useRef(null);
@@ -145,7 +144,6 @@ export default function CarritoCompra({
   }
 
   function mostrarErrores(nuevos) {
-    if (nuevos.correo) setOpcionalesAbiertos(true);
     onErrores(nuevos);
     const destino = pasoConErrores(nuevos);
     if (destino !== paso) irA(destino);
@@ -270,13 +268,14 @@ export default function CarritoCompra({
                 {esPuntoVillavo && <fieldset className="ra-compra__opciones"><legend>¿Cómo quieres recibirlo?</legend>{[["RECOGER", "Recoger en el local", "Sin costo de envío"], ["ENVIO", "Enviar a mi dirección", "El envío se calcula con tu ciudad"]].map(([valor, tituloOpcion, ayuda]) => <label key={valor} className={modalidad === valor ? "ra-compra__seleccionada" : ""}><input type="radio" id={valor === "RECOGER" ? "compra-modalidad" : undefined} name="modalidad" value={valor} checked={modalidad === valor} onChange={() => { onModalidad(valor); onErrores({}); }} /><span><strong>{tituloOpcion}</strong><small>{ayuda}</small></span></label>)}{errores.modalidad && <p className="ra-compra__error">{errores.modalidad}</p>}</fieldset>}
                 <Campo nombre="nombre" titulo="Nombre completo" error={errores.nombre}><input {...atributos("nombre")} name="name" type="text" autoComplete="shipping name" value={cliente.nombre} placeholder="Ej. María Rodríguez" onChange={evento => cambiarCliente("nombre", evento.target.value)} /></Campo>
                 <Campo nombre="telefono" titulo="WhatsApp" ayuda="Aquí te avisaremos cómo va tu pedido." error={errores.telefono}><input {...atributos("telefono")} name="tel" type="tel" inputMode="tel" autoComplete="shipping tel" value={cliente.telefono} placeholder="Ej. 3101234567" onChange={evento => cambiarCliente("telefono", evento.target.value.replace(/\D/g, ""))} /></Campo>
+                <Campo nombre="cedula" titulo="Cédula (opcional)"><input {...atributos("cedula")} name="documento" type="text" inputMode="numeric" autoComplete="off" value={cliente.cedula} placeholder="Número de cédula" onChange={evento => cambiarCliente("cedula", evento.target.value.replace(/\D/g, ""))} /></Campo>
+                <Campo nombre="correo" titulo="Correo electrónico (opcional)" error={errores.correo}><input {...atributos("correo")} name="email" type="email" inputMode="email" autoComplete="shipping email" value={cliente.correo} placeholder="Ej. maria@gmail.com" onChange={evento => cambiarCliente("correo", evento.target.value)} /></Campo>
                 {!retiro && <>
-                  <Ciudad ciudades={ciudades} cargando={cargandoCiudades} seleccionada={ciudad} error={errores.ciudad} onSeleccionar={valor => { onCiudad(valor); onErrores({ ...errores, ciudad: "", envio: "" }); }} />
                   <Campo nombre="direccion" titulo="Dirección de entrega" ayuda="Incluye barrio, apartamento o casa, si aplica." error={errores.direccion}><input {...atributos("direccion")} name="street-address" type="text" autoComplete="shipping street-address" value={cliente.direccion} placeholder="Ej. Calle 15 # 20-30, barrio Centro" onChange={evento => cambiarCliente("direccion", evento.target.value)} /></Campo>
+                  <Ciudad ciudades={ciudades} cargando={cargandoCiudades} seleccionada={ciudad} error={errores.ciudad} onSeleccionar={valor => { onCiudad(valor); onErrores({ ...errores, ciudad: "", envio: "" }); }} />
                   {ciudad && <div className="ra-compra__envio"><span>Envío a {ciudad.ciudad_departamento}</span><strong>{envioGratis ? "Gratis" : costoEnvio === null ? "Por confirmar" : formatoPrecio(costoEnvio)}</strong>{ciudad.tiempo_estimado && <small>Entrega estimada: {ciudad.tiempo_estimado}</small>}</div>}
                 </>}
                 {retiro && <p className="ra-compra__nota">Recoges en RA Accesorios Villavo. Acordaremos contigo el pago por WhatsApp.</p>}
-                {!retiro && <details className="ra-compra__opcionales" open={opcionalesAbiertos} onToggle={evento => setOpcionalesAbiertos(evento.currentTarget.open)}><summary>Agregar cédula o correo <span>(opcional)</span></summary><div><Campo nombre="cedula" titulo="Cédula (opcional)"><input {...atributos("cedula")} name="documento" type="text" inputMode="numeric" autoComplete="off" value={cliente.cedula} placeholder="Número de cédula" onChange={evento => cambiarCliente("cedula", evento.target.value.replace(/\D/g, ""))} /></Campo><Campo nombre="correo" titulo="Correo electrónico (opcional)" error={errores.correo}><input {...atributos("correo")} name="email" type="email" inputMode="email" autoComplete="shipping email" value={cliente.correo} placeholder="Ej. maria@gmail.com" onChange={evento => cambiarCliente("correo", evento.target.value)} /></Campo></div></details>}
                 {!cargandoCiudades && !ciudades.length && !retiro && <div role="alert" className="ra-compra__error">No pudimos cargar las ciudades. <button type="button" className="ra-compra__enlace" onClick={onReintentarCiudades}>Volver a intentar</button></div>}
               </form>
             </>

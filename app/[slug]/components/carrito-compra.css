@@ -55,10 +55,6 @@
 .ra-compra__ciudades p { margin: 0; padding: 14px; color: #746b7e; font-size: 13px; }
 .ra-compra__envio { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 5px 12px; margin-bottom: 20px; padding: 12px; border: 1px solid #dce8df; border-radius: 9px; background: #f4f9f5; color: #365c42; font-size: 13px; }
 .ra-compra__envio small { grid-column: 1 / -1; }
-.ra-compra__opcionales { margin: 6px 0 20px; border: 1px solid #e8e2ee; border-radius: 9px; }
-.ra-compra__opcionales summary { padding: 14px 12px; cursor: pointer; font-size: 14px; color: #60516f; }
-.ra-compra__opcionales summary span { font-size: 12px; color: #786d82; }
-.ra-compra__opcionales > div { padding: 6px 12px 0; }
 .ra-compra__opciones { margin: 0 0 18px; padding: 0; border: 0; min-width: 0; }
 .ra-compra__opciones legend { margin-bottom: 12px; padding: 0; font-size: 16px; font-weight: 700; }
 .ra-compra__opciones > label { display: flex; align-items: center; gap: 11px; min-height: 80px; margin-bottom: 10px; padding: 14px; border: 1px solid #ded7e7; border-radius: 11px; cursor: pointer; background: white; }
