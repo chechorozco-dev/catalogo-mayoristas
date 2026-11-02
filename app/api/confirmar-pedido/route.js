@@ -1,3 +1,4 @@
+import {pedidoDirectoHabilitado,registrarPedidoDirecto,directRequestKey} from '../../../lib/integraciones/pedidosDirectos.mjs';
 import {revisarPedidosMake,registrarResultadoMake} from "../../../lib/integraciones/pedidosMakeControl.mjs";
 import { registrarActividadWeb } from "../../../lib/integraciones/actividad.mjs";
 import { after } from "next/server";
@@ -33,19 +34,16 @@ async function procesarPOST(request) {
     if (!tiendaActual?.activa) {
       return Response.json({ ok:false, error:"La tienda no está activa." }, { status:400 });
     }
-    // Preflight ANTES de crear pedidos, reservar/consumir inventario o invocar Make.
-    // Un proceso pausado NO debe fabricar un pedido aparentemente confirmado.
+    let directo;
     try {
-      const makeControl = await revisarPedidosMake("web-confirmar-pedido");
-      if(!makeControl.activo)return Response.json({
-        ok:false,codigo:"MAKE_PEDIDOS_PAUSADO",
-        error:"Los pedidos de esta tienda están temporalmente en mantenimiento. No se registró la compra. Inténtalo más tarde."
-      },{status:503,headers:{"Retry-After":"120","Cache-Control":"no-store"}});
+      directo=await pedidoDirectoHabilitado(tiendaActual);
+      if(!directo){
+        const control=await revisarPedidosMake("web-confirmar-pedido");
+        if(!control.activo)throw Error("Los pedidos están temporalmente en mantenimiento.");
+      }
     } catch {
-      return Response.json({
-        ok:false,codigo:"MAKE_CONTROL_INDISPONIBLE",
-        error:"No pudimos comprobar el estado del servicio de pedidos. No se registró la compra. Inténtalo nuevamente."
-      },{status:503,headers:{"Retry-After":"120","Cache-Control":"no-store"}});
+      return Response.json({ok:false,error:"El servicio de pedidos está temporalmente en mantenimiento. Inténtalo nuevamente."},
+        {status:503,headers:{"Retry-After":"120","Cache-Control":"no-store"}});
     }
     if (esRaAccesoriosVillavo(tiendaActual)) {
       const modalidad = String(pedido?.modalidad_entrega || "").toUpperCase();
@@ -420,6 +418,11 @@ for (const item of productosRecibidos) {
     // 3. CREAR NÚMERO ÚNICO DEL PEDIDO
     // ========================================
 
+    let pedidoCreado;
+    if(directo){
+      pedidoCreado=await registrarPedidoDirecto({...pedido,tienda_id:tiendaActual.id,productos:productosCompletos},
+        tiendaActual,directRequestKey(pedido,pedido.confirmacion_id));
+    }else{
     const respuestaSupabase = await fetch(
       `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/pedidos?select=id,numero_pedido`,
       {
@@ -452,13 +455,15 @@ for (const item of productosRecibidos) {
     const pedidosCreados =
       await respuestaSupabase.json();
 
-    const pedidoCreado =
+    pedidoCreado =
       pedidosCreados?.[0];
 
     if (!pedidoCreado?.numero_pedido) {
       throw new Error(
         "Supabase no devolvió el número del pedido."
       );
+    }
+
     }
 
     // ========================================
@@ -481,6 +486,7 @@ for (const item of productosRecibidos) {
     // 5. ENVIAR PEDIDO A MAKE
     // ========================================
 
+    if(!directo){
     let respuestaMake;
     try {
       // Mantener el destino ya operativo sin modificar la integración existente.
@@ -511,6 +517,8 @@ for (const item of productosRecibidos) {
       throw new Error(
         `Make respondió con estado ${respuestaMake.status}`
       );
+    }
+
     }
 
     // Aviso a RA WhatsApp Lab: cola interna después de confirmar con Make.

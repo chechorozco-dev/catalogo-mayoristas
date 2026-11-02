@@ -1,3 +1,4 @@
+import {pedidoDirectoHabilitado,registrarPedidoDirecto} from '../../../../lib/integraciones/pedidosDirectos.mjs';
 import { cookies } from "next/headers";
 import crypto from "crypto";
 
@@ -532,6 +533,18 @@ for (const item of productosCarrito) {
       subtotalProductos -
       descuento +
       costoEnvioFinal;
+
+    // Same direct pipeline as checkout, using the cart as an idempotency key.
+    const storeResponse=await fetch(supabaseUrl+'/rest/v1/tiendas?select=id,slug,tipo_tienda,negocio_id,activa&id=eq.'+encodeURIComponent(carrito.tienda_id)+'&limit=1',
+      {headers:{apikey:supabaseSecret},cache:'no-store'});
+    if(!storeResponse.ok)throw Error('No se pudo verificar la tienda del carrito.');
+    const store=(await storeResponse.json())[0];
+    if(store?.activa&&await pedidoDirectoHabilitado(store)){
+      const direct=await registrarPedidoDirecto({tienda_id:store.id,
+       cliente:{nombre:carrito.nombre_cliente||'',cedula:carrito.cedula_cliente||'',whatsapp:carrito.telefono_cliente||'',correo:carrito.correo_cliente||'',direccion:carrito.direccion_cliente||'',ciudad_id:ciudadEncontrada?.ciudad_id||''},
+       pago:{forma_pago:formaPago},productos:productosCompletos},store,'cart:'+carrito.id);
+      return Response.json({ok:true,mensaje:'Pedido registrado en WhatsApp Lab.',pedido_id:direct.id,numero_pedido:direct.numero_pedido,total_pedido:totalPedido});
+    }
 
     // ========================================
     // 7. CREAR NUEVO NÚMERO DE PEDIDO

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import {checkoutKey,clearCheckoutKey} from "../../lib/catalogo/checkout-key.mjs";
 import { useRouter } from "next/navigation";
 import FotoOptimizada from "../components/FotoOptimizada";
 import { limpiarTexto, formatoPrecio as formatoPrecioMoneda, limpiarWhatsapp, normalizarTelefonoColombia, obtenerColorTexto } from "../../lib/catalogo/formatos.mjs";
@@ -1569,6 +1570,7 @@ if (Object.keys(nuevosErrores).length > 0) {
   try {
     setEnviandoPedido(true);
 
+    pedido.confirmacion_id=await checkoutKey(pedido);
     const respuesta = await fetch(
       "/api/confirmar-pedido",
       {
@@ -1673,6 +1675,8 @@ if(perfilAutorizado?.whatsapp&&(
     console.warn("Ficha de cliente pendiente de actualizar tras pedido confirmado.");
   }
 }
+
+clearCheckoutKey(pedido);
 
 // El pedido sí fue confirmado correctamente
     // ==========================================
