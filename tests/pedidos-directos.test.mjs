@@ -15,7 +15,9 @@ test('checkout directo guarda una vez y un reintento no llama Make ni genera otr
   const u=String(url);
   if(u.includes('/tiendas?'))return Response.json([shop]);
   if(u.includes('/ra_web_order_control?'))return Response.json([{mode:'direct',tienda_id:shop.id,negocio_id:shop.negocio_id}]);
-  if(u.includes('/productos?'))return Response.json([{id:1,infoimagen:'picture',solo_ra:false}]);
+  if(u.includes('/productos?'))return Response.json(created?[]:[{id:1,infoimagen:'picture',solo_ra:false,activo:true}],{headers:{'content-range':created?'*/0':'0-0/1'}});
+  if(u.includes('/tienda_productos?'))return Response.json([]);
+  if(u.includes('/ra_web_orders?')){const saved=keys.get(new URL(u).searchParams.get('request_key').slice(3));return Response.json(saved?[{...saved,payload:{numero_pedido:saved.numero_pedido}}]:[]);}
   if(u.includes('/rpc/ra_web_order_enqueue')){
    const b=JSON.parse(init.body);rpc.push(b);
    if(!keys.has(b.p_request_key)){keys.set(b.p_request_key,{id:'source-id',numero_pedido:'REM100',lab_order_id:'lab-id'});created++;}
@@ -26,7 +28,7 @@ test('checkout directo guarda una vez y un reintento no llama Make ni genera otr
  };
  try{
   for(let n=0;n<2;n++){const r=await POST({json:async()=>order()});assert.equal(r.status,200);assert.equal((await r.json()).numero_pedido,'REM100');}
-  assert.equal(created,1);assert.equal(legacy,0);assert.equal(rpc[0].p_tienda_id,shop.id);assert.equal(rpc[0].p_payload.productos[0].infoimagen,'picture');
+  assert.equal(created,1);assert.equal(rpc.length,1);assert.equal(legacy,0);assert.equal(rpc[0].p_tienda_id,shop.id);assert.equal(rpc[0].p_payload.productos[0].infoimagen,'picture');
  }finally{globalThis.fetch=previous;if(oldUrl===undefined)delete process.env.NEXT_PUBLIC_SUPABASE_URL;else process.env.NEXT_PUBLIC_SUPABASE_URL=oldUrl;if(oldKey===undefined)delete process.env.SUPABASE_SECRET_KEY;else process.env.SUPABASE_SECRET_KEY=oldKey;}
 });
 test('checkout keys survive a failed request and change after acknowledged purchase or cart edits',async()=>{

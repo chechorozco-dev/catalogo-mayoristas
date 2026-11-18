@@ -169,8 +169,10 @@ export default function CarritoCompra({
     const nuevos = validarDatosCompra(datos);
     if (Object.keys(nuevos).length) { mostrarErrores(nuevos); return; }
     envioEnCurso.current = true;
-    setResumenEnviado({ cantidad: cantidadTotal, total: totalPedido, telefono: cliente.telefono });
-    try { await onConfirmar(); } finally { envioEnCurso.current = false; }
+    try {
+      const resumen = await onConfirmar();
+      if (resumen) setResumenEnviado(resumen);
+    } finally { envioEnCurso.current = false; }
   }
 
   async function cambiarCantidad(clave, accion) {

@@ -1,4 +1,5 @@
-import {pedidoDirectoHabilitado,registrarPedidoDirecto,directRequestKey} from '../../../lib/integraciones/pedidosDirectos.mjs';
+import { consultarDisponibilidadCarrito } from "../../../lib/catalogo/consultar-carrito.mjs";
+import {pedidoDirectoHabilitado,registrarPedidoDirecto,directRequestKey,buscarPedidoDirecto} from '../../../lib/integraciones/pedidosDirectos.mjs';
 import {revisarPedidosMake,registrarResultadoMake} from "../../../lib/integraciones/pedidosMakeControl.mjs";
 import { registrarActividadWeb } from "../../../lib/integraciones/actividad.mjs";
 import { after } from "next/server";
@@ -21,7 +22,7 @@ async function procesarPOST(request) {
     }
     const respuestaTienda = await fetch(
       process.env.NEXT_PUBLIC_SUPABASE_URL +
-        "/rest/v1/tiendas?select=id,slug,tipo_tienda,negocio_id,activa&id=eq." +
+        "/rest/v1/tiendas?select=id,slug,tipo_tienda,negocio_id,activa,creado_en&id=eq." +
         encodeURIComponent(tiendaId) + "&limit=1",
       { headers: { apikey: process.env.SUPABASE_SECRET_KEY,
         Authorization: "Bearer " + process.env.SUPABASE_SECRET_KEY },
@@ -44,6 +45,10 @@ async function procesarPOST(request) {
     } catch {
       return Response.json({ok:false,error:"El servicio de pedidos está temporalmente en mantenimiento. Inténtalo nuevamente."},
         {status:503,headers:{"Retry-After":"120","Cache-Control":"no-store"}});
+    }
+    if (directo) {
+      const existente = await buscarPedidoDirecto(tiendaActual, directRequestKey(pedido, pedido.confirmacion_id));
+      if (existente) return Response.json({ ok: true, pedido_id: existente.id, numero_pedido: existente.numero_pedido });
     }
     if (esRaAccesoriosVillavo(tiendaActual)) {
       const modalidad = String(pedido?.modalidad_entrega || "").toUpperCase();
@@ -161,233 +166,32 @@ async function procesarPOST(request) {
       );
     }
 
-    // ========================================
-// 2. COMPLETAR PRODUCTOS CON INFOIMAGEN
-//    SIN BLOQUEAR EL PEDIDO SI EL PRODUCTO
-//    YA FUE RETIRADO O ELIMINADO
-// ========================================
-
-const productosCompletos = [];
-const productosLimitados = [];
-
-for (const item of productosRecibidos) {
-  const productoId = Number(item?.producto_id);
-
-  const varianteId =
-    item?.variante_id !== null &&
-    item?.variante_id !== undefined &&
-    item?.variante_id !== ""
-      ? Number(item.variante_id)
-      : null;
-
-  const productoIdValido =
-    Number.isInteger(productoId) &&
-    productoId > 0;
-
-  const varianteIdValido =
-    varianteId === null ||
-    (
-      Number.isInteger(varianteId) &&
-      varianteId > 0
-    );
-
-  // Si ya venía alguna información de imagen,
-  // la conservamos como respaldo.
-  let infoimagen =
-    item?.infoimagen || "";
-
-  let productoDisponible = false;
-
-  let varianteDisponible =
-    varianteId !== null
-      ? false
-      : null;
-
-  // ========================================
-  // SI EL ID YA NO ES VÁLIDO
-  // NO DETENEMOS EL PEDIDO
-  // ========================================
-
-  if (!productoIdValido) {
-    console.warn(
-      "Producto del carrito sin producto_id válido. Se enviará igualmente:",
-      item?.referencia || item?.nombre || item
-    );
-
-    productosCompletos.push({
-      ...item,
-
-      infoimagen,
-
-      producto_disponible: false,
-
-      variante_disponible:
-        varianteId !== null
-          ? false
-          : null,
-
-      producto_retirado: true,
-    });
-
-    continue;
-  }
-
-  // ========================================
-  // CONSULTAR PRODUCTO PADRE
-  // ========================================
-
-  try {
-    const respuestaProducto = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/productos?select=id,infoimagen,solo_ra,cant,activo&id=eq.${encodeURIComponent(
-        productoId
-      )}&limit=1`,
-      {
-        method: "GET",
-
-        headers: {
-          apikey:
-            process.env.SUPABASE_SECRET_KEY,
-
-          Accept: "application/json",
-        },
-
-        cache: "no-store",
-      }
-    );
-
-    if (respuestaProducto.ok) {
-      const productosEncontrados =
-        await respuestaProducto.json();
-
-      const productoSupabase =
-        productosEncontrados?.[0];
-
-      if (productoSupabase) {
-        productoDisponible = true;
-        if (productoSupabase.solo_ra === true) {
-          productosLimitados.push({
-            producto_id: productoId,
-            cantidad: Number(item.cantidad || 0),
-          });
-        }
-
-        infoimagen =
-          productoSupabase.infoimagen ||
-          infoimagen ||
-          "";
-
-        // ========================================
-        // CONSULTAR VARIANTE
-        // ========================================
-
-        if (
-          varianteId !== null &&
-          varianteIdValido
-        ) {
-          try {
-            const respuestaVariante =
-              await fetch(
-                `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/producto_variantes?select=id,producto_id,infoimagen&id=eq.${encodeURIComponent(
-                  varianteId
-                )}&producto_id=eq.${encodeURIComponent(
-                  productoId
-                )}&limit=1`,
-                {
-                  method: "GET",
-
-                  headers: {
-                    apikey:
-                      process.env.SUPABASE_SECRET_KEY,
-
-                    Accept:
-                      "application/json",
-                  },
-
-                  cache: "no-store",
-                }
-              );
-
-            if (respuestaVariante.ok) {
-              const variantesEncontradas =
-                await respuestaVariante.json();
-
-              const varianteSupabase =
-                variantesEncontradas?.[0];
-
-              if (varianteSupabase) {
-                varianteDisponible = true;
-
-                // La variante manda.
-                // Si no tiene infoimagen,
-                // usamos la del producto padre.
-                infoimagen =
-                  varianteSupabase.infoimagen ||
-                  productoSupabase.infoimagen ||
-                  infoimagen ||
-                  "";
-              } else {
-                console.warn(
-                  `La variante ${varianteId} ya no existe. El pedido continuará.`
-                );
-              }
-            } else {
-              const errorVariante =
-                await respuestaVariante.text();
-
-              console.error(
-                `No se pudo consultar la variante ${varianteId}, pero el pedido continuará:`,
-                errorVariante
-              );
-            }
-          } catch (errorVariante) {
-            console.error(
-              `Error consultando variante ${varianteId}. El pedido continuará:`,
-              errorVariante
-            );
-          }
-        }
-      } else {
-        console.warn(
-          `El producto ${productoId} ya no existe en Supabase. El pedido continuará con los datos guardados en el carrito.`
-        );
-      }
-    } else {
-      const errorProducto =
-        await respuestaProducto.text();
-
-      console.error(
-        `No se pudo consultar el producto ${productoId}, pero el pedido continuará:`,
-        errorProducto
-      );
+    // Comprobar la publicación real antes de reservar, crear o enviar el pedido.
+    // Los checkouts antiguos también deben revisar las referencias retiradas.
+    let disponibilidad;
+    try {
+      disponibilidad = await consultarDisponibilidadCarrito(tiendaActual, productosRecibidos);
+    } catch {
+      return Response.json({ ok: false,
+        error: "No pudimos comprobar la disponibilidad. Tus productos siguen guardados; vuelve a intentar." },
+        { status: 503, headers: { "Cache-Control": "no-store" } });
     }
-  } catch (errorProducto) {
-    console.error(
-      `Error consultando producto ${productoId}. El pedido continuará:`,
-      errorProducto
-    );
-  }
-
-  // ========================================
-  // SI EL PRODUCTO O VARIANTE YA NO EXISTEN,
-  // CONSERVAMOS LOS DATOS QUE VENÍAN
-  // DEL CARRITO
-  // ========================================
-
-  productosCompletos.push({
-    ...item,
-
-    infoimagen,
-
-    producto_disponible:
-      productoDisponible,
-
-    variante_disponible:
-      varianteDisponible,
-
-    producto_retirado:
-      !productoDisponible,
-  });
-}
+    if (disponibilidad.retirados.length) {
+      return Response.json({ ok: false, codigo: "CARRITO_ACTUALIZADO",
+        retirados: disponibilidad.retirados,
+        error: "Actualiza la página y vuelve a confirmar tu pedido." },
+        { status: 409, headers: { "Cache-Control": "no-store" } });
+    }
+    const productosCompletos = disponibilidad.disponibles.map(({ item, producto, variante }) => ({
+      ...item,
+      infoimagen: variante?.infoimagen || producto.infoimagen || item.infoimagen || "",
+      producto_disponible: true,
+      variante_disponible: item.variante_id != null && item.variante_id !== "" ? true : null,
+      producto_retirado: false,
+    }));
+    const productosLimitados = disponibilidad.disponibles
+      .filter(({ producto }) => producto.solo_ra === true)
+      .map(({ item, producto }) => ({ producto_id: Number(producto.id), cantidad: Number(item.cantidad || 0) }));
 
     // Verificar reservas ANTES de enviar el pedido a Make.
     // El servidor consulta los productos reales, nunca confía en

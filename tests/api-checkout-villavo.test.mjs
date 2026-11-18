@@ -56,8 +56,9 @@ function stubFetch(permitirPedido = false) {
     if (direccion.includes("/rest/v1/ciudades_envio?")) {
       return Response.json([{ciudad_id:"VILLAVICENCIO\\META\\COL",ciudad_departamento:"VILLAVICENCIO, META",costo_envio:"15000.00",tiempo_estimado:"DE 1 A 2 DÍAS"}]);
     }
+    if (direccion.includes("/rest/v1/tienda_productos?")) return Response.json([]);
     if (direccion.includes("/rest/v1/productos?")) {
-      return Response.json([{id:1,infoimagen:"",solo_ra:false,activo:true}]);
+      return Response.json([{id:1,infoimagen:"",solo_ra:false,activo:true}], {headers:{"content-range":"0-0/1"}});
     }
     if (direccion.includes("/rest/v1/pedidos?") && permitirPedido) {
       return Response.json([{id:444,numero_pedido:"WEB-PRUEBA"}]);

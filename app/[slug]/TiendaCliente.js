@@ -9,6 +9,8 @@ import { productoPerteneceCategoria, obtenerTipoProducto } from "../../lib/catal
 import AvisoDisponibilidad from "./components/AvisoDisponibilidad";
 import GaleriaProducto from "./components/GaleriaProducto";
 import CarritoCompra from "./components/CarritoCompra";
+import useDisponibilidadCarrito from "./components/useDisponibilidadCarrito";
+import { confirmarCarritoVigente, quitarProductosRetirados } from "../../lib/catalogo/carrito-disponibilidad.mjs";
 import { validarDatosCompra } from "../../lib/catalogo/checkout.mjs";
 import { fotosProducto } from "../../lib/catalogo/pdf-layout.mjs";
 
@@ -378,6 +380,11 @@ const [intentoCiudades, setIntentoCiudades] = useState(0);
 const [carrito, setCarrito] = useState([]);
 const [carritoCargado, setCarritoCargado] = useState(false);
 const [carritoAbierto, setCarritoAbierto] = useState(false);
+const { aplicarRetirados } = useDisponibilidadCarrito({
+  tiendaId, carrito, cargado: carritoCargado, abierto: carritoAbierto,
+  suspendido: enviandoPedido || pedidoEnviado, setCarrito,
+});
+
 
 // El perfil solo se consulta cuando se abre el checkout; el servidor valida
 // la cookie firmada y el negocio de la tienda antes de mostrar datos personales.
@@ -1365,7 +1372,7 @@ setErroresCompra(nuevosErrores);
 if (Object.keys(nuevosErrores).length || !carrito.length) return;
 confirmacionEnCurso.current = true;
 
-  const pedido = {
+  let pedido = {
     sesion_id: sesionCarrito,
     tienda_id: tiendaId,
     ...(esPuntoVillavo ? { modalidad_entrega: modalidadEntrega } : {}),
@@ -1458,27 +1465,20 @@ confirmacionEnCurso.current = true;
   try {
     setEnviandoPedido(true);
 
-    pedido.confirmacion_id=await checkoutKey(pedido);
-    const respuesta = await fetch(
-      "/api/confirmar-pedido",
-      {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify(pedido),
-      }
-    );
-
-    const datos = await respuesta.json();
-
-    if (!respuesta.ok || !datos.ok) {
-      const errorPedido = new Error(datos?.error || "No se pudo confirmar el pedido.");
-      errorPedido.mensajeCliente = datos?.error;
-      throw errorPedido;
-    }
+    let carritoConfirmado = carrito;
+    const confirmado = await confirmarCarritoVigente(pedido, async vigente => {
+      vigente.confirmacion_id = await checkoutKey(vigente);
+      return fetch("/api/confirmar-pedido", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(vigente),
+      });
+    }, retirados => {
+      aplicarRetirados(retirados);
+      carritoConfirmado = quitarProductosRetirados(carritoConfirmado, retirados);
+    });
+    if (confirmado.vacio) return;
+    pedido = confirmado.pedido;
+    const datos = confirmado.datos;
     setAvisoPedido(datos.inventario_pendiente
       ? "Revisaremos la disponibilidad de una pieza de unidades limitadas y te confirmaremos por WhatsApp. Tu pedido ya fue recibido."
       : "");
@@ -1501,7 +1501,7 @@ try {
       tienda_id: tiendaId,
       estado: "COMPLETADO",
 
-      productos: carrito,
+      productos: carritoConfirmado,
 
       nombre_cliente:
   nombreCliente.trim(),
@@ -1569,9 +1569,9 @@ clearCheckoutKey(pedido);
 // ==========================================
 if (typeof window !== "undefined" && typeof window.fbq === "function") {
   window.fbq("track", "Purchase", {
-    value: Number(totalPedido) || 0,
+    value: Number(pedido.valores.total_pedido) || 0,
     currency: "COP",
-    content_ids: carrito
+    content_ids: carritoConfirmado
       .filter((item) => Number(item.cantidad || 0) > 0)
       .map((item) =>
         String(
@@ -1584,7 +1584,7 @@ if (typeof window !== "undefined" && typeof window.fbq === "function") {
       )
       .filter(Boolean),
     content_type: "product",
-    num_items: carrito.reduce(
+    num_items: carritoConfirmado.reduce(
       (total, item) => total + Number(item.cantidad || 0),
       0
     ),
@@ -1627,6 +1627,11 @@ try {
   );
 }
 
+    return {
+      cantidad: pedido.productos.reduce((total, item) => total + Number(item.cantidad || 0), 0),
+      total: pedido.valores.total_pedido,
+      telefono: telefonoCliente,
+    };
   } catch (error) {
     console.error(
       "Error confirmando pedido:",
