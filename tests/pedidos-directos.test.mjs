@@ -39,3 +39,12 @@ test('checkout keys survive a failed request and change after acknowledged purch
  assert.equal(directRequestKey(p),directRequestKey(p));
  assert.notEqual(directRequestKey(p),directRequestKey({...p,sesion_id:'another-session'}));
 });
+test('la clave del envío no altera la identidad de una compra al reintentar',async()=>{
+ const values=new Map(),storage={getItem:k=>values.get(k),setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)};
+ const p=order();delete p.confirmacion_id;
+ const first=await checkoutKey(p,storage);
+ p.confirmacion_id=first;
+ assert.equal(await checkoutKey(p,storage),first);
+ const {confirmacion_id,...reconstruido}=p;
+ assert.equal(await checkoutKey(reconstruido,storage),first);
+});
