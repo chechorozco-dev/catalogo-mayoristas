@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import styles from "./VillavoAccesos.module.css";
 
 export default function AccesosLocal() {
   const router = useRouter();
@@ -11,6 +12,7 @@ export default function AccesosLocal() {
   const [error, setError] = useState("");
   const [temporal, setTemporal] = useState(null);
   const [cargando, setCargando] = useState(false);
+  const esLocalVillavo = process.env.NEXT_PUBLIC_AUTH_MODE === "password";
   async function cargar() {
     setCargando(true);
     try {
@@ -45,27 +47,30 @@ export default function AccesosLocal() {
     (c.nombre + " " + c.telefono).toLowerCase().includes(busqueda.trim().toLowerCase())
   );
   const input = { width: "100%", boxSizing: "border-box", padding: 12, borderRadius: 10,
-    border: "1px solid #ddd", marginTop: 6 };
-  const btn = { border: "1px solid #ddd", background: "white", borderRadius: 9,
+    border: "1px solid var(--villavo-input-border, #ddd)", background: "var(--villavo-input-bg, white)",
+    color: "var(--villavo-ink, inherit)", marginTop: 6 };
+  const btn = { border: "1px solid var(--villavo-button-border, #ddd)", background: "var(--villavo-button-bg, white)",
+    color: "var(--villavo-wine, inherit)", borderRadius: 9,
     padding: "10px 12px", cursor: "pointer" };
-  return <main style={{ background: "#f7f8fa", minHeight: "100vh", padding: 20 }}>
+  return <main className={esLocalVillavo ? styles.page : undefined}
+    style={{ background: "var(--villavo-bg, #f7f8fa)", minHeight: "100vh", padding: 20 }}>
     <div style={{ maxWidth: 980, margin: "auto" }}>
       <button style={btn} onClick={() => router.push("/admin-maestro")}>← Volver al administrador</button>
       <h1>Clientes autorizados · RA ACCESORIOS VILLAVO</h1>
       <p>Solo quienes estén en esta lista pueden solicitar un registro con contraseña. La autorización no verifica por sí sola el número: antes de aprobar o restablecer, confirma la identidad del cliente.</p>
-      {error && <p role="alert" style={{ color: "#ab2525" }}>{error}</p>}
+      {error && <p role="alert" style={{ color: "var(--villavo-error, #ab2525)" }}>{error}</p>}
       <section style={{ background: "white", padding: 20, borderRadius: 15, marginBottom: 20 }}>
         <h2>Autorizar un cliente</h2>
         <form onSubmit={e => { e.preventDefault(); accion({ accion: "autorizar", nombre, telefono }); }}>
-          <label>Nombre <input style={input} value={nombre} required minLength={3}
+          <label htmlFor="villavo-cliente-nombre">Nombre <input id="villavo-cliente-nombre" style={input} value={nombre} required minLength={3}
             onChange={e => setNombre(e.target.value)} placeholder="Nombre del cliente" /></label>
-          <label style={{ display: "block", marginTop: 10 }}>Celular <input style={input} value={telefono} required type="tel"
+          <label htmlFor="villavo-cliente-telefono" style={{ display: "block", marginTop: 10 }}>Celular <input id="villavo-cliente-telefono" style={input} value={telefono} required type="tel"
             onChange={e => setTelefono(e.target.value)} placeholder="3140000000" /></label>
-          <button disabled={cargando} style={{ ...btn, marginTop: 12, background: "#d97883", color: "white" }}>
+          <button disabled={cargando} style={{ ...btn, marginTop: 12, background: "var(--villavo-wine, #d97883)", color: "white" }}>
             Agregar a autorizados</button>
         </form>
       </section>
-      {temporal && <section style={{ background: "#fff3d5", padding: 18, borderRadius: 12, marginBottom: 20 }} role="alert">
+      {temporal && <section style={{ background: "var(--villavo-note, #fff3d5)", padding: 18, borderRadius: 12, marginBottom: 20 }} role="alert">
         <strong>Contraseña temporal (solo se muestra esta vez)</strong>
         <p style={{ fontFamily: "monospace", fontSize: 18, overflowWrap: "anywhere" }}>{temporal.clave}</p>
         <p>Comunícala solo al titular tras verificar su identidad. Tendrá que cambiarla antes de entrar.</p>
@@ -73,7 +78,7 @@ export default function AccesosLocal() {
       </section>}
       <section style={{ background: "white", padding: 20, borderRadius: 15 }}>
         <h2>Lista de clientes ({clientes.length})</h2>
-        <input type="search" value={busqueda} onChange={e => setBusqueda(e.target.value)} style={input}
+        <input type="search" aria-label="Buscar por nombre o celular" value={busqueda} onChange={e => setBusqueda(e.target.value)} style={input}
           placeholder="Buscar por nombre o celular" />
         {visibles.map(c => <div key={c.id} style={{ borderBottom: "1px solid #eee", padding: "15px 0",
           display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>

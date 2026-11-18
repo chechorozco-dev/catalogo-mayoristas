@@ -1,0 +1,77 @@
+.page {
+  min-height: 100vh;
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 38px 20px;
+  background: #fcf8f3;
+  color: #2d2026;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.container { width: 100%; max-width: 510px; }
+.brand { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 30px; }
+.monogram {
+  display: grid; place-items: center; flex: 0 0 62px; width: 62px; height: 62px;
+  border: 1px solid #ae8750; border-radius: 50%; color: #70283e;
+  font: 31px/1 Georgia, "Times New Roman", serif; letter-spacing: -2px; padding-right: 2px;
+}
+.brandName { display: block; color: #552034; font-size: 15px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+.brandPlace { display: block; margin-top: 7px; font-size: 11px; letter-spacing: .3em; color: #6e5861; text-transform: uppercase; }
+.card {
+  padding: 36px 40px 30px; background: #fff; border: 1px solid #e8dcd5; border-radius: 24px;
+  box-shadow: 0 15px 45px rgba(85, 32, 52, .055);
+}
+.heading { border-top: 2px solid #ae8750; padding-top: 24px; }
+.eyebrow { display: block; color: #70283e; font-size: 11px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; }
+.title { max-width: none; margin: 12px 0 15px; color: #552034; font: 37px/1.13 Georgia, "Times New Roman", serif; letter-spacing: -.035em; }
+.description { margin: 0; color: #6e5861; font-size: 14px; line-height: 1.7; }
+.form { margin-top: 25px; }
+.label { display: block; color: #2d2026; font-size: 14px; font-weight: 700; margin: 21px 0 8px; }
+.label:first-child { margin-top: 0; }
+.input, .phoneField {
+  width: 100%; min-width: 0; min-height: 52px; border: 1px solid #bdabb1; border-radius: 11px;
+  background: #fffdfa; color: #2d2026; transition: border-color .16s, box-shadow .16s;
+}
+.input { display: block; padding: 14px 15px; font: inherit; font-size: 16px; }
+.input::placeholder, .phoneInput::placeholder { color: #806c75; opacity: 1; }
+.phoneField { display: flex; align-items: stretch; overflow: hidden; }
+.countryCode { display: flex; align-items: center; padding: 0 15px; border-right: 1px solid #e4d7dc; background: #f8f0f2; color: #70283e; font-size: 14px; font-weight: 700; }
+.phoneInput { flex: 1; min-width: 0; width: 100%; padding: 14px; border: 0; border-radius: 0; background: transparent; color: #2d2026; font: inherit; font-size: 16px; }
+.hint { display: block; margin-top: 7px; color: #6e5861; font-size: 12px; line-height: 1.5; }
+.input:focus, .phoneField:focus-within { border-color: #70283e; box-shadow: 0 0 0 3px #f3e4e8; outline: 0; }
+.phoneInput:focus { outline: 0; }
+.primaryButton, .secondaryButton, .backButton {
+  display: block; width: 100%; min-height: 50px; padding: 14px 18px; border-radius: 11px;
+  font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; transition: background .16s, border-color .16s;
+}
+.primaryButton { margin-top: 27px; border: 1px solid #70283e; background: #70283e; color: #fff; }
+.primaryButton:hover:not(:disabled) { background: #552034; border-color: #552034; }
+.secondaryButton { margin-top: 12px; border: 1px solid #c4a5b0; background: #fcf8f9; color: #70283e; }
+.secondaryButton:hover { background: #f3e4e8; border-color: #70283e; }
+.backButton { margin-top: 12px; border: 1px solid transparent; background: transparent; color: #70283e; }
+.backButton:hover { background: #fcf8f9; }
+.primaryButton:focus-visible, .secondaryButton:focus-visible, .backButton:focus-visible { outline: 2px solid #70283e; outline-offset: 4px; }
+.primaryButton:disabled { background: #795463; border-color: #795463; cursor: wait; }
+.message { margin: 18px 0 0; padding: 14px 16px; border: 1px solid; border-radius: 11px; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.success { background: #edf5ee; color: #235137; border-color: #b8d0bd; }
+.error { background: #fcf0ef; color: #8a283b; border-color: #e8bdc3; }
+.recovery { margin: 23px 0 0; padding-top: 20px; border-top: 1px solid #eee4df; color: #6e5861; font-size: 12px; line-height: 1.7; }
+.footer { margin-top: 23px; color: #6e5861; text-align: center; font-size: 11px; letter-spacing: .06em; }
+.footer span { margin: 0 8px; color: #ae8750; }
+
+@media (max-width: 520px) {
+  .page { padding: 25px 16px; }
+  .brand { margin-bottom: 23px; gap: 13px; }
+  .monogram { flex-basis: 54px; width: 54px; height: 54px; font-size: 27px; }
+  .brandName { font-size: 13px; }
+  .brandPlace { font-size: 10px; }
+  .card { padding: 27px 24px 24px; border-radius: 20px; }
+  .heading { padding-top: 20px; }
+  .title { font-size: 32px; }
+  .description { font-size: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .input, .phoneField, .primaryButton, .secondaryButton, .backButton { transition: none; }
+}

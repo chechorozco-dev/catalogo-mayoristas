@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import styles from "./VillavoPanel.module.css";
 
 export default function AdminMaestroPage() {
   const router = useRouter();
@@ -10,6 +11,11 @@ export default function AdminMaestroPage() {
   const [cargando, setCargando] = useState(true);
   const [cerrando, setCerrando] = useState(false);
   const [mensaje, setMensaje] = useState("");
+
+  // El panel de los otros despliegues conserva su presentación actual.
+  const esLocalVillavo = process.env.NEXT_PUBLIC_AUTH_MODE === "password";
+  const tema = (nombre) => esLocalVillavo ? styles[nombre] : undefined;
+  const estilo = (original) => esLocalVillavo ? undefined : original;
 
   useEffect(() => {
     verificarAcceso();
@@ -100,7 +106,7 @@ export default function AdminMaestroPage() {
 
   if (cargando) {
     return (
-      <main style={paginaCargando}>
+      <main className={tema("loading")} style={estilo(paginaCargando)}>
         <p
           style={{
             margin: 0,
@@ -115,31 +121,27 @@ export default function AdminMaestroPage() {
   }
 
   return (
-    <main style={pagina}>
-      <div style={contenedor}>
-        {process.env.NEXT_PUBLIC_AUTH_MODE === "password" && (
-          <section style={{ padding: 16, borderRadius: 16, background: "white", marginBottom: 15 }}>
-            <strong>🔐 Accesos de clientes del local</strong>
-            <p>Administra la lista de clientes autorizados y sus contraseñas temporales.</p>
-            <button type="button" style={{ padding: 12, borderRadius: 10, cursor: "pointer" }}
-              onClick={() => router.push("/admin-maestro/accesos")}>Administrar clientes y contraseñas</button>
-          </section>
-        )}
+    <main className={tema("page")} style={estilo(pagina)}>
+      <div className={tema("container")} style={estilo(contenedor)}>
+        {esLocalVillavo && <div className={styles.brand}>
+          <span className={styles.monogram} aria-hidden="true">RA</span>
+          <div><strong>RA Accesorios</strong><span>Villavo · Administración</span></div>
+        </div>}
         {/* =====================================
             ENCABEZADO
         ===================================== */}
 
-        <header style={encabezado}>
+        <header className={tema("header")} style={estilo(encabezado)}>
           <div>
-            <div style={badge}>
+            <div className={tema("badge")} style={estilo(badge)}>
               ADMINISTRADOR MAESTRO
             </div>
 
-            <h1 style={titulo}>
+            <h1 className={tema("title")} style={estilo(titulo)}>
               Panel maestro
             </h1>
 
-            <p style={saludo}>
+            <p className={tema("greeting")} style={estilo(saludo)}>
               {cliente?.nombre
                 ? `Hola, ${cliente.nombre}`
                 : "Administrador"}
@@ -150,13 +152,14 @@ export default function AdminMaestroPage() {
             type="button"
             onClick={cerrarSesion}
             disabled={cerrando}
-            style={{
+            className={tema("logout")}
+            style={estilo({
               ...botonCerrar,
               cursor: cerrando
                 ? "not-allowed"
                 : "pointer",
               opacity: cerrando ? 0.6 : 1,
-            }}
+            })}
           >
             {cerrando
               ? "Cerrando..."
@@ -165,32 +168,45 @@ export default function AdminMaestroPage() {
         </header>
 
         {mensaje && (
-          <div style={mensajeError}>
+          <div className={tema("error")} style={estilo(mensajeError)} role="alert">
             {mensaje}
           </div>
+        )}
+
+        {esLocalVillavo && (
+          <section className={styles.accessCard}>
+            <div>
+              <strong>Accesos de clientes del local</strong>
+              <p>Administra la lista de clientes autorizados y sus contraseñas temporales.</p>
+            </div>
+            <button type="button" className={styles.accessButton}
+              onClick={() => router.push("/admin-maestro/accesos")}>Administrar clientes y contraseñas <span aria-hidden="true">↗</span></button>
+          </section>
         )}
 
         {/* =====================================
             TÍTULO ACCESOS
         ===================================== */}
 
-        <div style={tituloSeccion}>
+        <div className={tema("sectionHeading")} style={estilo(tituloSeccion)}>
           <div>
             <h2
-              style={{
+              className={tema("sectionTitle")}
+              style={estilo({
                 margin: 0,
                 fontSize: "22px",
-              }}
+              })}
             >
               Accesos principales
             </h2>
 
             <p
-              style={{
+              className={tema("sectionDescription")}
+              style={estilo({
                 margin: "6px 0 0",
                 color: "#777",
                 lineHeight: "1.5",
-              }}
+              })}
             >
               Administra tus productos, pedidos y
               catálogo desde un solo lugar.
@@ -202,33 +218,34 @@ export default function AdminMaestroPage() {
             CUADRÍCULA PRINCIPAL
         ===================================== */}
 
-        <div style={grid}>
+        <div className={tema("grid")} style={estilo(grid)}>
           {/* PRODUCTOS */}
 
-          <section style={tarjeta}>
+          <section className={tema("card")} style={estilo(tarjeta)}>
             <div
-              style={{
+              className={tema("icon")}
+              style={estilo({
                 ...icono,
                 background: "#fff0f2",
-              }}
+              })}
             >
               💎
             </div>
 
-            <h2 style={tituloTarjeta}>
+            <h2 className={tema("cardTitle")} style={estilo(tituloTarjeta)}>
               Productos
             </h2>
 
-            <p style={descripcion}>
+            <p className={tema("description")} style={estilo(descripcion)}>
               Administra el catálogo central y agrega
               nuevos productos para tus tiendas.
             </p>
 
-            <div style={acciones}>
+            <div className={tema("actions")} style={estilo(acciones)}>
               <button
                 type="button"
                 onClick={irProductos}
-                style={botonSecundario}
+                className={tema("secondaryButton")} style={estilo(botonSecundario)}
               >
                 📦 Ver productos
               </button>
@@ -236,7 +253,7 @@ export default function AdminMaestroPage() {
               <button
                 type="button"
                 onClick={irNuevoProducto}
-                style={botonPrincipal}
+                className={tema("primaryButton")} style={estilo(botonPrincipal)}
               >
                 ＋ Agregar producto
               </button>
@@ -245,30 +262,31 @@ export default function AdminMaestroPage() {
 
           {/* VARIANTES */}
 
-          <section style={tarjeta}>
+          <section className={tema("card")} style={estilo(tarjeta)}>
             <div
-              style={{
+              className={tema("icon")}
+              style={estilo({
                 ...icono,
                 background: "#f2f1ff",
-              }}
+              })}
             >
               🔤
             </div>
 
-            <h2 style={tituloTarjeta}>
+            <h2 className={tema("cardTitle")} style={estilo(tituloTarjeta)}>
               Productos con variantes
             </h2>
 
-            <p style={descripcion}>
+            <p className={tema("description")} style={estilo(descripcion)}>
               Maneja productos con opciones como
               letras, colores o referencias diferentes.
             </p>
 
-            <div style={acciones}>
+            <div className={tema("actions")} style={estilo(acciones)}>
               <button
                 type="button"
                 onClick={irVariantes}
-                style={botonSecundario}
+                className={tema("secondaryButton")} style={estilo(botonSecundario)}
               >
                 🔤 Ver variantes
               </button>
@@ -276,7 +294,7 @@ export default function AdminMaestroPage() {
               <button
                 type="button"
                 onClick={irNuevaVariante}
-                style={botonPrincipal}
+                className={tema("primaryButton")} style={estilo(botonPrincipal)}
               >
                 ＋ Agregar con variantes
               </button>
@@ -285,31 +303,32 @@ export default function AdminMaestroPage() {
 
           {/* TODAS LAS TIENDAS */}
 
-          <section style={tarjeta}>
+          <section className={tema("card")} style={estilo(tarjeta)}>
             <div
-              style={{
+              className={tema("icon")}
+              style={estilo({
                 ...icono,
                 background: "#faeef5",
-              }}
+              })}
             >
               🏪
             </div>
 
-            <h2 style={tituloTarjeta}>
+            <h2 className={tema("cardTitle")} style={estilo(tituloTarjeta)}>
               Todas mis tiendas
             </h2>
 
-            <p style={descripcion}>
+            <p className={tema("description")} style={estilo(descripcion)}>
               Consulta qué tiendas están activas, qué carritos
               están preparando, sus pedidos completados y
               la actividad de cada catálogo en un solo panel.
             </p>
 
-            <div style={acciones}>
+            <div className={tema("actions")} style={estilo(acciones)}>
               <button
                 type="button"
                 onClick={irTiendas}
-                style={botonPrincipal}
+                className={tema("primaryButton")} style={estilo(botonPrincipal)}
               >
                 📊 Ver resumen de tiendas
               </button>
@@ -318,31 +337,32 @@ export default function AdminMaestroPage() {
 
           {/* CARRITOS */}
 
-          <section style={tarjeta}>
+          <section className={tema("card")} style={estilo(tarjeta)}>
             <div
-              style={{
+              className={tema("icon")}
+              style={estilo({
                 ...icono,
                 background: "#eef8ff",
-              }}
+              })}
             >
               🛒
             </div>
 
-            <h2 style={tituloTarjeta}>
+            <h2 className={tema("cardTitle")} style={estilo(tituloTarjeta)}>
               Carritos en vivo
             </h2>
 
-            <p style={descripcion}>
+            <p className={tema("description")} style={estilo(descripcion)}>
               Revisa los pedidos que están armando,
               los que llegaron al checkout y los
               completados.
             </p>
 
-            <div style={acciones}>
+            <div className={tema("actions")} style={estilo(acciones)}>
               <button
                 type="button"
                 onClick={irCarritos}
-                style={botonPrincipal}
+                className={tema("primaryButton")} style={estilo(botonPrincipal)}
               >
                 🛒 Ver carritos en vivo
               </button>
@@ -351,31 +371,32 @@ export default function AdminMaestroPage() {
 
           {/* MI CATÁLOGO */}
 
-          <section style={tarjeta}>
+          <section className={tema("card")} style={estilo(tarjeta)}>
             <div
-              style={{
+              className={tema("icon")}
+              style={estilo({
                 ...icono,
                 background: "#f1f8ee",
-              }}
+              })}
             >
               🏪
             </div>
 
-            <h2 style={tituloTarjeta}>
+            <h2 className={tema("cardTitle")} style={estilo(tituloTarjeta)}>
               Mi catálogo
             </h2>
 
-            <p style={descripcion}>
+            <p className={tema("description")} style={estilo(descripcion)}>
               Entra al administrador que utilizan tus
               clientes y revisa cómo funciona tu propia
               tienda.
             </p>
 
-            <div style={acciones}>
+            <div className={tema("actions")} style={estilo(acciones)}>
               <button
                 type="button"
                 onClick={irAdminCliente}
-                style={botonSecundario}
+                className={tema("secondaryButton")} style={estilo(botonSecundario)}
               >
                 🏪 Ir a mi catálogo
               </button>

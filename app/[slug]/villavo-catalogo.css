@@ -1,0 +1,457 @@
+/* Apariencia exclusiva de RA Accesorios Villavo. El servidor verifica la
+   identidad completa antes de añadir el atributo; no afecta a otras tiendas. */
+[data-villavo-catalogo] {
+  --color-principal: #70283e;
+  --color-fondo: #fcf8f3;
+  --texto-principal: #ffffff;
+  --texto-fondo: #2d2026;
+  --villavo-vino: #70283e;
+  --villavo-vino-oscuro: #552034;
+  --villavo-rosa: #f3e4e8;
+  --villavo-oro: #ae8750;
+  --villavo-borde: #e7d9d6;
+  --villavo-secundario: #6e5861;
+  min-height: 100vh;
+  background: var(--color-fondo);
+  color: var(--texto-fondo);
+  color-scheme: light;
+}
+
+/* Encabezado: vino intenso, marfil y un detalle fino en oro. */
+[data-villavo-catalogo] .header {
+  background: var(--villavo-vino-oscuro);
+  color: #fffaf5;
+  border-bottom: 2px solid var(--villavo-oro);
+  box-shadow: 0 4px 20px rgb(85 32 52 / 9%);
+}
+[data-villavo-catalogo] .nombre-tienda {
+  color: #fffaf5;
+  font-family: Georgia, "Times New Roman", serif;
+  letter-spacing: .055em;
+  line-height: 1.25;
+}
+[data-villavo-catalogo] .mensaje-portada {
+  color: #f3dfe4;
+  opacity: 1;
+  font-weight: 400;
+  letter-spacing: .02em;
+}
+[data-villavo-catalogo] .logo-placeholder {
+  background: #fcf8f3;
+  color: var(--villavo-vino-oscuro);
+  border: 1px solid #c9a674;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 500;
+  box-shadow: 0 0 0 4px rgb(255 250 245 / 8%);
+}
+[data-villavo-catalogo] .logo-tienda {
+  background: #fff;
+  border: 1px solid #c9a674;
+}
+[data-villavo-catalogo] .header-btn,
+[data-villavo-catalogo] .carrito-header {
+  color: #fffaf5;
+  background: rgb(255 250 245 / 7%);
+  border: 1px solid rgb(255 250 245 / 18%);
+}
+[data-villavo-catalogo] .header-btn:hover,
+[data-villavo-catalogo] .carrito-header:hover {
+  background: rgb(255 250 245 / 17%);
+}
+[data-villavo-catalogo] .contador-carrito {
+  background: #f3e4e8;
+  color: #552034;
+  border-color: #552034;
+}
+[data-villavo-catalogo] .red-social {
+  color: #fffaf5;
+  opacity: 1;
+  border-color: #bc8e9c;
+}
+
+/* Navegación y búsqueda sobre un fondo cálido. */
+[data-villavo-catalogo] .navegacion-sticky {
+  background: #fcf8f3;
+  box-shadow: 0 5px 14px rgb(85 32 52 / 5%);
+}
+[data-villavo-catalogo] .categorias-superiores,
+[data-villavo-catalogo] .lineas-producto {
+  background: #fcf8f3;
+  border-bottom-color: var(--villavo-borde);
+}
+[data-villavo-catalogo] .categoria-circulo {
+  background: #f3e4e8;
+  border-color: #e2ccc4;
+}
+[data-villavo-catalogo] .categoria-nombre,
+[data-villavo-catalogo] .categoria-sin-foto {
+  color: #6e5861;
+  opacity: 1;
+}
+[data-villavo-catalogo] .categoria-superior.activa .categoria-circulo {
+  border-color: #70283e;
+  box-shadow: 0 0 0 2px #fcf8f3, 0 0 0 4px #ae8750;
+}
+[data-villavo-catalogo] .categoria-superior.activa .categoria-nombre {
+  color: #70283e;
+}
+[data-villavo-catalogo] .linea-producto {
+  background: #fff;
+  border-color: #dcc7cd;
+  color: #552034;
+  transition: background-color .16s ease, border-color .16s ease;
+}
+[data-villavo-catalogo] .linea-producto.activa {
+  background: #70283e;
+  border-color: #70283e;
+  color: #fff;
+  box-shadow: 0 3px 8px rgb(112 40 62 / 15%);
+}
+[data-villavo-catalogo] .buscador-caja {
+  background: #fff;
+  border-color: #c6a4ad;
+  box-shadow: 0 4px 14px rgb(85 32 52 / 5%);
+}
+[data-villavo-catalogo] .buscador-input {
+  border-color: #c6a4ad;
+  color: #2d2026;
+  background: transparent;
+}
+[data-villavo-catalogo] .buscador-input::placeholder {
+  color: #6e5861;
+  opacity: 1;
+}
+[data-villavo-catalogo] .buscador-icono {
+  color: #70283e;
+  opacity: 1;
+}
+[data-villavo-catalogo] .lupa-flotante {
+  color: #70283e;
+  background: #fff;
+  border-color: #c6a4ad;
+}
+
+/* Tarjetas luminosas: el color acompaña las fotografías originales. */
+[data-villavo-catalogo] .titulo-catalogo h1 {
+  color: #552034;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 500;
+  line-height: 1.2;
+}
+[data-villavo-catalogo] .titulo-catalogo > span {
+  color: #6e5861;
+  opacity: 1;
+}
+[data-villavo-catalogo] .filtro-favoritos {
+  background: #fff;
+  border-color: #dcc7cd;
+  color: #552034;
+}
+[data-villavo-catalogo] .filtro-favoritos.activo {
+  background: #f3e4e8;
+  border-color: #70283e;
+}
+[data-villavo-catalogo] .contador-favoritos {
+  background: #f3e4e8;
+  color: #552034;
+}
+[data-villavo-catalogo] .ayuda-favoritos {
+  color: #6e5861;
+}
+[data-villavo-catalogo] .productos-grid {
+  column-gap: 16px;
+  row-gap: 20px;
+}
+[data-villavo-catalogo] .producto-card {
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #e7d9d6;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgb(85 32 52 / 5%);
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+[data-villavo-catalogo] .imagen-contenedor {
+  background: #f3ece5;
+}
+[data-villavo-catalogo] .miniaturas-producto {
+  background: #fffdfb;
+  border-bottom-color: #f0e5e1;
+}
+[data-villavo-catalogo] .miniatura-producto {
+  border-color: #d8c3ba;
+}
+[data-villavo-catalogo] .miniatura-producto.activa {
+  border-color: #70283e;
+  box-shadow: 0 0 0 2px #f3e4e8;
+}
+[data-villavo-catalogo] .miniatura-etiqueta {
+  background: #552034;
+}
+[data-villavo-catalogo] .producto-info {
+  padding: 12px 12px 16px;
+  color: #2d2026;
+}
+[data-villavo-catalogo] .producto-nombre {
+  color: #2d2026;
+  font-weight: 600;
+  line-height: 1.35;
+}
+[data-villavo-catalogo] .producto-opciones {
+  background: #f3e4e8;
+  color: #70283e;
+}
+[data-villavo-catalogo] .producto-precio-detal,
+[data-villavo-catalogo] .producto-precio-detal del {
+  color: #6e5861;
+}
+[data-villavo-catalogo] .producto-precio {
+  color: #70283e;
+  font-weight: 800;
+}
+[data-villavo-catalogo] .boton-agregar {
+  background: #70283e;
+  color: #fff;
+  border: 1px solid #fff;
+  box-shadow: 0 4px 14px rgb(85 32 52 / 24%);
+}
+[data-villavo-catalogo] .icono-carrito-agregar {
+  filter: grayscale(1) brightness(0) invert(1);
+}
+[data-villavo-catalogo] .circulo-mas {
+  background: #fcf8f3;
+  color: #552034;
+  border-color: #70283e;
+  font-weight: 800;
+}
+[data-villavo-catalogo] .boton-favorito {
+  background: #fffdfb;
+  color: #70283e;
+  border-color: #e7d9d6;
+  box-shadow: 0 3px 10px rgb(85 32 52 / 12%);
+}
+[data-villavo-catalogo] .boton-favorito.activo {
+  background: #f3e4e8;
+  color: #8b2347;
+  border-color: #bf8197;
+}
+[data-villavo-catalogo] .sin-imagen,
+[data-villavo-catalogo] .sin-resultados {
+  color: #6e5861;
+}
+
+/* Menú, ficha y acciones principales comparten la misma jerarquía. */
+[data-villavo-catalogo] .overlay,
+[data-villavo-catalogo] .ra-compra__overlay {
+  background: rgb(45 20 31 / 48%);
+}
+[data-villavo-catalogo] .menu-lateral,
+[data-villavo-catalogo] .producto-modal,
+[data-villavo-catalogo] .compra-panel,
+[data-villavo-catalogo] .carrito-panel {
+  background: #fffdfb;
+  color: #2d2026;
+  box-shadow: 0 16px 60px rgb(45 20 31 / 18%);
+}
+[data-villavo-catalogo] .producto-modal {
+  border: 1px solid #e7d9d6;
+  border-radius: 18px;
+}
+[data-villavo-catalogo] .menu-cabecera,
+[data-villavo-catalogo] .compra-cabecera,
+[data-villavo-catalogo] .carrito-cabecera {
+  color: #552034;
+  border-color: #e7d9d6;
+}
+[data-villavo-catalogo] .menu-lista button {
+  background: transparent;
+  color: #2d2026;
+  border-bottom-color: #e7d9d6;
+}
+[data-villavo-catalogo] .menu-lista .menu-activo {
+  background: #f3e4e8;
+  color: #70283e;
+  border-radius: 9px;
+  padding-left: 12px;
+}
+[data-villavo-catalogo] .cerrar-modal,
+[data-villavo-catalogo] .galeria-flecha,
+[data-villavo-catalogo] .menu-cabecera button,
+[data-villavo-catalogo] .carrito-cabecera button,
+[data-villavo-catalogo] .compra-cabecera button {
+  color: #552034;
+}
+[data-villavo-catalogo] .referencia-modal,
+[data-villavo-catalogo] .producto-modal-info p,
+[data-villavo-catalogo] .recomendados-titulo span {
+  color: #6e5861;
+}
+[data-villavo-catalogo] .acciones-producto-modal button,
+[data-villavo-catalogo] .variante-boton {
+  color: #552034;
+  border-color: #d8bfc6;
+}
+[data-villavo-catalogo] .variante-boton.seleccionada {
+  background: #f3e4e8;
+  border-color: #70283e;
+}
+[data-villavo-catalogo] .recomendados-seccion {
+  border-top-color: #f3e4e8;
+}
+[data-villavo-catalogo] .barra-carrito,
+[data-villavo-catalogo] .agregar-modal,
+[data-villavo-catalogo] .recomendado-agregar,
+[data-villavo-catalogo] .confirmar-pedido-btn,
+[data-villavo-catalogo] .pedido-exitoso-btn,
+[data-villavo-catalogo] .continuar-btn {
+  background: #70283e;
+  color: #fff;
+  border-color: #70283e;
+  border-radius: 12px;
+}
+[data-villavo-catalogo] .barra-carrito {
+  border: 1px solid #ae8750;
+  box-shadow: 0 8px 24px rgb(85 32 52 / 25%);
+}
+
+/* Checkout actual y compatibilidad con el catálogo anterior del local. */
+[data-villavo-catalogo] .ra-compra__panel {
+  background: #fffdfb;
+  color: #2d2026;
+}
+[data-villavo-catalogo] .ra-compra__cabecera {
+  background: #552034;
+  color: #fffaf5;
+  border-bottom: 2px solid #ae8750;
+}
+[data-villavo-catalogo] .ra-compra__marca {
+  color: #f3dfe4;
+}
+[data-villavo-catalogo] .ra-compra__cerrar {
+  color: #552034;
+  background: #fcf8f3;
+  border-color: #d8bfc6;
+}
+[data-villavo-catalogo] .ra-compra__pasos,
+[data-villavo-catalogo] .ra-compra__resumen,
+[data-villavo-catalogo] .resumen-compra {
+  background: #fcf8f3;
+  border-color: #e7d9d6;
+}
+[data-villavo-catalogo] .ra-compra__pasos .ra-compra__paso-activo,
+[data-villavo-catalogo] .ra-compra__intro > span,
+[data-villavo-catalogo] .ra-compra__total,
+[data-villavo-catalogo] .total-final-pedido {
+  color: #70283e;
+}
+[data-villavo-catalogo] .ra-compra__principal {
+  background: #70283e;
+  color: #fff;
+  border-color: #70283e;
+}
+[data-villavo-catalogo] .ra-compra__secundario {
+  color: #552034;
+  border-color: #c6a4ad;
+}
+[data-villavo-catalogo] .ra-compra__enlace,
+[data-villavo-catalogo] .ra-compra__quitar {
+  color: #70283e;
+}
+[data-villavo-catalogo] .ra-compra__nota {
+  background: #f3e4e8;
+  color: #552034;
+}
+[data-villavo-catalogo] .ra-compra__campo > input,
+[data-villavo-catalogo] .compra-campo input,
+[data-villavo-catalogo] .compra-campo select {
+  border-color: #c6a4ad;
+  color: #2d2026;
+  background: #fff;
+}
+[data-villavo-catalogo] .ra-compra__campo > input::placeholder {
+  color: #6e5861;
+}
+[data-villavo-catalogo] .ra-compra__campo > input:focus {
+  border-color: #70283e;
+  outline-color: #d8bfc6;
+}
+[data-villavo-catalogo] .ra-compra__campo > input[aria-invalid="true"] {
+  border-color: #ba3d43;
+}
+[data-villavo-catalogo] .ra-compra__opciones > label.ra-compra__seleccionada,
+[data-villavo-catalogo] .pago-resumen-card.seleccionada,
+[data-villavo-catalogo] .forma-pago-opcion.seleccionada {
+  background: #f3e4e8;
+  border-color: #70283e;
+  color: #552034;
+}
+[data-villavo-catalogo] .ra-compra__ciudades button.ra-compra__ciudad-activa,
+[data-villavo-catalogo] .ra-compra__ciudades button:hover {
+  background: #f3e4e8;
+  color: #552034;
+}
+[data-villavo-catalogo] .ra-compra__pie,
+[data-villavo-catalogo] .carrito-pie {
+  background: #fffdfb;
+  border-color: #e7d9d6;
+}
+[data-villavo-catalogo] .footer-ra {
+  background: #552034;
+  color: #fffaf5;
+  border-top: 2px solid #ae8750;
+}
+[data-villavo-catalogo] .footer-ra-web,
+[data-villavo-catalogo] .footer-ra-copyright {
+  color: #f3dfe4;
+  opacity: 1;
+}
+
+/* Foco visible en todos los fondos, sin depender solo del color. */
+[data-villavo-catalogo] :is(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid #70283e;
+  outline-offset: 3px;
+}
+[data-villavo-catalogo] .header :is(button, a):focus-visible,
+[data-villavo-catalogo] .ra-compra__cabecera button:focus-visible,
+[data-villavo-catalogo] .footer-ra a:focus-visible {
+  outline-color: #f2d6ab;
+}
+@media (hover: hover) {
+  [data-villavo-catalogo] .producto-card:hover {
+    border-color: #cbb19f;
+    box-shadow: 0 8px 24px rgb(85 32 52 / 10%);
+  }
+  [data-villavo-catalogo] .linea-producto:not(.activa):hover,
+  [data-villavo-catalogo] .filtro-favoritos:hover {
+    background: #f3e4e8;
+    border-color: #ae7889;
+  }
+  [data-villavo-catalogo] .boton-agregar:hover,
+  [data-villavo-catalogo] .agregar-modal:hover,
+  [data-villavo-catalogo] .ra-compra__principal:hover:not(:disabled) {
+    background: #552034;
+  }
+}
+@media (max-width: 650px) {
+  [data-villavo-catalogo] .nombre-tienda {
+    letter-spacing: .015em;
+  }
+  [data-villavo-catalogo] .productos-grid {
+    column-gap: 10px;
+    row-gap: 14px;
+  }
+  [data-villavo-catalogo] .producto-card {
+    border-radius: 12px;
+  }
+  [data-villavo-catalogo] .producto-info {
+    padding: 10px 9px 13px;
+  }
+  [data-villavo-catalogo] .producto-modal {
+    border-radius: 14px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-villavo-catalogo] .producto-card,
+  [data-villavo-catalogo] .linea-producto {
+    transition: none;
+  }
+}

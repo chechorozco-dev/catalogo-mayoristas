@@ -1,6 +1,7 @@
 import { negocioFetch } from "../../lib/negocioFetch.mjs";
 import { notFound } from "next/navigation";
 import TiendaCliente from "./TiendaCliente";
+import "./villavo-catalogo.css";
 import { fetchSupabasePaginado, dividirEnBloques } from "../../lib/supabasePagination";
 
 export const dynamic = "force-dynamic";
@@ -146,11 +147,18 @@ export default async function TiendaPage({
   // 1. BUSCAR TIENDA
   // =========================================
 
-  const { data: tienda, error: tiendaError } = await buscarTienda(slug, "id,nombre_tienda,slug,whatsapp,logo_url,color_principal,color_fondo,mensaje_portada,instagram,facebook,tiktok,tipo_tienda,creado_en");
+  const { data: tienda, error: tiendaError } = await buscarTienda(slug, "id,nombre_tienda,slug,whatsapp,logo_url,color_principal,color_fondo,mensaje_portada,instagram,facebook,tiktok,tipo_tienda,creado_en,negocio_id");
 
   if (tiendaError || !tienda) {
     notFound();
   }
+
+  // La identidad completa evita aplicar la apariencia del local a otras tiendas.
+  const esTemaVillavo =
+    tienda.id === "5d21bcb7-6e0a-4e9a-9d3f-b78ae4af9f41" &&
+    String(tienda.slug || "").trim().toLowerCase() === "local-2" &&
+    tienda.negocio_id === "38100510-1325-4d3c-9b6c-886552e82089" &&
+    String(tienda.tipo_tienda || "").trim().toUpperCase() === "RA";
 
   // =========================================
   // 2. CONFIGURACIÓN PRIVADA DEL SERVIDOR
@@ -1068,7 +1076,7 @@ created_at:
   // =========================================
 
  return (
-  <main>
+  <main data-villavo-catalogo={esTemaVillavo ? "" : undefined}>
 {/* META PIXEL - SOLO TIENDA RA */}
 {esTiendaRA && (process.env.NEGOCIO_SLUG || "ra-accesorios") === "ra-accesorios" && (
   <>
