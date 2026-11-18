@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import TiendaCliente from "./TiendaCliente";
+import "./villavo-catalogo.css";
 import { esRaAccesoriosVillavo } from "../../lib/catalogo/pagos-local.mjs";
 import { precioVentaTienda } from "../../lib/catalogo/monedas.mjs";
 import { fetchSupabasePaginado, dividirEnBloques } from "../../lib/supabasePagination";
@@ -1128,7 +1129,7 @@ created_at:
   // =========================================
 
  return (
-  <main>
+  <main data-villavo-catalogo={esRaAccesoriosVillavo(tienda) ? "" : undefined}>
 {/* META PIXEL - SOLO TIENDA RA */}
 {esTiendaRA && (
   <>
