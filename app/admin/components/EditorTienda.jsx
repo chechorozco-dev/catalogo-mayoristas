@@ -60,6 +60,8 @@ export default function EditorTienda({
   onCancelar,
   setMensaje,
 }) {
+  const esTiendaCliente = tienda?.tipo_tienda === "CLIENTE";
+
   const [pestana, setPestana] =
     useState("datos");
 
@@ -429,6 +431,26 @@ export default function EditorTienda({
       return;
     }
 
+    const datos = {
+      nombre_tienda: nombre.trim(),
+      mensaje_portada: mensajePortada.trim(),
+      instagram: instagram.trim(),
+      facebook: facebook.trim(),
+      tiktok: tiktok.trim(),
+      color_principal: colorPrincipal,
+      color_fondo: colorFondo,
+    };
+    if (esTiendaCliente) datos.whatsapp = whatsapp.trim();
+
+    const predeterminados = { color_principal: "#000000", color_fondo: "#FFFFFF" };
+    const cambios = Object.fromEntries(
+      Object.entries(datos).filter(([campo, valor]) => valor !== (tienda[campo] || predeterminados[campo] || ""))
+    );
+    if (Object.keys(cambios).length === 0) {
+      setMensaje("✅ Tu tienda está al día.");
+      return;
+    }
+
     setGuardando(true);
     setMensaje("");
 
@@ -444,30 +466,7 @@ export default function EditorTienda({
                 "application/json",
             },
 
-            body: JSON.stringify({
-              nombre_tienda:
-                nombre.trim(),
-
-              whatsapp,
-
-              mensaje_portada:
-                mensajePortada.trim(),
-
-              instagram:
-                instagram.trim(),
-
-              facebook:
-                facebook.trim(),
-
-              tiktok:
-                tiktok.trim(),
-
-              color_principal:
-                colorPrincipal,
-
-              color_fondo:
-                colorFondo,
-            }),
+            body: JSON.stringify(cambios),
           }
         );
 
@@ -831,39 +830,27 @@ export default function EditorTienda({
                 </strong>
               </div>
 
-              <CampoEtiqueta>
-                WhatsApp
+              <CampoEtiqueta htmlFor="whatsapp-tienda">
+                {esTiendaCliente ? "WhatsApp para recibir pedidos" : "WhatsApp de tu tienda"}
               </CampoEtiqueta>
 
               <input
-                aria-label="WhatsApp de tu tienda"
+                id="whatsapp-tienda"
+                type="tel"
+                aria-describedby="ayuda-whatsapp-tienda"
                 value={whatsapp}
-                readOnly
-                style={{
-                  ...estiloInput,
-                  background:
-                    "#f4f4f4",
-                  color: "#777",
-                  marginBottom:
-                    "7px",
-                }}
+                onChange={(e) => setWhatsapp(e.target.value)}
+                readOnly={!esTiendaCliente}
+                required={esTiendaCliente}
+                placeholder="Ej. 310 123 4567"
+                style={{ ...estiloInput, marginBottom: "7px" }}
               />
 
-              <div
-                style={{
-                  fontSize:
-                    "11px",
-                  color: "#888",
-                  lineHeight:
-                    "1.45",
-                }}
-              >
-                🔒 Este número
-                está vinculado a
-                la cuenta y no
-                puede modificarse
-                desde aquí.
-              </div>
+              <p id="ayuda-whatsapp-tienda" style={{ fontSize: "13px", color: "#555", marginTop: 0 }}>
+                {esTiendaCliente
+                  ? "Tus clientes enviarán sus pedidos y consultas a este WhatsApp. Para Colombia escribe los 10 dígitos del celular. Para otro país incluye el indicativo con +. Seguirás ingresando con tu número de siempre."
+                  : "Número de contacto de la tienda."}
+              </p>
             </>
           )}
 
@@ -1487,10 +1474,11 @@ function TituloBloque({
 }
 
 function CampoEtiqueta({
-  children,
+  children, htmlFor,
 }) {
   return (
     <label
+      htmlFor={htmlFor}
       style={{
         display: "block",
         fontSize: "13px",

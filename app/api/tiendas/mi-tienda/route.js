@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import crypto from "crypto";
+import { normalizarWhatsappTienda } from "../../../../lib/catalogo/formatos.mjs";
 
 function crearFirma(valor, secreto) {
   return crypto
@@ -98,13 +99,6 @@ async function obtenerSesion() {
   return verificarToken(
     token,
     secreto
-  );
-}
-
-function limpiarTelefono(valor) {
-  return String(valor || "").replace(
-    /\D/g,
-    ""
   );
 }
 
@@ -243,7 +237,7 @@ export async function GET() {
       await fetch(
         `${supabaseUrl}/rest/v1/tiendas?id=eq.${encodeURIComponent(
           cliente.tienda_id
-        )}&activa=eq.true&select=id,nombre_tienda,slug,whatsapp,logo_url,color_principal,color_fondo,mensaje_portada,instagram,facebook,tiktok,activa,creado_en,moneda`,
+        )}&activa=eq.true&select=id,nombre_tienda,slug,whatsapp,logo_url,color_principal,color_fondo,mensaje_portada,instagram,facebook,tiktok,activa,creado_en,moneda,tipo_tienda`,
         {
           method: "GET",
           headers,
@@ -372,7 +366,7 @@ export async function PATCH(request) {
       await fetch(
         `${supabaseUrl}/rest/v1/clientes_autorizados?id=eq.${encodeURIComponent(
           sesion.cliente_id
-        )}&activo=eq.true&select=id,tienda_id,negocio_id`,
+        )}&activo=eq.true&select=id,tienda_id,negocio_id,tiendas(tipo_tienda,whatsapp)`,
         {
           method: "GET",
           headers,
@@ -459,135 +453,48 @@ export async function PATCH(request) {
       });
     }
 
-    const colorPrincipal =
-      String(
-        body.color_principal || "#000000"
-      ).trim();
-
-    const colorFondo =
-      String(
-        body.color_fondo || "#FFFFFF"
-      ).trim();
-
-    const mensajePortada =
-      String(
-        body.mensaje_portada || ""
-      )
-        .trim()
-        .slice(0, 120);
-
-    /* =========================================
-       REDES SOCIALES
-    ========================================= */
-
-    const instagram =
-      limpiarRedSocial(
-        body.instagram
-      );
-
-    const facebook =
-      limpiarRedSocial(
-        body.facebook
-      );
-
-    const tiktok =
-      limpiarRedSocial(
-        body.tiktok
-      );
-
-    const nombreTienda =
-      String(
-        body.nombre_tienda || ""
-      ).trim();
-
-    let whatsapp =
-      limpiarTelefono(
-        body.whatsapp
-      );
-
-    if (nombreTienda.length < 2) {
-      return NextResponse.json(
-        {
-          ok: false,
-          mensaje:
-            "El nombre de la tienda no puede quedar vacío.",
-        },
-        { status: 400 }
-      );
+    const cambios = {};
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return NextResponse.json({ ok: false, mensaje: "Datos de tienda no válidos." }, { status: 400 });
     }
 
-    if (nombreTienda.length > 80) {
-      return NextResponse.json(
-        {
-          ok: false,
-          mensaje:
-            "El nombre es demasiado largo.",
-        },
-        { status: 400 }
-      );
+    if (Object.hasOwn(body, "nombre_tienda")) {
+      const nombre = String(body.nombre_tienda || "").trim();
+      if (nombre.length < 2 || nombre.length > 80) {
+        return NextResponse.json({ ok: false, mensaje: "El nombre de la tienda debe tener entre 2 y 80 caracteres." }, { status: 400 });
+      }
+      cambios.nombre_tienda = nombre;
+    }
+    if (Object.hasOwn(body, "whatsapp") && body.whatsapp !== cliente.tiendas?.whatsapp) {
+      if (cliente.tiendas?.tipo_tienda !== "CLIENTE") {
+        return NextResponse.json({ ok: false, mensaje: "Esta opción es para tiendas personalizadas." }, { status: 403 });
+      }
+      const numero = normalizarWhatsappTienda(body.whatsapp);
+      if (!numero) {
+        return NextResponse.json({ ok: false, mensaje: "Revisa el WhatsApp para pedidos. Escribe los 10 dígitos del celular colombiano o el número con su indicativo internacional." }, { status: 400 });
+      }
+      cambios.whatsapp = numero;
+    }
+    if (Object.hasOwn(body, "color_principal")) cambios.color_principal = String(body.color_principal || "#000000").trim();
+    if (Object.hasOwn(body, "color_fondo")) cambios.color_fondo = String(body.color_fondo || "#FFFFFF").trim();
+    if (Object.hasOwn(body, "mensaje_portada")) cambios.mensaje_portada = String(body.mensaje_portada || "").trim().slice(0, 120);
+    for (const red of ["instagram", "facebook", "tiktok"]) {
+      if (Object.hasOwn(body, red)) cambios[red] = limpiarRedSocial(body[red]);
     }
 
-    /*
-      Si escribe un celular colombiano
-      de 10 dígitos, agregamos 57.
-    */
-
-    if (
-      whatsapp.length === 10 &&
-      whatsapp.startsWith("3")
-    ) {
-      whatsapp =
-        "57" + whatsapp;
-    }
-
-    if (whatsapp.length < 10) {
-      return NextResponse.json(
-        {
-          ok: false,
-          mensaje:
-            "Escribe un WhatsApp válido.",
-        },
-        { status: 400 }
-      );
-    }
-
-    const actualizarResponse =
-      await fetch(
-        `${supabaseUrl}/rest/v1/tiendas?id=eq.${encodeURIComponent(
-          cliente.tienda_id
-        )}`,
-        {
-          method: "PATCH",
-
-          headers: {
-            ...headers,
-            Prefer:
-              "return=representation",
-          },
-
-          body: JSON.stringify({
-            nombre_tienda:
-              nombreTienda,
-
-            whatsapp,
-
-            color_principal:
-              colorPrincipal,
-
-            color_fondo:
-              colorFondo,
-
-            mensaje_portada:
-              mensajePortada,
-
-            instagram,
-
-            facebook,
-
-            tiktok,
-          }),
-        }
-      );
+    const filtroTienda = `id=eq.${encodeURIComponent(cliente.tienda_id)}&negocio_id=eq.${encodeURIComponent(cliente.negocio_id)}&activa=eq.true`;
+    const hayCambios = Object.keys(cambios).length > 0;
+    const actualizarResponse = await fetch(
+      `${supabaseUrl}/rest/v1/tiendas?${filtroTienda}`,
+      hayCambios
+        ? {
+            method: "PATCH",
+            headers: { ...headers, Prefer: "return=representation" },
+            body: JSON.stringify(cambios),
+            cache: "no-store",
+          }
+        : { headers, cache: "no-store" }
+    );
 
     if (!actualizarResponse.ok) {
       const texto =
@@ -611,12 +518,16 @@ export async function PATCH(request) {
     const tiendas =
       await actualizarResponse.json();
 
+    if (!tiendas?.[0]) {
+      return NextResponse.json({ ok: false, mensaje: "No encontramos tu tienda activa." }, { status: 404 });
+    }
+
     return NextResponse.json({
       ok: true,
       mensaje:
         "Datos actualizados correctamente.",
       tienda:
-        tiendas?.[0] || null,
+        tiendas[0],
     });
   } catch (error) {
     console.error(

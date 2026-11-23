@@ -6,6 +6,7 @@ import {
   formatoPrecio,
   limpiarWhatsapp,
   normalizarTelefonoColombia,
+  normalizarWhatsappTienda,
   obtenerColorTexto,
 } from "../lib/catalogo/formatos.mjs";
 
@@ -26,6 +27,17 @@ test("textos, acentos y números se formatean como antes", () => {
   assert.equal(normalizarTelefonoColombia("314 603 9934"), "573146039934");
   assert.equal(normalizarTelefonoColombia("0057 3146039934"), "573146039934");
   assert.match(formatoPrecio(150000), /150[.,]000/);
+});
+
+test("el WhatsApp de pedidos acepta celulares colombianos y números con indicativo", () => {
+  for (const telefono of ["310 123 4567", "+57 (310) 123-4567", "573101234567", "0057 3101234567"]) {
+    assert.equal(normalizarWhatsappTienda(telefono), "573101234567");
+  }
+  assert.equal(normalizarWhatsappTienda("+1 (202) 555-0123"), "12025550123");
+  assert.equal(normalizarWhatsappTienda("00 34 612 34 56 78"), "34612345678");
+  for (const invalido of ["", "hola3101234567", "123", "310123456", "+57 310123456", "+1234567890123456"]) {
+    assert.equal(normalizarWhatsappTienda(invalido), "");
+  }
 });
 
 test("el color del texto contrasta con los fondos de tienda", () => {
