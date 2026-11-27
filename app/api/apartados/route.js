@@ -1,19 +1,34 @@
 import { verificarToken } from "../../../lib/apartados/sesion.mjs";
-import { generarPdfApartado } from "../../../lib/apartados/pdf.mjs";
+import { descargarPdfApartado } from "../../../lib/apartados/pdf.mjs";
 
 export const runtime = "nodejs";
+export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
 const uuid = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
 const sku = /^(?:w:\d+:\d+|r:[a-f\d-]{36})$/i;
 const privadas = { "Cache-Control": "private, no-store", Vary: "Cookie" };
 const errores = {
+  PORTAL_PDF: [
+    503,
+    "No pudimos preparar el PDF. Vuelve a intentar la descarga.",
+  ],
+  PORTAL_PDF_VACIO: [
+    409,
+    "El apartado todavía no tiene productos para generar el PDF.",
+  ],
+  PORTAL_FICHA: [
+    400,
+    "Revisa los datos del formulario. Verifica el nombre, el correo y el teléfono.",
+  ],
+  PORTAL_CIUDAD: [400, "Elige una ciudad disponible en la lista."],
+  PORTAL_FICHA_CAMBIO: [
+    409,
+    "La ficha cambió mientras la editabas. Recarga la página y revisa los datos antes de guardar.",
+  ],
   PORTAL_ACCESO: [403, "Tu cuenta no tiene acceso al portal de apartados."],
   PORTAL_NO_EXISTE: [404, "No encontramos ese apartado en tu cuenta."],
-  PORTAL_DATOS: [
-    400,
-    "Revisa las referencias, las cantidades y el compromiso.",
-  ],
+  PORTAL_DATOS: [400, "Revisa las referencias y las cantidades."],
   PORTAL_PRECIO: [
     409,
     "Cambió un precio. Actualiza la selección y revísala antes de confirmar.",
@@ -100,7 +115,14 @@ export async function GET(request) {
     busca = (p.get("q") || "").trim();
   const offset = Number(p.get("offset") || 0);
   if (
-    !["resumen", "detalle", "catalogo", "pdf"].includes(modo) ||
+    ![
+      "resumen",
+      "detalle",
+      "catalogo",
+      "referencia",
+      "ciudades",
+      "pdf",
+    ].includes(modo) ||
     (["pdf", "detalle"].includes(modo) && !uuid.test(id)) ||
     busca.length > 80 ||
     !Number.isInteger(offset) ||
@@ -109,22 +131,20 @@ export async function GET(request) {
   )
     return fallo(new Error("PORTAL_DATOS"));
   try {
+    if (modo === "pdf") {
+      const token = await rpc("ra_portal_pdf_emitir", {
+        ...identity,
+        p_pedido: id,
+      });
+      return await descargarPdfApartado(token);
+    }
     const data = await rpc("ra_portal_leer", {
       ...identity,
-      p_modo: modo === "pdf" ? "detalle" : modo,
+      p_modo: modo,
       p_pedido: id,
       p_busca: busca,
       p_offset: offset,
     });
-    if (modo === "pdf")
-      return new Response(await generarPdfApartado(data), {
-        headers: {
-          ...privadas,
-          "Content-Type": "application/pdf",
-          "Content-Disposition":
-            'attachment; filename="RA_' + data.codigo + '.pdf"',
-        },
-      });
     return respuesta(data);
   } catch (error) {
     return fallo(error);
@@ -164,9 +184,18 @@ export async function POST(request) {
         }),
       );
     }
+    if (b?.accion === "guardar_ficha" && uuid.test(b.destino)) {
+      return respuesta(
+        await rpc("ra_portal_guardar_ficha", {
+          ...identity,
+          p_pedido: b.destino,
+          p_cambios: b.cambios,
+          p_antes: b.antes,
+        }),
+      );
+    }
     if (
       b?.accion !== "apartar" ||
-      b.compromiso !== true ||
       !uuid.test(b.solicitud) ||
       (b.destino !== null && !uuid.test(b.destino)) ||
       !Array.isArray(b.lineas) ||

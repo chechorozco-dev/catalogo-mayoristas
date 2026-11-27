@@ -9,6 +9,7 @@ import {
   descontarConfirmados,
   leerGuardado,
 } from "../../../lib/apartados/carrito.mjs";
+import FichaCliente from "./FichaCliente";
 import InstalarPortal from "../components/InstalarPortal";
 import "../cliente-admin.css";
 import "./apartados.css";
@@ -56,7 +57,13 @@ function Precios({ p }) {
     </div>
   );
 }
-function Catalogo({ agregar, bloqueado }) {
+function Catalogo({
+  agregar,
+  bloqueado,
+  porReferencia = false,
+  revisarSeleccion,
+}) {
+  const [cantidades, setCantidades] = useState({});
   const [q, setQ] = useState(""),
     [offset, setOffset] = useState(0),
     [productos, setProductos] = useState([]),
@@ -68,11 +75,16 @@ function Catalogo({ agregar, bloqueado }) {
     const ctrl = new AbortController();
     setCarga(true);
     setError("");
+    if (porReferencia && !q.trim()) {
+      setProductos([]);
+      setCarga(false);
+      return;
+    }
     const timer = setTimeout(
       () =>
         pedir(
           api +
-            "?modo=catalogo&q=" +
+            (porReferencia ? "?modo=referencia&q=" : "?modo=catalogo&q=") +
             encodeURIComponent(q) +
             "&offset=" +
             offset,
@@ -92,17 +104,27 @@ function Catalogo({ agregar, bloqueado }) {
       ctrl.abort();
       clearTimeout(timer);
     };
-  }, [q, offset, revision]);
+  }, [q, offset, revision, porReferencia]);
   return (
     <section className="ap-panel">
-      <h2>Buscar productos para apartar</h2>
-      <label className="ap-field">
-        Referencia, letra o nombre
+      <h2>
+        {porReferencia
+          ? "Anexar por referencia"
+          : "Buscar productos para apartar"}
+      </h2>
+      <label className={"ap-field" + (porReferencia ? " ap-referencia" : "")}>
+        {porReferencia
+          ? "Referencia del accesorio"
+          : "Referencia, letra o nombre"}
         <input
           type="search"
           maxLength={80}
           value={q}
-          placeholder="Ej. RA7789 o collar letra"
+          autoFocus={porReferencia}
+          autoCapitalize="characters"
+          placeholder={
+            porReferencia ? "Ej. AC1057" : "Ej. RA7789 o collar letra"
+          }
           onChange={(e) => {
             setQ(e.target.value);
             setOffset(0);
@@ -121,11 +143,11 @@ function Catalogo({ agregar, bloqueado }) {
         </p>
       ) : (
         <>
-          {!productos.length && (
+          {!productos.length && (!porReferencia || q.trim()) && (
             <p>No encontramos referencias disponibles para esa búsqueda.</p>
           )}
           <div className="ap-catalogo">
-            {productos.slice(0, 24).map((p) => (
+            {(porReferencia ? productos : productos.slice(0, 24)).map((p) => (
               <article className="ap-producto" key={p.clave}>
                 <Foto p={p} />
                 <div>
@@ -133,20 +155,58 @@ function Catalogo({ agregar, bloqueado }) {
                   <strong>{p.nombre}</strong>
                   <Precios p={p} />
                 </div>
-                <button
-                  disabled={bloqueado}
-                  aria-label={"Agregar " + p.referencia}
-                  onClick={() => {
-                    agregar(p);
-                    setAviso("Agregado a la selección: " + p.referencia);
-                  }}
-                >
-                  + Agregar
-                </button>
+                <div className="ap-elegir">
+                  {porReferencia && (
+                    <label className="ap-field">
+                      Cantidad
+                      <input
+                        type="number"
+                        min="1"
+                        max="999"
+                        step="1"
+                        inputMode="numeric"
+                        aria-label={"Unidades para anexar de " + p.referencia}
+                        value={cantidades[p.clave] ?? 1}
+                        onChange={(e) =>
+                          setCantidades({
+                            ...cantidades,
+                            [p.clave]: e.target.value,
+                          })
+                        }
+                      />
+                    </label>
+                  )}
+                  <button
+                    disabled={
+                      bloqueado ||
+                      (porReferencia &&
+                        (!Number.isInteger(Number(cantidades[p.clave] ?? 1)) ||
+                          Number(cantidades[p.clave] ?? 1) < 1 ||
+                          Number(cantidades[p.clave] ?? 1) > 999))
+                    }
+                    aria-label={"Agregar " + p.referencia}
+                    onClick={() => {
+                      if (
+                        !agregar(
+                          p,
+                          porReferencia ? Number(cantidades[p.clave] ?? 1) : 1,
+                        )
+                      )
+                        return;
+                      if (porReferencia) {
+                        revisarSeleccion();
+                        return;
+                      }
+                      setAviso("Agregado a la selección: " + p.referencia);
+                    }}
+                  >
+                    {porReferencia ? "Agregar a mi selección" : "+ Agregar"}
+                  </button>
+                </div>
               </article>
             ))}
           </div>
-          {(offset > 0 || productos.length > 24) && (
+          {!porReferencia && (offset > 0 || productos.length > 24) && (
             <div className="ap-pag">
               <button
                 disabled={!offset}
@@ -183,6 +243,22 @@ function FichaApartado({ doc, completo = false }) {
       </div>
       <dl className="ap-datos">
         <div>
+          <dt>Forma de pago</dt>
+          <dd>
+            {{
+              SIN_DEFINIR: "Por definir",
+              CONTADO: "Contado",
+              CONTADO_CON_ENVIO: "Contado con envío",
+              PAGO_EN_CASA: "Pago en casa",
+              RECOGE_EN_LOCAL: "Recoge en el local",
+              COTIZACION: "Cotización",
+            }[doc.forma_pago] ||
+              (doc.forma_pago || "Por definir")
+                .replaceAll("_", " ")
+                .toLowerCase()}
+          </dd>
+        </div>
+        <div>
           <dt>Fecha de inicio</dt>
           <dd>{fecha(doc.fecha)}</dd>
         </div>
@@ -210,40 +286,104 @@ function FichaApartado({ doc, completo = false }) {
     </>
   );
 }
-function TarjetaApartado({ doc, ver, agregar }) {
+function TarjetaApartado({ doc, ver, agregar, guardarFicha }) {
   return (
     <article
       className="ap-panel ap-tarjeta"
       aria-label={"Apartado " + doc.codigo}
     >
       <FichaApartado doc={doc} />
+      <FichaCliente doc={doc} pedir={pedir} guardar={guardarFicha} />
       <div className="ap-acciones">
         <button className="ca-primary" onClick={() => ver(doc.id)}>
           Ver detalles
         </button>
         {agregar && (
-          <button onClick={() => agregar(doc.id)}>Agregar productos</button>
+          <>
+            <button onClick={() => agregar(doc.id, "referencia")}>
+              Anexar por referencia
+            </button>
+            <button onClick={() => agregar(doc.id)}>Agregar productos</button>
+          </>
         )}
       </div>
     </article>
   );
 }
-function Detalle({ doc, cerrar, agregar }) {
+function DescargarPdf({ doc }) {
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState("");
+  const href = api + "?modo=pdf&id=" + doc.id;
+  async function descargar(e) {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    if (cargando) return;
+    setCargando(true);
+    setError("");
+    try {
+      const r = await fetch(href, { cache: "no-store" });
+      if (!r.ok) {
+        const datos = await r.json().catch(() => ({}));
+        throw Error(
+          datos.mensaje || "No pudimos descargar el PDF. Inténtalo nuevamente.",
+        );
+      }
+      const archivo = await r.blob(),
+        url = URL.createObjectURL(archivo),
+        enlace = document.createElement("a");
+      enlace.href = url;
+      enlace.download = "RA_" + doc.codigo + "_MEDIA_CARTA.pdf";
+      document.body.append(enlace);
+      enlace.click();
+      enlace.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setCargando(false);
+    }
+  }
+  return (
+    <>
+      <a
+        className="ca-outline ap-link"
+        href={href}
+        aria-busy={cargando}
+        onClick={descargar}
+      >
+        {cargando ? "Preparando PDF…" : "Descargar PDF"}
+      </a>
+      {error && (
+        <span role="alert" className="ca-error">
+          {error}
+        </span>
+      )}
+    </>
+  );
+}
+function Detalle({ doc, cerrar, agregar, guardarFicha }) {
   return (
     <section className="ap-panel ap-detalle">
       <button className="ap-regresar" onClick={cerrar}>
         ← Volver a mis apartados
       </button>
       <FichaApartado doc={doc} completo />
+      <FichaCliente doc={doc} pedir={pedir} guardar={guardarFicha} />
       <div className="ap-acciones">
         {agregar && (
-          <button className="ca-primary" onClick={() => agregar(doc.id)}>
-            Agregar productos a {doc.codigo}
-          </button>
+          <>
+            <button
+              className="ca-primary"
+              onClick={() => agregar(doc.id, "referencia")}
+            >
+              Anexar por referencia
+            </button>
+            <button onClick={() => agregar(doc.id)}>
+              Agregar productos a {doc.codigo}
+            </button>
+          </>
         )}
-        <a className="ca-outline ap-link" href={api + "?modo=pdf&id=" + doc.id}>
-          Descargar PDF
-        </a>
+        <DescargarPdf doc={doc} />
       </div>
       <h3 className="ap-titulo-productos">Productos de tu apartado</h3>
       {!doc.productos.length && (
@@ -284,7 +424,6 @@ export default function Apartados() {
     [detalle, setDetalle] = useState(null);
   const [error, setError] = useState(""),
     [mensaje, setMensaje] = useState(""),
-    [acepto, setAcepto] = useState(false),
     [enviando, setEnviando] = useState(false),
     [pendiente, setPendiente] = useState(null);
   const [tab, setTab] = useState("resumen"),
@@ -351,7 +490,11 @@ export default function Apartados() {
           url.searchParams.delete("carrito");
           history.replaceState(history.state, "", url);
         }
-        setTab(borrador.pendiente || (importar && actual.length > 0) ? "seleccion" : "resumen");
+        setTab(
+          borrador.pendiente || (importar && actual.length > 0)
+            ? "seleccion"
+            : "resumen",
+        );
       } catch (e) {
         if (vivo && e.status !== 401) setError(e.message);
       } finally {
@@ -370,7 +513,6 @@ export default function Apartados() {
     );
     setItems(lista);
     setPendiente(intento);
-    setAcepto(false);
   }
   function cambiar(lista) {
     if (!busy.current && !pendiente) {
@@ -379,9 +521,20 @@ export default function Apartados() {
       setMensaje("");
     }
   }
-  function agregar(p) {
+  function agregar(p, cantidad = 1) {
+    if (
+      busy.current ||
+      pendiente ||
+      !Number.isInteger(cantidad) ||
+      cantidad < 1 ||
+      cantidad > 999
+    )
+      return false;
     const encontrado = items.find((i) => i.clave === p.clave);
-    if (encontrado?.cantidad >= 999 || (!encontrado && items.length >= 250)) {
+    if (
+      (encontrado?.cantidad || 0) + cantidad > 999 ||
+      (!encontrado && items.length >= 250)
+    ) {
       setError("Alcanzaste el límite de esta selección.");
       return;
     }
@@ -389,11 +542,17 @@ export default function Apartados() {
       encontrado
         ? items.map((i) =>
             i.clave === p.clave
-              ? { ...i, ...p, cantidad: i.cantidad + 1, disponible: true }
+              ? {
+                  ...i,
+                  ...p,
+                  cantidad: i.cantidad + cantidad,
+                  disponible: true,
+                }
               : i,
           )
-        : [...items, { ...p, cantidad: 1, disponible: true }],
+        : [...items, { ...p, cantidad, disponible: true }],
     );
+    return true;
   }
   async function ver(id) {
     const version = ++versionDetalle.current;
@@ -410,7 +569,15 @@ export default function Apartados() {
     }
   }
   async function confirmar() {
-    if (busy.current || (!pendiente && !acepto)) return;
+    if (
+      busy.current ||
+      (!pendiente &&
+        (!items.length ||
+          bloqueado ||
+          noDisponibles ||
+          (abiertos.length && !destino)))
+    )
+      return;
     busy.current = true;
     setEnviando(true);
     setError("");
@@ -419,7 +586,6 @@ export default function Apartados() {
       accion: "apartar",
       solicitud: crypto.randomUUID(),
       destino: destino || null,
-      compromiso: true,
       lineas: items.map(({ clave, cantidad, mayor }) => ({
         clave,
         cantidad,
@@ -435,7 +601,6 @@ export default function Apartados() {
         setMensaje(
           "Tu selección cambió en otra pestaña. Revísala antes de confirmar.",
         );
-        setAcepto(false);
         setInicio((n) => n + 1);
         return;
       }
@@ -490,16 +655,38 @@ export default function Apartados() {
   const anteriores =
     resumen?.apartados.filter((a) => a.estado !== "Abierto") || [];
   const elegido = abiertos.find((a) => a.id === destino);
-  function preparar(id) {
+  function preparar(id, vista = "buscar") {
     if (bloqueado || fijo) return;
     ++versionDetalle.current;
     setDestino(id || "");
     setDetalle(null);
     setError("");
     setMensaje("");
-    setAcepto(false);
-    setTab("buscar");
+    setTab(vista);
     window.scrollTo(0, 0);
+  }
+  function guardarFicha(id, ficha) {
+    const actualizar = (doc) =>
+      doc?.id === id
+        ? {
+            ...doc,
+            ficha,
+            destinatario:
+              doc.destinatario && doc.destinatario === doc.ficha?.nombre
+                ? ficha.nombre
+                : doc.destinatario,
+          }
+        : doc;
+    setDetalle(actualizar);
+    setResumen((prev) => ({
+      ...prev,
+      apartados: prev.apartados.map(actualizar),
+    }));
+    setMensaje("Guardamos tus datos en WhatsApp Lab.");
+    // Other documents may share the same contact or have their own recipient.
+    pedir()
+      .then((r) => setResumen(r))
+      .catch(() => {});
   }
   function volver() {
     ++versionDetalle.current;
@@ -507,7 +694,6 @@ export default function Apartados() {
     setError("");
     setMensaje("");
     setTab("resumen");
-    setAcepto(false);
     window.scrollTo(0, 0);
   }
   return (
@@ -550,6 +736,7 @@ export default function Apartados() {
             {detalle ? (
               <Detalle
                 doc={detalle}
+                guardarFicha={guardarFicha}
                 cerrar={volver}
                 agregar={
                   detalle.estado === "Abierto" && !bloqueado && !fijo
@@ -595,6 +782,7 @@ export default function Apartados() {
                           <TarjetaApartado
                             key={a.id}
                             doc={a}
+                            guardarFicha={guardarFicha}
                             ver={ver}
                             agregar={!bloqueado && !fijo ? preparar : null}
                           />
@@ -657,9 +845,18 @@ export default function Apartados() {
                         Buscar productos
                       </button>
                     </nav>
-                    {tab === "buscar" && !fijo ? (
+                    {(tab === "buscar" || tab === "referencia") && !fijo ? (
                       <>
-                        <Catalogo agregar={agregar} bloqueado={bloqueado} />
+                        <Catalogo
+                          key={tab}
+                          revisarSeleccion={() => {
+                            setTab("seleccion");
+                            window.scrollTo(0, 0);
+                          }}
+                          porReferencia={tab === "referencia"}
+                          agregar={agregar}
+                          bloqueado={bloqueado}
+                        />
                         {items.length > 0 && (
                           <button
                             className="ap-sticky ca-primary"
@@ -781,7 +978,6 @@ export default function Apartados() {
                                   value={destino}
                                   onChange={(e) => {
                                     setDestino(e.target.value);
-                                    setAcepto(false);
                                   }}
                                 >
                                   <option value="">
@@ -803,32 +999,21 @@ export default function Apartados() {
                               )
                             )}
                             <div className="ap-compromiso">
-                              <h3>Antes de apartar</h3>
+                              <h3>Los guardamos para ti</h3>
                               <p>
-                                Contamos como vendidos los productos que
-                                confirmes y los guardamos para ti. Aparta solo
-                                lo que estés seguro de comprar. Una vez
-                                confirmado, únicamente el equipo de RA puede
-                                retirar productos o cambiar cantidades.
+                                Cuando confirmes, contaremos estos accesorios
+                                como vendidos y te los guardaremos. Elige solo
+                                los que quieras comprar y revisa las cantidades.
+                                Si después necesitas algún ajuste, escríbenos y
+                                te ayudamos.
                               </p>
-                              <label>
-                                <input
-                                  type="checkbox"
-                                  disabled={fijo}
-                                  checked={acepto || Boolean(pendiente)}
-                                  onChange={(e) => setAcepto(e.target.checked)}
-                                />{" "}
-                                Revisé las referencias y cantidades y me
-                                comprometo a comprar estos productos.
-                              </label>
                             </div>
                             <button
                               className="ca-primary ap-confirm"
                               disabled={
                                 enviando ||
                                 (!pendiente &&
-                                  (!acepto ||
-                                    bloqueado ||
+                                  (bloqueado ||
                                     noDisponibles ||
                                     (abiertos.length > 0 && !destino)))
                               }
