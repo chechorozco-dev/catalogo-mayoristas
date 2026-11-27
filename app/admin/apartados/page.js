@@ -11,6 +11,13 @@ import {
   leerGuardado,
 } from "../../../lib/apartados/carrito.mjs";
 import FichaCliente from "./FichaCliente";
+import { CamposEntrega, EditarEntrega } from "./EntregaApartado";
+import {
+  pagosApartado,
+  empresasApartado,
+  empresasDisponibles,
+  entregaValida,
+} from "../../../lib/apartados/entrega.mjs";
 import InstalarPortal from "../components/InstalarPortal";
 import "../cliente-admin.css";
 import "./apartados.css";
@@ -264,7 +271,7 @@ function Catalogo({ agregar, bloqueado, porReferencia = false, anexar }) {
     </section>
   );
 }
-function FichaApartado({ doc, completo = false }) {
+function FichaApartado({ doc, completo = false, actualizarEntrega }) {
   const unidades = completo
     ? doc.productos.reduce((n, p) => n + p.cantidad, 0)
     : doc.unidades;
@@ -281,17 +288,16 @@ function FichaApartado({ doc, completo = false }) {
         <div>
           <dt>Forma de pago</dt>
           <dd>
-            {{
-              SIN_DEFINIR: "Por definir",
-              CONTADO: "Contado",
-              CONTADO_CON_ENVIO: "Contado con envío",
-              PAGO_EN_CASA: "Pago en casa",
-              RECOGE_EN_LOCAL: "Recoge en el local",
-              COTIZACION: "Cotización",
-            }[doc.forma_pago] ||
-              (doc.forma_pago || "Por definir")
-                .replaceAll("_", " ")
-                .toLowerCase()}
+            {pagosApartado[doc.forma_pago] ||
+              (doc.forma_pago === "COTIZACION" ? "Cotización" : "Por definir")}
+          </dd>
+        </div>
+        <div>
+          <dt>Transportadora</dt>
+          <dd>
+            {doc.forma_pago === "RECOGE_EN_LOCAL"
+              ? "Recogida en el local"
+              : empresasApartado[doc.transportadora] || "Por elegir"}
           </dd>
         </div>
         <div>
@@ -319,16 +325,28 @@ function FichaApartado({ doc, completo = false }) {
           <dd>{pesos(completo ? suma(doc.productos) : doc.total)}</dd>
         </div>
       </dl>
+      <EditarEntrega
+        doc={doc}
+        total={completo ? suma(doc.productos) : doc.total}
+        pedir={pedir}
+        actualizar={actualizarEntrega}
+      />
     </>
   );
 }
-function TarjetaApartado({ doc, ver, agregar, guardarFicha }) {
+function TarjetaApartado({
+  doc,
+  ver,
+  agregar,
+  guardarFicha,
+  actualizarEntrega,
+}) {
   return (
     <article
       className="ap-panel ap-tarjeta"
       aria-label={"Apartado " + doc.codigo}
     >
-      <FichaApartado doc={doc} />
+      <FichaApartado doc={doc} actualizarEntrega={actualizarEntrega} />
       <FichaCliente doc={doc} pedir={pedir} guardar={guardarFicha} />
       <div className="ap-acciones">
         <button className="ca-primary" onClick={() => ver(doc.id)}>
@@ -397,13 +415,13 @@ function DescargarPdf({ doc }) {
     </>
   );
 }
-function Detalle({ doc, cerrar, agregar, guardarFicha }) {
+function Detalle({ doc, cerrar, agregar, guardarFicha, actualizarEntrega }) {
   return (
     <section className="ap-panel ap-detalle">
       <button className="ap-regresar" onClick={cerrar}>
         ← Volver a mis apartados
       </button>
-      <FichaApartado doc={doc} completo />
+      <FichaApartado doc={doc} completo actualizarEntrega={actualizarEntrega} />
       <FichaCliente doc={doc} pedir={pedir} guardar={guardarFicha} />
       <div className="ap-acciones">
         {agregar && (
@@ -463,6 +481,21 @@ export default function Apartados() {
     [enviando, setEnviando] = useState(false),
     [pendiente, setPendiente] = useState(null),
     [anexo, setAnexo] = useState(null);
+  const [entregaNueva, setEntregaNueva] = useState({
+    forma_pago: "",
+    transportadora: null,
+  });
+  const totalSeleccion = suma(items);
+  useEffect(() => {
+    setEntregaNueva((actual) =>
+      actual.transportadora &&
+      !empresasDisponibles(actual.forma_pago, totalSeleccion).includes(
+        actual.transportadora,
+      )
+        ? { ...actual, transportadora: null }
+        : actual,
+    );
+  }, [totalSeleccion]);
   const [tab, setTab] = useState("resumen"),
     [cargando, setCargando] = useState(true),
     [inicio, setInicio] = useState(0);
@@ -696,7 +729,10 @@ export default function Apartados() {
     if (
       busy.current ||
       (!pendiente &&
-        (!items.length || bloqueado || (abiertos.length && !destino)))
+        (!items.length ||
+          bloqueado ||
+          (abiertos.length && !destino) ||
+          (!abiertos.length && !entregaValida(entregaNueva, totalSeleccion))))
     )
       return;
     busy.current = true;
@@ -707,6 +743,7 @@ export default function Apartados() {
       accion: "apartar",
       solicitud: crypto.randomUUID(),
       destino: destino || null,
+      ...(!destino ? { entrega: entregaNueva } : {}),
       lineas: items.map(({ clave, cantidad, mayor }) => ({
         clave,
         cantidad,
@@ -736,6 +773,8 @@ export default function Apartados() {
         JSON.stringify(descontarConfirmados(leerGuardado(key, []), items)),
       );
       guardar([]);
+      if (!intento.destino)
+        setEntregaNueva({ forma_pago: "", transportadora: null });
       setTab("resumen");
       const [r, doc] = await Promise.all([
         pedir(),
@@ -790,6 +829,17 @@ export default function Apartados() {
   const bloqueado = resumen?.bloqueado === true,
     fijo = enviando || Boolean(pendiente) || Boolean(anexo);
   const cliente = resumen?.cliente;
+  const formularioInicio = !abiertos.length && !anexo && (
+    <section className="ap-panel ap-entrega">
+      <h2>Pago y entrega</h2>
+      <CamposEntrega
+        valor={pendiente?.entrega || entregaNueva}
+        total={totalSeleccion}
+        cambiar={setEntregaNueva}
+        disabled={fijo}
+      />
+    </section>
+  );
   const sinDestino = abiertos.length > 1 && !destino;
   useEffect(() => {
     if (
@@ -851,6 +901,24 @@ export default function Apartados() {
     setMensaje("");
     setTab(vista);
     window.scrollTo(0, 0);
+  }
+  function actualizarEntrega(d, guardada) {
+    const cambios = {
+      forma_pago: d.forma_pago,
+      transportadora: d.transportadora,
+      total: d.total,
+      ...(d.estado ? { estado: d.estado } : {}),
+    };
+    setResumen((prev) => ({
+      ...prev,
+      apartados: prev.apartados.map((a) =>
+        a.id === d.id ? { ...a, ...cambios } : a,
+      ),
+    }));
+    setDetalle((prev) =>
+      prev?.id === d.id ? { ...prev, ...(d.productos ? d : cambios) } : prev,
+    );
+    if (guardada) setMensaje("Guardamos el pago y la entrega de tu apartado.");
   }
   function guardarFicha(id, ficha) {
     const actualizar = (doc) =>
@@ -924,6 +992,7 @@ export default function Apartados() {
               <Detalle
                 doc={detalle}
                 guardarFicha={guardarFicha}
+                actualizarEntrega={actualizarEntrega}
                 cerrar={volver}
                 agregar={
                   detalle.estado === "Abierto" && !bloqueado && !fijo
@@ -970,6 +1039,7 @@ export default function Apartados() {
                             key={a.id}
                             doc={a}
                             guardarFicha={guardarFicha}
+                            actualizarEntrega={actualizarEntrega}
                             ver={ver}
                             agregar={!bloqueado && !fijo ? preparar : null}
                           />
@@ -1016,6 +1086,7 @@ export default function Apartados() {
                         </p>
                       )}
                     </div>
+                    {tab !== "seleccion" && formularioInicio}
                     <nav className="ap-tabs" aria-label="Preparar apartado">
                       <button
                         disabled={Boolean(anexo)}
@@ -1196,6 +1267,7 @@ export default function Apartados() {
                                 </p>
                               )
                             )}
+                            {formularioInicio}
                             <div className="ap-compromiso">
                               <h3>Los guardamos para ti</h3>
                               <p>
@@ -1212,7 +1284,12 @@ export default function Apartados() {
                                 enviando ||
                                 (!pendiente &&
                                   (bloqueado ||
-                                    (abiertos.length > 0 && !destino)))
+                                    (abiertos.length > 0 && !destino) ||
+                                    (!abiertos.length &&
+                                      !entregaValida(
+                                        entregaNueva,
+                                        totalSeleccion,
+                                      ))))
                               }
                               onClick={confirmar}
                             >

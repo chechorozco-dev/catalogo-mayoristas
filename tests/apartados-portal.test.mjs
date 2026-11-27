@@ -126,3 +126,41 @@ test("las fechas del APT respetan el día de Colombia y los registros sin fecha"
   );
   assert.equal(fechaApartado(null), "Sin fecha registrada");
 });
+
+test("las opciones de entrega dependen del pago y del subtotal mayorista estricto", async () => {
+  const { empresasDisponibles, entregaValida, empresasApartado } = await import(
+    "../lib/apartados/entrega.mjs"
+  );
+  const normales = ["INTERRAPIDISIMO", "ENVIA", "SERVIENTREGA"];
+  assert.equal(empresasApartado.ENVIA, "ENVIO");
+  for (const precio of [399999, 400000])
+    assert.deepEqual(empresasDisponibles("PAGO_EN_CASA", precio), normales);
+  assert.deepEqual(empresasDisponibles("PAGO_EN_CASA", 400001), [
+    ...normales,
+    "COORDINADORA",
+  ]);
+  for (const forma_pago of ["CONTADO", "CONTADO_CON_ENVIO"])
+    assert.deepEqual(empresasDisponibles(forma_pago, 600000), normales);
+  assert.equal(
+    entregaValida(
+      { forma_pago: "PAGO_EN_CASA", transportadora: "COORDINADORA" },
+      400000,
+    ),
+    false,
+  );
+  assert.deepEqual(empresasDisponibles("RECOGE_EN_LOCAL", 500000), []);
+  assert.equal(
+    entregaValida(
+      { forma_pago: "RECOGE_EN_LOCAL", transportadora: null },
+      500000,
+    ),
+    true,
+  );
+  assert.equal(
+    entregaValida(
+      { forma_pago: "RECOGE_EN_LOCAL", transportadora: "SERVIENTREGA" },
+      500000,
+    ),
+    false,
+  );
+});

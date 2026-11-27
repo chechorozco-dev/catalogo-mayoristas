@@ -9,6 +9,18 @@ const uuid = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
 const sku = /^(?:w:\d+:\d+|r:[a-f\d-]{36})$/i;
 const privadas = { "Cache-Control": "private, no-store", Vary: "Cookie" };
 const errores = {
+  PORTAL_ENTREGA: [
+    409,
+    "Revisa la forma de pago y elige una opción de entrega disponible.",
+  ],
+  PORTAL_ENTREGA_CAMBIO: [
+    409,
+    "Los datos de entrega cambiaron. Revisa la selección antes de guardar.",
+  ],
+  PORTAL_COBERTURA: [
+    409,
+    "La ciudad registrada no tiene pago contra entrega. Revisa la ciudad o elige otra forma de pago.",
+  ],
   PORTAL_PDF: [
     503,
     "No pudimos preparar el PDF. Vuelve a intentar la descarga.",
@@ -218,6 +230,17 @@ export async function POST(request) {
         }),
       );
     }
+    if (b?.accion === "guardar_entrega" && uuid.test(b.destino)) {
+      return respuesta(
+        await rpc("ra_portal_editar_entrega", {
+          ...identity,
+          p_pedido: b.destino,
+          p_pago: b.entrega?.forma_pago ?? null,
+          p_empresa: b.entrega?.transportadora ?? null,
+          p_antes: b.antes || {},
+        }),
+      );
+    }
     if (b?.accion === "guardar_ficha" && uuid.test(b.destino)) {
       return respuesta(
         await rpc("ra_portal_guardar_ficha", {
@@ -248,17 +271,32 @@ export async function POST(request) {
     )
       return fallo(new Error("PORTAL_DATOS"));
     return respuesta(
-      await rpc("ra_portal_apartar", {
-        ...identity,
-        p_pedido: b.destino,
-        p_solicitud: b.solicitud,
-        p_compromiso: true,
-        p_lineas: b.lineas.map(({ clave, cantidad, mayor }) => ({
-          clave,
-          cantidad,
-          mayor,
-        })),
-      }),
+      await rpc(
+        b.destino === null
+          ? "ra_portal_confirmar_apartado"
+          : "ra_portal_apartar",
+        {
+          ...(b.destino === null
+            ? {
+                p_entrega: b.entrega
+                  ? {
+                      forma_pago: b.entrega.forma_pago,
+                      transportadora: b.entrega.transportadora ?? null,
+                    }
+                  : {},
+              }
+            : {}),
+          ...identity,
+          p_pedido: b.destino,
+          p_solicitud: b.solicitud,
+          p_compromiso: true,
+          p_lineas: b.lineas.map(({ clave, cantidad, mayor }) => ({
+            clave,
+            cantidad,
+            mayor,
+          })),
+        },
+      ),
     );
   } catch (error) {
     return fallo(
