@@ -1,5 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async headers() {
+    return [{ source: "/admin/portal-sw.js", headers: [
+      { key: "Service-Worker-Allowed", value: "/admin" },
+      { key: "Cache-Control", value: "no-cache" },
+    ] }];
+  },
   images: {
     // Solo permitir optimizar imágenes públicas de nuestro almacenamiento.
     // Los enlaces externos (p. ej. Google Drive) mantienen su URL original.

@@ -11,6 +11,7 @@ import {
 import { estadoPublicacionProducto, claveProducto } from "../../../lib/catalogo/publicacion.mjs";
 import { GaleriaProducto, VisorImagen } from "./components/GaleriasProducto";
 import EditorPrecios from "./components/EditorPrecios";
+import { claveCarrito, leerGuardado } from "../../../lib/apartados/carrito.mjs";
 import CarritoPedido from "./components/CarritoPedido";
 
 /* =========================================================
@@ -82,6 +83,7 @@ export default function ProductosMayoristaPage() {
 
   /* CARRITO */
 
+  const [clienteCarrito,setClienteCarrito] = useState(null);
   const [carrito, setCarrito] =
     useState([]);
 
@@ -220,23 +222,20 @@ const productosPermitidos =
 setProductos(productosPermitidos);
 
 setTiendaActual(tienda);
-if (!esTiendaRA) {
-  const idsPermitidos = new Set(
-    productosPermitidos.map(
-      (producto) =>
-        String(producto.id)
-    )
-  );
-
-  setCarrito((actual) =>
-    actual.filter((item) =>
-      idsPermitidos.has(
-        String(item.producto_id)
-      )
-    )
-  );
-}
-
+const clienteId = sesionData.cliente.id;
+const key = claveCarrito(clienteId);
+try {
+  // Migrate a pre-existing device cart once when its owner opens Products.
+  const legado = localStorage.getItem("ra_pedido_mayorista");
+  const actual = leerGuardado(key, legado ? JSON.parse(legado) : []);
+  const idsPermitidos = new Set(productosPermitidos.map(p => String(p.id)));
+  const items = Array.isArray(actual) ? actual.filter(i => esTiendaRA || idsPermitidos.has(String(i.producto_id))) : [];
+  localStorage.setItem(key,JSON.stringify(items));
+  if (legado) localStorage.removeItem("ra_pedido_mayorista");
+  setCarrito(items);
+} catch { setCarrito([]); }
+setClienteCarrito(clienteId);
+setCarritoCargado(true);
 setCargando(false);
     } catch (error) {
       console.error(error);
@@ -253,41 +252,16 @@ setCargando(false);
      CARGAR CARRITO DE LOCALSTORAGE
   ======================================================= */
 
-  useEffect(() => {
-    try {
-      const guardado =
-        window.localStorage.getItem(
-          "ra_pedido_mayorista"
-        );
-
-      if (guardado) {
-        const datos =
-          JSON.parse(guardado);
-
-        if (Array.isArray(datos)) {
-          setCarrito(datos);
-        }
-      }
-    } catch (error) {
-      console.error(
-        "Error cargando carrito:",
-        error
-      );
-    }
-
-    setCarritoCargado(true);
-  }, []);
-
   /* =======================================================
      GUARDAR CARRITO
   ======================================================= */
 
   useEffect(() => {
-    if (!carritoCargado) return;
+    if (!carritoCargado || !clienteCarrito) return;
 
     try {
       window.localStorage.setItem(
-        "ra_pedido_mayorista",
+        claveCarrito(clienteCarrito),
         JSON.stringify(carrito)
       );
     } catch (error) {
@@ -296,7 +270,26 @@ setCargando(false);
         error
       );
     }
-  }, [carrito, carritoCargado]);
+  }, [carrito, carritoCargado, clienteCarrito]);
+
+  useEffect(() => {
+    if (!clienteCarrito) return;
+    const key = claveCarrito(clienteCarrito);
+    function actualizar() {
+      try {
+        const items = leerGuardado(key, []);
+        if (Array.isArray(items)) setCarrito(items);
+      } catch {}
+    }
+    function alVolver(e) { if (e.persisted) actualizar(); }
+    function alCambiar(e) { if (e.key === key) actualizar(); }
+    window.addEventListener("pageshow", alVolver);
+    window.addEventListener("storage", alCambiar);
+    return () => {
+      window.removeEventListener("pageshow", alVolver);
+      window.removeEventListener("storage", alCambiar);
+    };
+  }, [clienteCarrito]);
 
   /* =======================================================
      ANIMACIÓN PRODUCTO → CARRITO

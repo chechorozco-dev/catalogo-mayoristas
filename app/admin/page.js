@@ -10,6 +10,7 @@ import {
 } from "next/navigation";
 
 import "./cliente-admin.css";
+import InstalarPortal from "./components/InstalarPortal";
 import EditorTienda from "./components/EditorTienda";
 import PanelAnuncios from "./components/PanelAnuncios";
 import CompartirCatalogo from "./components/CompartirCatalogo";
@@ -267,11 +268,12 @@ export default function AdminPage() {
 
 
   const secciones = [
-    ["inicio", "Inicio"], ["productos", "Productos"],
+    ["inicio", "Inicio"], ["productos", "Productos"], ["apartados", "Mis apartados"],
     ["tienda", "Mi tienda"], ["anuncios", "Avisos"], ["compartir", "Compartir"],
   ];
   function navegar(id) {
     if (id === "productos") { verProductos(); return; }
+    if (id === "apartados") { router.push("/admin/apartados"); return; }
     setSeccionActiva(id);
     setMensaje("");
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -290,7 +292,7 @@ export default function AdminPage() {
     <header className="ca-header"><div className="ca-header-inner">
       <div className="ca-brand"><span className="ca-mark" aria-hidden="true">RA</span>
         <div><span className="ca-eyebrow">MI NEGOCIO</span><strong>Administra tu catálogo</strong></div></div>
-      <button className="ca-outline" onClick={verCatalogo}>Ver mi catálogo ↗</button>
+      <div className="ca-header-actions"><InstalarPortal /><button className="ca-outline" onClick={verCatalogo}>Ver mi catálogo ↗</button></div>
     </div></header>
     <div className="ca-layout">
       <nav className="ca-nav" aria-label="Administración de mi tienda">
@@ -325,6 +327,7 @@ export default function AdminPage() {
               <span className="ca-action-link">{action} <span aria-hidden="true">→</span></span>
             </button>)}
           </div>
+          <section className="ca-announcements ca-apartado-entry"><div><h2>Mis apartados</h2><p>Separa mercancía con RA y consulta lo que ya tienes guardado.</p></div><a className="ca-primary" href="/admin/apartados">Ver mis apartados →</a></section>
           <section className="ca-announcements">
             <div className="ca-section-head"><div><h2>Avisos de tu tienda</h2>
               <p>{activos.length ? activos.length + " publicados en tu catálogo" : "Destaca una novedad o un mensaje para tus clientes."}</p></div>

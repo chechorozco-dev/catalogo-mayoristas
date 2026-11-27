@@ -389,6 +389,8 @@ export default function Carrito({
                 Enviar pedido
               </button>
 
+              <a className="cart-layaway" href="/admin/apartados?carrito=1">Apartar estos productos →</a>
+
               <button
                 type="button"
                 className="empty-cart-button"
