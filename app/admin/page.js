@@ -327,7 +327,7 @@ export default function AdminPage() {
               <span className="ca-action-link">{action} <span aria-hidden="true">→</span></span>
             </button>)}
           </div>
-          <section className="ca-announcements ca-apartado-entry"><div><h2>Mis apartados</h2><p>Separa mercancía con RA y consulta lo que ya tienes guardado.</p></div><a className="ca-primary" href="/admin/apartados">Ver mis apartados →</a></section>
+          <section className="ca-announcements ca-apartado-entry"><div><h2>Mis apartados</h2><p>Inicia un apartado o consulta su número, fechas y productos.</p></div><a className="ca-primary" href="/admin/apartados">Ver o iniciar apartado →</a></section>
           <section className="ca-announcements">
             <div className="ca-section-head"><div><h2>Avisos de tu tienda</h2>
               <p>{activos.length ? activos.length + " publicados en tu catálogo" : "Destaca una novedad o un mensaje para tus clientes."}</p></div>

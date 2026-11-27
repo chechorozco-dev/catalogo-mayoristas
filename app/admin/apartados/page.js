@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { fechaApartado as fecha } from "../../../lib/apartados/fechas.mjs";
 import { formatoPrecio as pesos } from "../../../lib/catalogo/formatos.mjs";
 import {
   claveBorrador,
@@ -13,13 +14,6 @@ import "../cliente-admin.css";
 import "./apartados.css";
 
 const api = "/api/apartados";
-const fecha = (value) =>
-  new Date(value).toLocaleDateString("es-CO", {
-    timeZone: "America/Bogota",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
 const suma = (items) => items.reduce((n, p) => n + p.mayor * p.cantidad, 0);
 async function pedir(url = api, body, signal) {
   const r = await fetch(url, {
@@ -174,19 +168,87 @@ function Catalogo({ agregar, bloqueado }) {
     </section>
   );
 }
-function Detalle({ doc, cerrar }) {
+function FichaApartado({ doc, completo = false }) {
+  const unidades = completo
+    ? doc.productos.reduce((n, p) => n + p.cantidad, 0)
+    : doc.unidades;
   return (
-    <section className="ap-panel ap-detalle">
-      <div className="ap-head">
+    <>
+      <div className="ap-identidad">
         <div>
-          <small>Detalle del apartado</small>
+          <small>Número de apartado</small>
           <h2>{doc.codigo}</h2>
         </div>
-        <button onClick={cerrar}>Volver a mis apartados</button>
+        <span className="ap-estado">{doc.estado}</span>
       </div>
-      <p>
-        {doc.estado} · {fecha(doc.fecha)}
-      </p>
+      <dl className="ap-datos">
+        <div>
+          <dt>Fecha de inicio</dt>
+          <dd>{fecha(doc.fecha)}</dd>
+        </div>
+        <div>
+          <dt>Último producto agregado</dt>
+          <dd>{fecha(doc.ultimo_producto_en)}</dd>
+        </div>
+        {completo && (
+          <div>
+            <dt>Vencimiento</dt>
+            <dd>
+              {doc.vence_en ? fecha(doc.vence_en) : "Sin fecha programada"}
+            </dd>
+          </div>
+        )}
+        <div>
+          <dt>Unidades apartadas</dt>
+          <dd>{unidades}</dd>
+        </div>
+        <div>
+          <dt>Total al por mayor</dt>
+          <dd>{pesos(completo ? suma(doc.productos) : doc.total)}</dd>
+        </div>
+      </dl>
+    </>
+  );
+}
+function TarjetaApartado({ doc, ver, agregar }) {
+  return (
+    <article
+      className="ap-panel ap-tarjeta"
+      aria-label={"Apartado " + doc.codigo}
+    >
+      <FichaApartado doc={doc} />
+      <div className="ap-acciones">
+        <button className="ca-primary" onClick={() => ver(doc.id)}>
+          Ver detalles
+        </button>
+        {agregar && (
+          <button onClick={() => agregar(doc.id)}>Agregar productos</button>
+        )}
+      </div>
+    </article>
+  );
+}
+function Detalle({ doc, cerrar, agregar }) {
+  return (
+    <section className="ap-panel ap-detalle">
+      <button className="ap-regresar" onClick={cerrar}>
+        ← Volver a mis apartados
+      </button>
+      <FichaApartado doc={doc} completo />
+      <div className="ap-acciones">
+        {agregar && (
+          <button className="ca-primary" onClick={() => agregar(doc.id)}>
+            Agregar productos a {doc.codigo}
+          </button>
+        )}
+        <a className="ca-outline ap-link" href={api + "?modo=pdf&id=" + doc.id}>
+          Descargar PDF
+        </a>
+      </div>
+      <h3 className="ap-titulo-productos">Productos de tu apartado</h3>
+      {!doc.productos.length && (
+        <p>Este apartado todavía no tiene productos registrados.</p>
+      )}
       {doc.productos.map((p) => (
         <article key={p.id} className="ap-item">
           <Foto p={p} />
@@ -196,6 +258,11 @@ function Detalle({ doc, cerrar }) {
             </small>
             <strong>{p.nombre}</strong>
             <Precios p={p} />
+            <small>
+              {p.agregado_en
+                ? "Agregado el " + fecha(p.agregado_en)
+                : "Fecha de ingreso sin registrar"}
+            </small>
           </div>
           <div className="ap-end">
             {p.cantidad} ud.<b>{pesos(p.mayor * p.cantidad)}</b>
@@ -207,9 +274,6 @@ function Detalle({ doc, cerrar }) {
         <b>{pesos(suma(doc.productos))}</b>
       </div>
       {doc.abono > 0 && <p>Abono registrado · {pesos(doc.abono)}</p>}
-      <a className="ca-primary ap-link" href={api + "?modo=pdf&id=" + doc.id}>
-        Descargar PDF
-      </a>
     </section>
   );
 }
@@ -223,7 +287,7 @@ export default function Apartados() {
     [acepto, setAcepto] = useState(false),
     [enviando, setEnviando] = useState(false),
     [pendiente, setPendiente] = useState(null);
-  const [tab, setTab] = useState("seleccion"),
+  const [tab, setTab] = useState("resumen"),
     [cargando, setCargando] = useState(true),
     [inicio, setInicio] = useState(0);
   const busy = useRef(false),
@@ -259,6 +323,8 @@ export default function Apartados() {
       setError("");
       try {
         const r = await pedir();
+        if (!vivo) return;
+        elegirResumen(r);
         const borrador = leerGuardado(claveBorrador(r.cliente), { items: [] });
         const url = new URL(location.href);
         const importar =
@@ -285,7 +351,7 @@ export default function Apartados() {
           url.searchParams.delete("carrito");
           history.replaceState(history.state, "", url);
         }
-        if (!actual.length && !r.apartados.length) setTab("buscar");
+        setTab(borrador.pendiente || (importar && actual.length > 0) ? "seleccion" : "resumen");
       } catch (e) {
         if (vivo && e.status !== 401) setError(e.message);
       } finally {
@@ -384,7 +450,7 @@ export default function Apartados() {
         JSON.stringify(descontarConfirmados(leerGuardado(key, []), items)),
       );
       guardar([]);
-      setTab("seleccion");
+      setTab("resumen");
       const [r, doc] = await Promise.all([
         pedir(),
         pedir(api + "?modo=detalle&id=" + d.id),
@@ -421,6 +487,29 @@ export default function Apartados() {
   const bloqueado = resumen?.bloqueado === true,
     fijo = enviando || Boolean(pendiente),
     noDisponibles = items.some((i) => !i.disponible);
+  const anteriores =
+    resumen?.apartados.filter((a) => a.estado !== "Abierto") || [];
+  const elegido = abiertos.find((a) => a.id === destino);
+  function preparar(id) {
+    if (bloqueado || fijo) return;
+    ++versionDetalle.current;
+    setDestino(id || "");
+    setDetalle(null);
+    setError("");
+    setMensaje("");
+    setAcepto(false);
+    setTab("buscar");
+    window.scrollTo(0, 0);
+  }
+  function volver() {
+    ++versionDetalle.current;
+    setDetalle(null);
+    setError("");
+    setMensaje("");
+    setTab("resumen");
+    setAcepto(false);
+    window.scrollTo(0, 0);
+  }
   return (
     <main className="ca-shell ap-shell">
       <header className="ca-header">
@@ -461,37 +550,97 @@ export default function Apartados() {
             {detalle ? (
               <Detalle
                 doc={detalle}
-                cerrar={() => {
-                  ++versionDetalle.current;
-                  setDetalle(null);
-                  setMensaje("");
-                }}
+                cerrar={volver}
+                agregar={
+                  detalle.estado === "Abierto" && !bloqueado && !fijo
+                    ? preparar
+                    : null
+                }
               />
             ) : (
               <>
-                {resumen.apartados.length > 0 && (
-                  <section className="ap-panel">
-                    <h2>Tus apartados con RA</h2>
-                    <div className="ap-docs">
-                      {resumen.apartados.map((a) => (
-                        <button key={a.id} onClick={() => ver(a.id)}>
-                          <span>
-                            <b>{a.codigo}</b>
-                            <small>
-                              {fecha(a.fecha)} · {a.estado}
-                            </small>
-                          </span>
-                          <span>
-                            {a.unidades} ud. · {pesos(a.total)}{" "}
-                            <b aria-hidden="true">›</b>
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </section>
-                )}
-                {(!bloqueado || pendiente) && (
+                {tab === "resumen" && (
                   <>
+                    {abiertos.length === 0 ? (
+                      <section className="ap-panel ap-inicio">
+                        <h2>
+                          {resumen.apartados.length
+                            ? "No tienes un apartado abierto"
+                            : "Todavía no tienes apartados"}
+                        </h2>
+                        {!bloqueado && (
+                          <>
+                            <p>
+                              Elige tus productos y confirma la selección. Al
+                              confirmar verás tu número APT y la fecha de
+                              inicio.
+                            </p>
+                            <button
+                              className="ca-primary"
+                              onClick={() => preparar(null)}
+                            >
+                              Iniciar apartado
+                            </button>
+                          </>
+                        )}
+                      </section>
+                    ) : (
+                      <section aria-label="Apartados abiertos">
+                        <h2 className="ap-subtitulo">
+                          {abiertos.length === 1
+                            ? "Tu apartado abierto"
+                            : "Tus apartados abiertos"}
+                        </h2>
+                        {abiertos.map((a) => (
+                          <TarjetaApartado
+                            key={a.id}
+                            doc={a}
+                            ver={ver}
+                            agregar={!bloqueado && !fijo ? preparar : null}
+                          />
+                        ))}
+                      </section>
+                    )}
+                    {!!items.length && !bloqueado && (
+                      <div className="ap-borrador">
+                        <span>Tienes productos pendientes de confirmar.</span>
+                        <button onClick={() => setTab("seleccion")}>
+                          Revisar mi selección
+                        </button>
+                      </div>
+                    )}
+                    {anteriores.length > 0 && (
+                      <section aria-label="Historial de apartados">
+                        <h2 className="ap-subtitulo">Historial de apartados</h2>
+                        {anteriores.map((a) => (
+                          <TarjetaApartado key={a.id} doc={a} ver={ver} />
+                        ))}
+                      </section>
+                    )}
+                  </>
+                )}
+                {tab !== "resumen" && (!bloqueado || pendiente) && (
+                  <>
+                    <div className="ap-flujo">
+                      {!fijo && (
+                        <button className="ap-regresar" onClick={volver}>
+                          ← Volver a mis apartados
+                        </button>
+                      )}
+                      <h2>
+                        {elegido
+                          ? "Agregar productos a " + elegido.codigo
+                          : abiertos.length
+                            ? "Agregar a un apartado"
+                            : "Iniciar apartado"}
+                      </h2>
+                      {tab === "buscar" && (
+                        <p>
+                          Agrega las referencias que necesitas y abre «Revisar
+                          selección» para confirmarlas.
+                        </p>
+                      )}
+                    </div>
                     <nav className="ap-tabs" aria-label="Preparar apartado">
                       <button
                         aria-pressed={tab === "seleccion"}
@@ -525,11 +674,7 @@ export default function Apartados() {
                       </>
                     ) : (
                       <section className="ap-panel">
-                        <h2>
-                          {abiertos.length
-                            ? "Agregar a mi apartado"
-                            : "Iniciar un apartado"}
-                        </h2>
+                        <h2>Revisa tu selección</h2>
                         {!items.length ? (
                           <>
                             <p>

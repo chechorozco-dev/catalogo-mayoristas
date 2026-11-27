@@ -79,3 +79,10 @@ test("Mis apartados valida en la base la cuenta firmada del cliente, del maestro
   assert.equal((await consultar({ ...cuenta, rol: "MAESTRO", exp: 1 })).status, 401);
   assert.equal(rpc.mock.callCount(), 3);
 });
+
+test("las fechas del APT respetan el día de Colombia y los registros sin fecha", async () => {
+  const { fechaApartado } = await import("../lib/apartados/fechas.mjs");
+  assert.equal(fechaApartado("2026-11-28T02:10:00Z"), fechaApartado("2026-11-27"));
+  assert.notEqual(fechaApartado("2026-11-28T05:10:00Z"), fechaApartado("2026-11-27"));
+  assert.equal(fechaApartado(null), "Sin fecha registrada");
+});
