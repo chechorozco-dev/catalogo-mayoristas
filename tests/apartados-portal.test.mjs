@@ -1,6 +1,6 @@
 import test from "node:test";
 import { createHmac } from "node:crypto";
-import { GET } from "../app/api/apartados/route.js";
+import { GET, POST } from "../app/api/apartados/route.js";
 import assert from "node:assert/strict";
 import {
   actualizarSeleccion,
@@ -163,4 +163,75 @@ test("las opciones de entrega dependen del pago y del subtotal mayorista estrict
     ),
     false,
   );
+});
+
+test("el permiso de apartar pertenece a la sesión y una reserva rechazada invita a consultar sin revelar inventario", async (t) => {
+  const secreto = "sesion-qa-stock";
+  const anterior = process.env.AUTH_SESSION_SECRET;
+  process.env.AUTH_SESSION_SECRET = secreto;
+  t.after(() => {
+    if (anterior === undefined) delete process.env.AUTH_SESSION_SECRET;
+    else process.env.AUTH_SESSION_SECRET = anterior;
+  });
+  const cliente = "eea6b881-1229-4dbe-87a7-43f7d31b3265";
+  const telefono = "573000000000";
+  const payload = Buffer.from(
+    JSON.stringify({
+      cliente_id: cliente,
+      telefono,
+      exp: Math.floor(Date.now() / 1000) + 120,
+    }),
+  ).toString("base64url");
+  const token =
+    payload +
+    "." +
+    createHmac("sha256", secreto).update(payload).digest("base64url");
+  const nextUrl = new URL("https://tienda.example/api/apartados?modo=permiso");
+  const req = {
+    nextUrl,
+    cookies: { get: () => ({ value: token }) },
+    headers: new Headers({ origin: nextUrl.origin }),
+  };
+  let penalizado = true;
+  t.mock.method(globalThis, "fetch", async (url, init) => {
+    const body = JSON.parse(init.body);
+    assert.equal(body.p_cliente, cliente);
+    assert.equal(body.p_telefono, telefono);
+    if (url.endsWith("ra_portal_leer")) {
+      assert.equal(body.p_modo, "permiso");
+      return Response.json({ puede_apartar: !penalizado });
+    }
+    assert.ok(url.endsWith("ra_portal_apartar"));
+    return Response.json(
+      {
+        message: penalizado ? "PORTAL_PENALIZADO" : "PORTAL_DISPONIBILIDAD",
+        details: "RA469",
+      },
+      { status: 400 },
+    );
+  });
+  const envio = {
+    accion: "apartar",
+    solicitud: cliente,
+    destino: cliente,
+    lineas: [{ clave: "w:1:0", cantidad: 1, mayor: 7500 }],
+  };
+  assert.deepEqual(await (await GET(req)).json(), { puede_apartar: false });
+  const denegado = await POST({
+    ...req,
+    text: async () => JSON.stringify(envio),
+  });
+  assert.equal(denegado.status, 403);
+  assert.equal((await denegado.json()).codigo, "PORTAL_PENALIZADO");
+  penalizado = false;
+  assert.deepEqual(await (await GET(req)).json(), { puede_apartar: true });
+  const sinSaldo = await POST({
+    ...req,
+    text: async () => JSON.stringify(envio),
+  });
+  assert.equal(sinSaldo.status, 409);
+  const datos = await sinSaldo.json();
+  assert.deepEqual(Object.keys(datos).sort(), ["codigo", "mensaje"]);
+  assert.equal(datos.codigo, "PORTAL_DISPONIBILIDAD");
+  assert.match(datos.mensaje, /Escríbenos/);
 });

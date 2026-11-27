@@ -55,7 +55,7 @@ const errores = {
   ],
   PORTAL_DISPONIBILIDAD: [
     409,
-    "Una referencia ya no está disponible en la cantidad elegida. Revisa tu selección.",
+    "No podemos apartar esa cantidad en este momento. Escríbenos y comprobamos la disponibilidad en el local.",
   ],
   PORTAL_SOLICITUD: [
     409,
@@ -118,7 +118,7 @@ function fallo(error) {
   return respuesta(
     {
       mensaje: texto + ref,
-      ...(error.message === "PORTAL_DISPONIBILIDAD"
+      ...(["PORTAL_DISPONIBILIDAD", "PORTAL_PENALIZADO"].includes(error.message)
         ? { codigo: error.message }
         : {}),
     },
@@ -136,6 +136,7 @@ export async function GET(request) {
   const offset = Number(p.get("offset") || 0);
   if (
     ![
+      "permiso",
       "resumen",
       "detalle",
       "catalogo",

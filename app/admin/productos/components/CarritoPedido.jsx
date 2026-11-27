@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import FotoOptimizada from "../../../components/FotoOptimizada";
+import { usePermisoApartar } from "../../../../lib/apartados/usePermisoApartar";
 import { formatoPrecio } from "../../../../lib/catalogo/formatos.mjs";
 
 export default function Carrito({
   abierto,
+  cliente,
   cerrar,
   carrito,
   aumentar,
@@ -28,6 +30,7 @@ export default function Carrito({
   const [pedidoExitoso, setPedidoExitoso] =
     useState(null);
 
+  const puedeApartar = usePermisoApartar(abierto ? cliente : null);
   if (!abierto) return null;
 
   const unidades = carrito.reduce(
@@ -389,7 +392,7 @@ export default function Carrito({
                 Enviar pedido
               </button>
 
-              <a className="cart-layaway" href="/admin/apartados?carrito=1">Apartar estos productos →</a>
+              {puedeApartar && <a className="cart-layaway" href="/admin/apartados?carrito=1">Apartar estos productos →</a>}
 
               <button
                 type="button"

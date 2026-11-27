@@ -3799,6 +3799,7 @@ async function publicarProductoAhora(productoId) {
       =================================================== */}
 
       <CarritoPedido
+        cliente={clienteCarrito}
         abierto={carritoAbierto}
         cerrar={() =>
           setCarritoAbierto(false)

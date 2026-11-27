@@ -18,6 +18,7 @@ import {
   empresasDisponibles,
   entregaValida,
 } from "../../../lib/apartados/entrega.mjs";
+import { vigilarVisible } from "../../../lib/apartados/usePermisoApartar";
 import InstalarPortal from "../components/InstalarPortal";
 import "../cliente-admin.css";
 import "./apartados.css";
@@ -42,6 +43,8 @@ async function pedir(url = api, body, signal) {
     const e = new Error(data.mensaje || "No pudimos cargar tus apartados.");
     e.status = r.status;
     e.codigo = data.codigo;
+    if (e.codigo === "PORTAL_PENALIZADO")
+      window.dispatchEvent(new Event("ra-penalizacion"));
     throw e;
   }
   return data;
@@ -60,30 +63,37 @@ async function revisar(lista, destino, signal) {
   return actualizarSeleccion(lista, d.productos);
 }
 
-// Keep visible stock current while the customer shops. A closed or hidden view does no polling.
-function vigilarDisponibilidad(consultar, demora) {
-  const ctrl = new AbortController();
-  let ocupado = false;
-  async function consultarVisible() {
-    if (document.hidden || ocupado || ctrl.signal.aborted) return;
-    ocupado = true;
-    try {
-      await consultar(ctrl.signal);
-    } finally {
-      ocupado = false;
-    }
-  }
-  const inicial = setTimeout(consultarVisible, demora);
-  const intervalo = setInterval(consultarVisible, 60000);
-  window.addEventListener("focus", consultarVisible);
-  document.addEventListener("visibilitychange", consultarVisible);
-  return () => {
-    ctrl.abort();
-    clearTimeout(inicial);
-    clearInterval(intervalo);
-    window.removeEventListener("focus", consultarVisible);
-    document.removeEventListener("visibilitychange", consultarVisible);
-  };
+function referenciasRetiradas(antes, despues) {
+  const vigentes = new Set(despues.map((p) => p.clave));
+  return antes
+    .filter((p) => !vigentes.has(p.clave))
+    .map((p) => p.referencia || p.nombre || "el accesorio");
+}
+function ConsultaDisponibilidad({ telefono, referencias = [] }) {
+  const refs = referencias.filter(Boolean).slice(0, 5).join(", ");
+  const texto =
+    "Hola, ¿me ayudan a comprobar la disponibilidad" +
+    (refs ? " de " + refs : "") +
+    " en el local?";
+  return (
+    <div className="ap-consulta" role="status">
+      <span>
+        {refs && <strong>{refs}. </strong>}Escríbenos y comprobamos la
+        disponibilidad en el local.
+      </span>
+      {/^[1-9]\d{7,14}$/.test(telefono || "") && (
+        <a
+          href={
+            "https://wa.me/" + telefono + "?text=" + encodeURIComponent(texto)
+          }
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Consultar por WhatsApp ↗
+        </a>
+      )}
+    </div>
+  );
 }
 function Foto({ p }) {
   return p.foto ? (
@@ -106,7 +116,13 @@ function Precios({ p }) {
     </div>
   );
 }
-function Catalogo({ agregar, bloqueado, porReferencia = false, anexar }) {
+function Catalogo({
+  agregar,
+  bloqueado,
+  porReferencia = false,
+  anexar,
+  telefono,
+}) {
   const [cantidades, setCantidades] = useState({});
   const [q, setQ] = useState(""),
     [offset, setOffset] = useState(0),
@@ -123,27 +139,31 @@ function Catalogo({ agregar, bloqueado, porReferencia = false, anexar }) {
       setCarga(false);
       return;
     }
-    return vigilarDisponibilidad(async (signal) => {
-      try {
-        const d = await pedir(
-          api +
-            (porReferencia ? "?modo=referencia&q=" : "?modo=catalogo&q=") +
-            encodeURIComponent(q) +
-            "&offset=" +
-            offset,
-          null,
-          signal,
-        );
-        if (!signal.aborted) {
-          setProductos(d.productos);
-          setError("");
+    return vigilarVisible(
+      async (signal) => {
+        try {
+          const d = await pedir(
+            api +
+              (porReferencia ? "?modo=referencia&q=" : "?modo=catalogo&q=") +
+              encodeURIComponent(q) +
+              "&offset=" +
+              offset,
+            null,
+            signal,
+          );
+          if (!signal.aborted) {
+            setProductos(d.productos);
+            setError("");
+          }
+        } catch (e) {
+          if (!signal.aborted) setError(e.message);
+        } finally {
+          if (!signal.aborted) setCarga(false);
         }
-      } catch (e) {
-        if (!signal.aborted) setError(e.message);
-      } finally {
-        if (!signal.aborted) setCarga(false);
-      }
-    }, 180);
+      },
+      180,
+      60000,
+    );
   }, [q, offset, revision, porReferencia]);
   return (
     <section className="ap-panel">
@@ -173,8 +193,8 @@ function Catalogo({ agregar, bloqueado, porReferencia = false, anexar }) {
       </label>
       {porReferencia && (
         <p className="ap-nota-anexo">
-          Al agregar, te guardamos esas unidades y las contamos como vendidas.
-          Si después necesitas un ajuste, escríbenos.
+          Al agregar, reservamos esas unidades para ti y las contamos como
+          vendidas. En el detalle verás cuándo las guardemos en tu apartado.
         </p>
       )}
       <div role="status" className="ap-live">
@@ -190,7 +210,13 @@ function Catalogo({ agregar, bloqueado, porReferencia = false, anexar }) {
       ) : (
         <>
           {!productos.length && (!porReferencia || q.trim()) && (
-            <p>No encontramos referencias disponibles para esa búsqueda.</p>
+            <>
+              <p>No encontramos referencias disponibles para esa búsqueda.</p>
+              <ConsultaDisponibilidad
+                telefono={telefono}
+                referencias={q.trim() ? [q.trim()] : []}
+              />
+            </>
           )}
           <div className="ap-catalogo">
             {(porReferencia ? productos : productos.slice(0, 24)).map((p) => (
@@ -235,10 +261,11 @@ function Catalogo({ agregar, bloqueado, porReferencia = false, anexar }) {
                         ? "Agregar a mi apartado · "
                         : "Agregar ") + p.referencia
                     }
-                    onClick={() => {
+                    onClick={async () => {
+                      setAviso("");
                       if (porReferencia) {
                         anexar(p, Number(cantidades[p.clave] ?? 1));
-                      } else if (agregar(p)) {
+                      } else if (await agregar(p)) {
                         setAviso("Agregado a la selección: " + p.referencia);
                       }
                     }}
@@ -447,8 +474,24 @@ function Detalle({ doc, cerrar, agregar, guardarFicha, actualizarEntrega }) {
         <article key={p.id} className="ap-item">
           <Foto p={p} />
           <div>
-            <small>
-              {p.referencia} · {p.estado}
+            <small>{p.referencia}</small>
+            <small
+              className={
+                "ap-guardado" + (p.estado === "Guardado" ? " ap-listo" : "")
+              }
+            >
+              {p.estado === "Guardado"
+                ? "✓ Ya guardado"
+                : p.estado === "Parcial"
+                  ? "Guardado parcial"
+                  : p.estado}
+              {p.guardadas > 0 &&
+                p.guardadas < p.cantidad &&
+                " · " +
+                  p.guardadas +
+                  " de " +
+                  p.cantidad +
+                  " unidades guardadas"}
             </small>
             <strong>{p.nombre}</strong>
             <Precios p={p} />
@@ -481,6 +524,8 @@ export default function Apartados() {
     [enviando, setEnviando] = useState(false),
     [pendiente, setPendiente] = useState(null),
     [anexo, setAnexo] = useState(null);
+  const [consulta, setConsulta] = useState(null);
+  const [permisoIncierto, setPermisoIncierto] = useState(false);
   const [entregaNueva, setEntregaNueva] = useState({
     forma_pago: "",
     transportadora: null,
@@ -521,6 +566,14 @@ export default function Apartados() {
         const r = await pedir();
         if (!vivo) return;
         elegirResumen(r);
+        setPermisoIncierto(false);
+        if (r.bloqueado) {
+          setTab("resumen");
+          setAnexo(null);
+          setPendiente(null);
+          setConsulta(null);
+          return;
+        }
         const borrador = leerGuardado(claveBorrador(r.cliente), { items: [] });
         const anexoGuardado = JSON.parse(
           sessionStorage.getItem(claveAnexo(r.cliente)) || "null",
@@ -550,6 +603,8 @@ export default function Apartados() {
         elegirResumen(r, anexoGuardado?.destino || borrador.pendiente?.destino);
         setAnexo(anexoGuardado);
         setItems(actual);
+        const retiradas = referenciasRetiradas(lista, actual);
+        if (retiradas.length) setConsulta(retiradas);
         setPendiente(borrador.pendiente || null);
         localStorage.setItem(
           claveBorrador(r.cliente),
@@ -595,9 +650,14 @@ export default function Apartados() {
       setMensaje("");
     }
   }
-  function agregar(p, cantidad = 1) {
+  function consultarEnLocal(referencias) {
+    setConsulta(referencias);
+    window.scrollTo(0, 0);
+  }
+  async function agregar(p, cantidad = 1) {
     if (
       busy.current ||
+      bloqueado ||
       pendiente ||
       !Number.isInteger(cantidad) ||
       cantidad < 1 ||
@@ -612,21 +672,41 @@ export default function Apartados() {
       setError("Alcanzaste el límite de esta selección.");
       return;
     }
-    cambiar(
-      encontrado
-        ? items.map((i) =>
-            i.clave === p.clave
-              ? {
-                  ...i,
-                  ...p,
-                  cantidad: i.cantidad + cantidad,
-                  disponible: true,
-                }
-              : i,
-          )
-        : [...items, { ...p, cantidad, disponible: true }],
-    );
-    return true;
+    const nuevaCantidad = (encontrado?.cantidad || 0) + cantidad;
+    busy.current = true;
+    try {
+      const [vigente] = await revisar(
+        [{ ...p, cantidad: nuevaCantidad }],
+        destino,
+      );
+      if (!vigente) {
+        consultarEnLocal([p.referencia]);
+        return false;
+      }
+      const guardado = leerGuardado(claveBorrador(resumen.cliente), {
+        items: [],
+      });
+      if (
+        guardado.pendiente ||
+        JSON.stringify(guardado.items) !== JSON.stringify(items)
+      ) {
+        setInicio((n) => n + 1);
+        return false;
+      }
+      guardar(
+        encontrado
+          ? items.map((i) => (i.clave === p.clave ? { ...i, ...vigente } : i))
+          : [...items, vigente],
+      );
+      setConsulta(null);
+      setError("");
+      return true;
+    } catch (e) {
+      setError(e.message);
+      return false;
+    } finally {
+      busy.current = false;
+    }
   }
   async function ver(id) {
     const version = ++versionDetalle.current;
@@ -643,7 +723,8 @@ export default function Apartados() {
     }
   }
   async function anexar(producto, cantidad) {
-    if (busy.current) return;
+    if (busy.current || bloqueado) return;
+    setConsulta(null);
     const solicitudAnterior = anexo;
     if (
       !solicitudAnterior &&
@@ -706,7 +787,9 @@ export default function Apartados() {
       }
       sessionStorage.removeItem(key);
       setAnexo(null);
-      if (e.codigo !== "PORTAL_DISPONIBILIDAD") setError(e.message);
+      if (e.codigo === "PORTAL_DISPONIBILIDAD")
+        consultarEnLocal([intento.referencia]);
+      else setError(e.message);
     } finally {
       busy.current = false;
       setEnviando(false);
@@ -726,6 +809,8 @@ export default function Apartados() {
     }
   }
   async function confirmar() {
+    if (bloqueado) return;
+    setConsulta(null);
     if (
       busy.current ||
       (!pendiente &&
@@ -810,6 +895,7 @@ export default function Apartados() {
           return;
         }
         guardar(lista);
+        if (stock) consultarEnLocal(referenciasRetiradas(items, lista));
         if (!stock) {
           try {
             elegirResumen(await pedir(), destino);
@@ -826,9 +912,76 @@ export default function Apartados() {
   }
   const abiertos =
     resumen?.apartados.filter((a) => a.estado === "Abierto") || [];
-  const bloqueado = resumen?.bloqueado === true,
+  const bloqueado = resumen?.bloqueado === true || permisoIncierto,
     fijo = enviando || Boolean(pendiente) || Boolean(anexo);
   const cliente = resumen?.cliente;
+  useEffect(() => {
+    if (!cliente) return;
+    const bloquear = () => {
+      setResumen((r) => r && { ...r, bloqueado: true });
+      setTab("resumen");
+      setConsulta(null);
+    };
+    window.addEventListener("ra-penalizacion", bloquear);
+    const cancelar = vigilarVisible(async (signal) => {
+      try {
+        const r = await pedir(api + "?modo=permiso", null, signal);
+        if (signal.aborted) return;
+        setPermisoIncierto(false);
+        if (r.puede_apartar !== true) bloquear();
+        else
+          setResumen((prev) =>
+            prev?.bloqueado ? { ...prev, bloqueado: false } : prev,
+          );
+      } catch {
+        if (!signal.aborted) setPermisoIncierto(true);
+      }
+    }, null);
+    return () => {
+      cancelar();
+      window.removeEventListener("ra-penalizacion", bloquear);
+    };
+  }, [cliente]);
+  const idDetalle = detalle?.id;
+  const estadoDetalle = detalle?.estado;
+  useEffect(() => {
+    if (
+      !idDetalle ||
+      !["Abierto", "Confirmado", "En revisión", "En despachos"].includes(
+        estadoDetalle,
+      )
+    )
+      return;
+    const version = versionDetalle.current;
+    return vigilarVisible(
+      async (signal) => {
+        try {
+          const d = await pedir(
+            api + "?modo=detalle&id=" + idDetalle,
+            null,
+            signal,
+          );
+          if (signal.aborted || version !== versionDetalle.current) return;
+          // Only refresh preparation and totals while the customer may be editing delivery details.
+          setDetalle((prev) =>
+            prev?.id === idDetalle
+              ? {
+                  ...prev,
+                  productos: d.productos,
+                  total: d.total,
+                  estado: d.estado,
+                  ultimo_producto_en: d.ultimo_producto_en,
+                }
+              : prev,
+          );
+        } catch {
+          // Keep the last confirmed preparation visible during a network interruption.
+        }
+      },
+      null,
+      15000,
+    );
+  }, [idDetalle, estadoDetalle]);
   const formularioInicio = !abiertos.length && !anexo && (
     <section className="ap-panel ap-entrega">
       <h2>Pago y entrega</h2>
@@ -853,31 +1006,37 @@ export default function Apartados() {
       !items.length
     )
       return;
-    return vigilarDisponibilidad(async (signal) => {
-      try {
-        const lista = await revisar(items, destino, signal);
-        if (
-          signal.aborted ||
-          busy.current ||
-          JSON.stringify(lista) === JSON.stringify(items)
-        )
-          return;
-        const key = claveBorrador(cliente);
-        const vigente = leerGuardado(key, { items: [] });
-        if (
-          vigente.pendiente ||
-          JSON.stringify(vigente.items) !== JSON.stringify(items)
-        )
-          return;
-        localStorage.setItem(
-          key,
-          JSON.stringify({ items: lista, pendiente: null }),
-        );
-        setItems(lista);
-      } catch {
-        // A failed background read must never discard the customer's draft.
-      }
-    }, 400);
+    return vigilarVisible(
+      async (signal) => {
+        try {
+          const lista = await revisar(items, destino, signal);
+          if (
+            signal.aborted ||
+            busy.current ||
+            JSON.stringify(lista) === JSON.stringify(items)
+          )
+            return;
+          const key = claveBorrador(cliente);
+          const vigente = leerGuardado(key, { items: [] });
+          if (
+            vigente.pendiente ||
+            JSON.stringify(vigente.items) !== JSON.stringify(items)
+          )
+            return;
+          localStorage.setItem(
+            key,
+            JSON.stringify({ items: lista, pendiente: null }),
+          );
+          setItems(lista);
+          const retiradas = referenciasRetiradas(items, lista);
+          if (retiradas.length) setConsulta(retiradas);
+        } catch {
+          // A failed background read must never discard the customer's draft.
+        }
+      },
+      400,
+      60000,
+    );
   }, [
     cliente,
     cargando,
@@ -894,6 +1053,7 @@ export default function Apartados() {
   const elegido = abiertos.find((a) => a.id === destino);
   function preparar(id, vista = "buscar") {
     if (bloqueado || fijo) return;
+    setConsulta(null);
     ++versionDetalle.current;
     setDestino(id || "");
     setDetalle(null);
@@ -944,6 +1104,7 @@ export default function Apartados() {
       .catch(() => {});
   }
   function volver() {
+    setConsulta(null);
     ++versionDetalle.current;
     setDetalle(null);
     setError("");
@@ -974,6 +1135,12 @@ export default function Apartados() {
             )}
           </div>
         )}
+        {consulta && !bloqueado && (
+          <ConsultaDisponibilidad
+            telefono={resumen?.whatsapp_ra}
+            referencias={consulta}
+          />
+        )}
         {mensaje && (
           <p role="status" className="ca-notice ca-success">
             {mensaje}
@@ -981,11 +1148,15 @@ export default function Apartados() {
         )}
         {resumen && !cargando && (
           <>
-            {bloqueado && (
+            {resumen.bloqueado && (
               <p className="ap-aviso">
                 Tu cuenta tiene una penalización activa. Puedes consultar tus
-                apartados y sus PDF. Habla con el equipo de RA para volver a
-                apartar.
+                apartados y descargar sus PDF.
+              </p>
+            )}
+            {permisoIncierto && !resumen.bloqueado && (
+              <p className="ap-aviso" role="status">
+                Estamos comprobando el acceso. Puedes consultar tus apartados.
               </p>
             )}
             {detalle ? (
@@ -1002,7 +1173,7 @@ export default function Apartados() {
               />
             ) : (
               <>
-                {tab === "resumen" && (
+                {(tab === "resumen" || bloqueado) && (
                   <>
                     {abiertos.length === 0 ? (
                       <section className="ap-panel ap-inicio">
@@ -1064,7 +1235,7 @@ export default function Apartados() {
                     )}
                   </>
                 )}
-                {tab !== "resumen" && (!bloqueado || pendiente || anexo) && (
+                {tab !== "resumen" && !bloqueado && (
                   <>
                     <div className="ap-flujo">
                       {!fijo && (
@@ -1126,6 +1297,7 @@ export default function Apartados() {
                           key={tab}
                           anexar={anexar}
                           porReferencia={tab === "referencia"}
+                          telefono={resumen.whatsapp_ra}
                           agregar={agregar}
                           bloqueado={bloqueado}
                         />
