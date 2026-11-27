@@ -1,3 +1,4 @@
+import {sesionOriginal,esSesionCompartida} from "../../../lib/catalogo/sesion-carrito-servidor.mjs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request) {
@@ -160,6 +161,12 @@ if (
       );
     }
 
+    const compartida=esSesionCompartida(sesion_id);
+    let sesionReal=sesion_id;
+    if(compartida){
+      try{sesionReal=await sesionOriginal(tienda_id,sesion_id);}
+      catch{return Response.json({ok:false,codigo:'CART_MOVED'},{status:409});}
+    }
     const ahora =
       new Date().toISOString();
 
@@ -170,9 +177,9 @@ if (
     const urlBuscar =
       `${supabaseUrl}` +
       `/rest/v1/carritos_web` +
-      `?select=id,estado,visitante_id,completado_en,nombre_cliente,cedula_cliente,telefono_cliente,correo_cliente,direccion_cliente,ciudad,forma_pago` +
+      `?select=id,estado,ultima_actividad,ra_live_cart_access(device_session),visitante_id,completado_en,nombre_cliente,cedula_cliente,telefono_cliente,correo_cliente,direccion_cliente,ciudad,forma_pago` +
       `&sesion_id=eq.${encodeURIComponent(
-        sesion_id
+        sesionReal
       )}` +
       `&tienda_id=eq.${encodeURIComponent(
         tienda_id
@@ -224,12 +231,17 @@ if (
   return Response.json({
     ok: true,
     accion: "YA_COMPLETADO",
-    carrito: carritoExistente,
+    carrito: {id:carritoExistente.id,estado:"COMPLETADO"},
   });
 }
+    const acceso=carritoExistente?.ra_live_cart_access;
+    const dispositivo=(Array.isArray(acceso)?acceso[0]:acceso)?.device_session;
+    if((dispositivo&&dispositivo!==sesion_id)||(compartida&&!dispositivo)){
+      return Response.json({ok:false,codigo:"CART_MOVED"},{status:409});
+    }
     const datos = {
   sesion_id:
-    String(sesion_id).slice(0, 200),
+    String(sesionReal).slice(0, 200),
 
   visitante_id:
     carritoExistente?.visitante_id ||
@@ -314,7 +326,7 @@ forma_pago:
         `/rest/v1/carritos_web` +
         `?id=eq.${encodeURIComponent(
           carritoExistente.id
-        )}`;
+        )}&estado=neq.COMPLETADO&ultima_actividad=eq.${encodeURIComponent(carritoExistente.ultima_actividad)}`;
 
       const respuestaActualizar =
         await fetch(urlActualizar, {
@@ -354,11 +366,12 @@ forma_pago:
       const actualizado =
         texto ? JSON.parse(texto) : [];
 
+      if (!actualizado?.length) return Response.json({ok:false,codigo:"CART_STALE"},{status:409});
       return Response.json({
         ok: true,
         accion: "ACTUALIZADO",
         carrito:
-          actualizado?.[0] || null,
+          actualizado?.[0]?{id:actualizado[0].id,estado:actualizado[0].estado}:null,
       });
     }
 
@@ -412,7 +425,7 @@ forma_pago:
     return Response.json({
       ok: true,
       accion: "CREADO",
-      carrito: creado?.[0] || null,
+      carrito: creado?.[0]?{id:creado[0].id,estado:creado[0].estado}:null,
     });
   } catch (error) {
     console.error(

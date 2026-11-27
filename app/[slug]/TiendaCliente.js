@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import {recuperarLineas} from "../../lib/catalogo/retomar-carrito.mjs";
 import {checkoutKey,clearCheckoutKey} from "../../lib/catalogo/checkout-key.mjs";
 import { useRouter } from "next/navigation";
 import FotoOptimizada from "../components/FotoOptimizada";
@@ -365,6 +366,7 @@ const [modalidadEntrega, setModalidadEntrega] = useState("");
 const retiroVillavo = esPuntoVillavo && modalidadEntrega === "RECOGER";
 const [avisoPedido, setAvisoPedido] = useState("");
 const confirmacionEnCurso = useRef(false);
+const seguimientoPendiente = useRef(Promise.resolve());
 
 const [ciudadesEnvio, setCiudadesEnvio] = useState([]);
 const [ciudadSeleccionada, setCiudadSeleccionada] =
@@ -432,32 +434,11 @@ useEffect(()=>{
 const [sesionCarrito, setSesionCarrito] = useState("");
 const [visitanteId, setVisitanteId] = useState("");
 
-useEffect(() => {
-  try {
-    const claveSesion = "ra_sesion_carrito";
-
-    let sesion = localStorage.getItem(claveSesion);
-
-    if (!sesion) {
-      sesion =
-        typeof crypto !== "undefined" &&
-        typeof crypto.randomUUID === "function"
-          ? crypto.randomUUID()
-          : `sesion_${Date.now()}_${Math.random()
-              .toString(36)
-              .slice(2)}`;
-
-      localStorage.setItem(claveSesion, sesion);
-    }
-
-    setSesionCarrito(sesion);
-  } catch (error) {
-    console.error(
-      "Error creando sesión del carrito:",
-      error
-    );
-  }
-}, []);
+const [errorCarrito,setErrorCarrito]=useState("");
+const [cargandoEnlace,setCargandoEnlace]=useState(false);
+const cargaEnlace=useRef(null);
+const carritoCompartido=sesionCarrito.startsWith("rcl_");
+const claveDispositivo="ra_carrito_compartido:"+tiendaId;
 // ========================================
 // IDENTIFICADOR PERSISTENTE DEL VISITANTE
 // ========================================
@@ -567,44 +548,70 @@ useEffect(() => {
   // ========================================
 
   useEffect(() => {
-    try {
-      const clave = `carrito_${window.location.pathname}`;
-      const guardado = localStorage.getItem(clave);
-
-      if (guardado) {
-        const datos = JSON.parse(guardado);
-
-        if (Array.isArray(datos)) {
-          setCarrito(datos);
+    if(!tiendaId)return;
+    let activo=true;
+    async function cargar(){
+      const token=new URLSearchParams(window.location.hash.slice(1)).get("carrito");
+      const dispositivo=sessionStorage.getItem(claveDispositivo);
+      if(token||dispositivo){
+        setCargandoEnlace(true);
+        const clave=tiendaId+":"+(token||dispositivo);
+        if(cargaEnlace.current?.clave!==clave){
+          const solicitud=fetch("/api/carrito/retomar",{method:"POST",headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({tienda_id:tiendaId,...(token?{token}:{sesion:dispositivo})})}).then(async res=>{
+              const data=await res.json();if(!res.ok)throw Error(data.error);return data;
+            });
+          cargaEnlace.current={clave,solicitud};
         }
+        const data=await cargaEnlace.current.solicitud;
+        if(!activo)return;
+        sessionStorage.setItem(claveDispositivo,data.sesion);
+        if(token)window.history.replaceState(window.history.state,"",window.location.pathname+window.location.search);
+        setSesionCarrito(data.sesion);
+        setCarrito(recuperarLineas(data.productos,productosPermitidos));
+        setCarritoAbierto(true);
+      }else{
+        let sesion=localStorage.getItem("ra_sesion_carrito");
+        if(!sesion){sesion=crypto.randomUUID();localStorage.setItem("ra_sesion_carrito",sesion);}
+        setSesionCarrito(sesion);
+        const guardado=JSON.parse(localStorage.getItem("carrito_"+window.location.pathname)||"[]");
+        if(Array.isArray(guardado))setCarrito(guardado);
       }
-    } catch (error) {
-      console.error("Error cargando carrito:", error);
-    } finally {
-      setCarritoCargado(true);
+      if(activo)setCarritoCargado(true);
     }
-  }, []);
-
-  // ========================================
-  // GUARDAR CARRITO
-  // ========================================
+    cargar().catch(e=>{if(activo)setErrorCarrito(e.message||"No pudimos abrir el carrito.");})
+      .finally(()=>{if(activo)setCargandoEnlace(false);});
+    return ()=>{activo=false;};
+  },[tiendaId]);
 
   useEffect(() => {
-    if (!carritoCargado) return;
+    if(!carritoCargado||carritoCompartido||errorCarrito)return;
+    try{localStorage.setItem("carrito_"+window.location.pathname,JSON.stringify(carrito));}catch{}
+  },[carrito,carritoCargado,carritoCompartido,errorCarrito]);
 
-    try {
-      const clave = `carrito_${window.location.pathname}`;
-      localStorage.setItem(clave, JSON.stringify(carrito));
-    } catch (error) {
-      console.error("Error guardando carrito:", error);
+  function seguirCarrito(opciones) {
+    async function guardar() {
+      async function enviar() {
+        const res = await fetch("/api/seguimiento-carrito", opciones);
+        return res.json();
+      }
+      let respuesta = await enviar();
+      if (respuesta.codigo === "CART_STALE") respuesta = await enviar();
+      if (confirmacionEnCurso.current) return;
+      if (respuesta.codigo === "CART_MOVED") setErrorCarrito("Tu carrito está abierto en otro dispositivo. Para retomarlo aquí, abre el enlace que te compartimos.");
+      if (respuesta.accion === "YA_COMPLETADO") setErrorCarrito("Este carrito ya se convirtió en pedido.");
+      if (!respuesta.ok && respuesta.codigo !== "CART_MOVED") throw Error("No se pudo guardar el carrito.");
     }
-  }, [carrito, carritoCargado]);
+    const siguiente = seguimientoPendiente.current.then(guardar);
+    seguimientoPendiente.current = siguiente.catch(() => {});
+    return siguiente;
+  }
     // ========================================
   // ENVIAR PROGRESO DEL CARRITO AL SERVIDOR
   // ========================================
 
   useEffect(() => {
-  if (!carritoCargado) return;
+  if (!carritoCargado || errorCarrito) return;
   if (!sesionCarrito) return;
   if (!tiendaId) return;
   if (!visitanteId) return;
@@ -613,11 +620,11 @@ useEffect(() => {
 
   // No creamos seguimiento mientras
   // el visitante todavía no tenga productos.
-  if (!carrito.length) return;
+  if (!carrito.length && !carritoCompartido) return;
 
     const temporizador = setTimeout(async () => {
       try {
-        await fetch("/api/seguimiento-carrito", {
+        await seguirCarrito({
           method: "POST",
 
           headers: {
@@ -648,12 +655,14 @@ useEffect(() => {
           error
         );
       }
-    }, 800);
+    }, carritoCompartido ? 0 : 800);
 
     return () => clearTimeout(temporizador);
 }, [
   carrito,
   carritoCargado,
+  errorCarrito,
+  visitanteId,
   sesionCarrito,
   tiendaId,
   telefonoCliente,
@@ -666,16 +675,16 @@ useEffect(() => {
 
 useEffect(() => {
   if (!formularioCompraAbierto && !formaPago && !esPuntoVillavo) return;
-  if (!carritoCargado) return;
+  if (!carritoCargado || errorCarrito) return;
   if (!sesionCarrito) return;
   if (!tiendaId) return;
   if (!visitanteId) return;
-  if (!carrito.length) return;
+  if (!carrito.length && !carritoCompartido) return;
   if (pedidoEnviado) return;
 
   const temporizador = setTimeout(async () => {
     try {
-      await fetch("/api/seguimiento-carrito", {
+      await seguirCarrito({
         method: "POST",
 
         headers: {
@@ -718,18 +727,22 @@ ciudad:
         error
       );
     }
-  }, 1000);
+  }, carritoCompartido ? 0 : 1000);
 
   return () => clearTimeout(temporizador);
 }, [
   formularioCompraAbierto,
   carrito,
   carritoCargado,
+  errorCarrito,
+  visitanteId,
   sesionCarrito,
   tiendaId,
   nombreCliente,
   telefonoCliente,
   correoCliente,
+  cedulaCliente,
+  direccionCliente,
   ciudadSeleccionada,
   formaPago,
   pedidoEnviado,
@@ -1593,7 +1606,7 @@ if (typeof window !== "undefined" && typeof window.fbq === "function") {
 setPedidoEnviado(true);
 // Un pedido recibido no debe reaparecer al cerrar o recargar el carrito.
 setCarrito([]);
-try { localStorage.removeItem(`carrito_${window.location.pathname}`); } catch {}
+try { if(carritoCompartido)sessionStorage.removeItem(claveDispositivo);else localStorage.removeItem(`carrito_${window.location.pathname}`); } catch {}
 
 
 // ========================================
@@ -1614,12 +1627,10 @@ try {
           .toString(36)
           .slice(2)}`;
 
-  localStorage.setItem(
-    "ra_sesion_carrito",
-    nuevaSesion
-  );
-
-  setSesionCarrito(nuevaSesion);
+  if(!carritoCompartido){
+    localStorage.setItem("ra_sesion_carrito",nuevaSesion);
+    setSesionCarrito(nuevaSesion);
+  }
 } catch (errorSesion) {
   console.error(
     "Error creando nueva sesión del carrito:",
@@ -1725,6 +1736,15 @@ try {
   // RENDER
   // ========================================
 
+  if(errorCarrito||cargandoEnlace)return <main className="tienda" style={{padding:24,textAlign:"center"}}>
+    <p role="status">{errorCarrito||"Recuperando tus productos…"}</p>
+    {errorCarrito&&<button type="button" onClick={()=>{
+      const eraCompartido=sessionStorage.getItem(claveDispositivo)||window.location.hash.includes("carrito=");
+      sessionStorage.removeItem(claveDispositivo);
+      if(!eraCompartido){localStorage.removeItem("carrito_"+window.location.pathname);localStorage.removeItem("ra_sesion_carrito");}
+      window.location.replace(window.location.pathname);
+    }}>Volver a la tienda</button>}
+  </main>;
   return (
     <>
       <div className="tienda">
@@ -2794,6 +2814,7 @@ try {
       setCarritoAbierto(false); setFormularioCompraAbierto(false);
       setErroresCompra({});
       if (pedidoEnviado) {
+        if(carritoCompartido){window.location.reload();return;}
         setPedidoEnviado(false); setFormaPago(""); setModalidadEntrega(""); setAvisoPedido("");
       }
     }}

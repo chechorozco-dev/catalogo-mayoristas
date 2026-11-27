@@ -1,3 +1,4 @@
+import {sesionOriginal} from "../../../../lib/catalogo/sesion-carrito-servidor.mjs";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -58,7 +59,7 @@ export async function POST(request) {
     const resultado = await rpc("ra_solo_ra_reservar", {
       p_producto_id: producto,
       p_tienda_id: tienda,
-      p_sesion_id: sesion,
+      p_sesion_id: await sesionOriginal(tienda,sesion),
       p_cantidad: cantidad,
     });
     return NextResponse.json(resultado, {
