@@ -1,3 +1,4 @@
+import {esSesionCompartida,sesionOriginal} from "../../../lib/catalogo/sesion-carrito-servidor.mjs";
 import { consultarDisponibilidadCarrito } from "../../../lib/catalogo/consultar-carrito.mjs";
 import {pedidoDirectoHabilitado,registrarPedidoDirecto,directRequestKey,buscarPedidoDirecto} from '../../../lib/integraciones/pedidosDirectos.mjs';
 import {revisarPedidosMake,registrarResultadoMake} from "../../../lib/integraciones/pedidosMakeControl.mjs";
@@ -196,7 +197,8 @@ async function procesarPOST(request) {
     // Verificar reservas ANTES de enviar el pedido a Make.
     // El servidor consulta los productos reales, nunca confía en
     // que el navegador diga si son SOLO_RA.
-    const sesionReserva = String(pedido?.sesion_id || "");
+    let sesionReserva = String(pedido?.sesion_id || "");
+    if(esSesionCompartida(sesionReserva))sesionReserva=await sesionOriginal(tiendaActual.id,sesionReserva);
     const tiendaReserva = String(pedido?.tienda_id || "");
     const parametrosInventario = {
       p_tienda_id: tiendaReserva,
@@ -391,6 +393,7 @@ async function procesarPOST(request) {
         pedidoCreado.numero_pedido,
     });
   } catch (error) {
+    if(['CART_CLOSED','CART_MOVED'].includes(error.message))return Response.json({ok:false,error:error.message==='CART_CLOSED'?'Este carrito ya tiene un pedido. Escríbenos para consultarlo.':'Este carrito se retomó en otro dispositivo. Abre el enlace para continuar.'},{status:409});
     console.error(
       "Error enviando pedido:",
       error
