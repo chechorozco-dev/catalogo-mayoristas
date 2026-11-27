@@ -1,4 +1,6 @@
 import test from "node:test";
+import { createHmac } from "node:crypto";
+import { GET } from "../app/api/apartados/route.js";
 import assert from "node:assert/strict";
 import { PDFDocument } from "pdf-lib";
 import {
@@ -47,4 +49,33 @@ test("el detalle PDF admite nombres con acentos, símbolos y varias páginas", a
   const doc = await PDFDocument.load(bytes);
   assert.ok(doc.getPageCount() > 1);
   assert.equal(doc.getTitle(), "Apartado APT4000");
+});
+
+test("Mis apartados valida en la base la cuenta firmada del cliente, del maestro y de la sesión creada al abrir tienda", async (t) => {
+  const secreto = "prueba-de-sesion";
+  const anterior = process.env.AUTH_SESSION_SECRET;
+  process.env.AUTH_SESSION_SECRET = secreto;
+  t.after(() => {
+    if (anterior === undefined) delete process.env.AUTH_SESSION_SECRET;
+    else process.env.AUTH_SESSION_SECRET = anterior;
+  });
+  const cuenta = { cliente_id: "e5776008-5dbb-439e-8974-fd327bfc666d", telefono: "573000000000" };
+  const exp = Math.floor(Date.now() / 1000) + 90;
+  const rpc = t.mock.method(globalThis, "fetch", async (_, init) => {
+    const body = JSON.parse(init.body);
+    assert.equal(body.p_cliente, cuenta.cliente_id);
+    assert.equal(body.p_telefono, cuenta.telefono);
+    return Response.json({ cliente: body.p_cliente, apartados: [] });
+  });
+  const nextUrl = new URL("https://tienda.example/api/apartados");
+  function consultar(datos) {
+    const payload = Buffer.from(JSON.stringify(datos)).toString("base64url");
+    const firma = createHmac("sha256", secreto).update(payload).digest("base64url");
+    return GET({ nextUrl, cookies: { get: () => ({ value: payload + "." + firma }) } });
+  }
+  for (const rol of ["CLIENTE", "MAESTRO", undefined]) {
+    assert.equal((await consultar({ ...cuenta, rol, exp })).status, 200);
+  }
+  assert.equal((await consultar({ ...cuenta, rol: "MAESTRO", exp: 1 })).status, 401);
+  assert.equal(rpc.mock.callCount(), 3);
 });

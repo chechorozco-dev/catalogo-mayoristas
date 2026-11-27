@@ -246,7 +246,7 @@ const colorFondo =
       await fetch(
         `${supabaseUrl}/rest/v1/clientes_autorizados?id=eq.${encodeURIComponent(
           sesion.cliente_id
-        )}&activo=eq.true&select=id,nombre,telefono,activo,tienda_id`,
+        )}&activo=eq.true&select=id,nombre,telefono,activo,tienda_id,rol`,
         {
           method: "GET",
           headers:
@@ -543,6 +543,7 @@ const colorFondo =
       60 * 60 * 24 * 30;
 
     const nuevaSesion = {
+      rol: cliente.rol === "MAESTRO" ? "MAESTRO" : "CLIENTE",
       cliente_id:
         cliente.id,
 

@@ -45,6 +45,12 @@ export default function LoginPage() {
       return;
     }
 
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("volver") === "apartados" && cliente.tienda_id) {
+      router.replace(params.get("carrito") === "1" ? "/admin/apartados?carrito=1" : "/admin/apartados");
+      return;
+    }
+
     // PRIMERO REVISAMOS SI ES MAESTRO
     if (cliente.rol === "MAESTRO") {
       router.replace("/admin-maestro");
@@ -255,19 +261,7 @@ export default function LoginPage() {
       // REDIRECCIÓN CORRECTA
       // =================================================
 
-      if (dataSesion.cliente.rol === "MAESTRO") {
-        router.replace("/admin-maestro");
-        router.refresh();
-        return;
-      }
-
-      if (dataSesion.cliente.tienda_id) {
-        router.replace("/admin");
-        router.refresh();
-        return;
-      }
-
-      router.replace("/crear-tienda");
+      redirigirUsuario(dataSesion.cliente);
       router.refresh();
     } catch (error) {
       console.error(

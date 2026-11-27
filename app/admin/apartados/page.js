@@ -30,7 +30,10 @@ async function pedir(url = api, body, signal) {
     signal,
   });
   const data = await r.json();
-  if (r.status === 401) location.replace("/login");
+  if (r.status === 401) {
+    const carrito = new URLSearchParams(location.search).get("carrito") === "1";
+    location.replace("/login?volver=apartados" + (carrito ? "&carrito=1" : ""));
+  }
   if (!r.ok) {
     const e = new Error(data.mensaje || "No pudimos cargar tus apartados.");
     e.status = r.status;
@@ -284,7 +287,7 @@ export default function Apartados() {
         }
         if (!actual.length && !r.apartados.length) setTab("buscar");
       } catch (e) {
-        if (vivo) setError(e.message);
+        if (vivo && e.status !== 401) setError(e.message);
       } finally {
         if (vivo) setCargando(false);
       }
@@ -391,6 +394,7 @@ export default function Apartados() {
       setMensaje("Tus productos quedaron registrados en " + doc.codigo + ".");
       window.scrollTo(0, 0);
     } catch (e) {
+      if (e.status === 401) return; // Keep the pending request across sign-in.
       if (confirmado) {
         setMensaje(
           "El apartado quedó registrado. Recarga para ver el detalle.",

@@ -47,7 +47,8 @@ function acceso(request) {
     request.cookies.get("ra_session")?.value,
     process.env.AUTH_SESSION_SECRET,
   );
-  return s?.rol === "CLIENTE" && uuid.test(s.cliente_id) && s.telefono
+  // The database checks the current account, role and active store for this signed identity.
+  return s && uuid.test(s.cliente_id) && s.telefono
     ? { p_cliente: s.cliente_id, p_telefono: s.telefono }
     : null;
 }
