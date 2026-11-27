@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { fechaApartado as fecha } from "../../../lib/apartados/fechas.mjs";
 import { formatoPrecio as pesos } from "../../../lib/catalogo/formatos.mjs";
 import {
+  actualizarSeleccion,
   claveBorrador,
   claveCarrito,
   combinarCarrito,
@@ -32,9 +33,49 @@ async function pedir(url = api, body, signal) {
   if (!r.ok) {
     const e = new Error(data.mensaje || "No pudimos cargar tus apartados.");
     e.status = r.status;
+    e.codigo = data.codigo;
     throw e;
   }
   return data;
+}
+async function revisar(lista, destino, signal) {
+  if (!lista.length) return [];
+  const d = await pedir(
+    api,
+    {
+      accion: "revisar",
+      destino: destino || null,
+      lineas: lista.map(({ clave, cantidad }) => ({ clave, cantidad })),
+    },
+    signal,
+  );
+  return actualizarSeleccion(lista, d.productos);
+}
+
+// Keep visible stock current while the customer shops. A closed or hidden view does no polling.
+function vigilarDisponibilidad(consultar, demora) {
+  const ctrl = new AbortController();
+  let ocupado = false;
+  async function consultarVisible() {
+    if (document.hidden || ocupado || ctrl.signal.aborted) return;
+    ocupado = true;
+    try {
+      await consultar(ctrl.signal);
+    } finally {
+      ocupado = false;
+    }
+  }
+  const inicial = setTimeout(consultarVisible, demora);
+  const intervalo = setInterval(consultarVisible, 60000);
+  window.addEventListener("focus", consultarVisible);
+  document.addEventListener("visibilitychange", consultarVisible);
+  return () => {
+    ctrl.abort();
+    clearTimeout(inicial);
+    clearInterval(intervalo);
+    window.removeEventListener("focus", consultarVisible);
+    document.removeEventListener("visibilitychange", consultarVisible);
+  };
 }
 function Foto({ p }) {
   return p.foto ? (
@@ -72,7 +113,6 @@ function Catalogo({
     [revision, setRevision] = useState(0),
     [aviso, setAviso] = useState("");
   useEffect(() => {
-    const ctrl = new AbortController();
     setCarga(true);
     setError("");
     if (porReferencia && !q.trim()) {
@@ -80,30 +120,27 @@ function Catalogo({
       setCarga(false);
       return;
     }
-    const timer = setTimeout(
-      () =>
-        pedir(
+    return vigilarDisponibilidad(async (signal) => {
+      try {
+        const d = await pedir(
           api +
             (porReferencia ? "?modo=referencia&q=" : "?modo=catalogo&q=") +
             encodeURIComponent(q) +
             "&offset=" +
             offset,
           null,
-          ctrl.signal,
-        )
-          .then((d) => setProductos(d.productos))
-          .catch((e) => {
-            if (!ctrl.signal.aborted) setError(e.message);
-          })
-          .finally(() => {
-            if (!ctrl.signal.aborted) setCarga(false);
-          }),
-      180,
-    );
-    return () => {
-      ctrl.abort();
-      clearTimeout(timer);
-    };
+          signal,
+        );
+        if (!signal.aborted) {
+          setProductos(d.productos);
+          setError("");
+        }
+      } catch (e) {
+        if (!signal.aborted) setError(e.message);
+      } finally {
+        if (!signal.aborted) setCarga(false);
+      }
+    }, 180);
   }, [q, offset, revision, porReferencia]);
   return (
     <section className="ap-panel">
@@ -442,19 +479,6 @@ export default function Apartados() {
           : "",
     );
   }
-  async function revisar(lista) {
-    if (!lista.length) return [];
-    const d = await pedir(api, {
-      accion: "revisar",
-      claves: lista.map((i) => i.clave),
-    });
-    const validos = new Map(d.productos.map((p) => [p.clave, p]));
-    return lista.map((i) => ({
-      ...i,
-      ...validos.get(i.clave),
-      disponible: validos.has(i.clave),
-    }));
-  }
   useEffect(() => {
     let vivo = true;
     async function cargar() {
@@ -474,8 +498,17 @@ export default function Apartados() {
               leerGuardado(claveCarrito(r.cliente), []),
             )
           : borrador.items;
-        const actual = borrador.pendiente ? lista : await revisar(lista);
+        const abiertos = r.apartados.filter((a) => a.estado === "Abierto");
+        const actual =
+          borrador.pendiente || abiertos.length > 1
+            ? lista
+            : await revisar(lista, abiertos[0]?.id);
         if (!vivo) return;
+        const vigente = leerGuardado(claveBorrador(r.cliente), { items: [] });
+        if (JSON.stringify(vigente) !== JSON.stringify(borrador)) {
+          setInicio((n) => n + 1);
+          return;
+        }
         elegirResumen(r, borrador.pendiente?.destino);
         setItems(actual);
         setPendiente(borrador.pendiente || null);
@@ -491,7 +524,7 @@ export default function Apartados() {
           history.replaceState(history.state, "", url);
         }
         setTab(
-          borrador.pendiente || (importar && actual.length > 0)
+          borrador.pendiente || (importar && lista.length > 0)
             ? "seleccion"
             : "resumen",
         );
@@ -572,10 +605,7 @@ export default function Apartados() {
     if (
       busy.current ||
       (!pendiente &&
-        (!items.length ||
-          bloqueado ||
-          noDisponibles ||
-          (abiertos.length && !destino)))
+        (!items.length || bloqueado || (abiertos.length && !destino)))
     )
       return;
     busy.current = true;
@@ -631,13 +661,30 @@ export default function Apartados() {
           "El apartado quedó registrado. Recarga para ver el detalle.",
         );
       } else if (e.status && e.status < 500) {
-        guardar(items);
-        setError(e.message);
+        const stock = e.codigo === "PORTAL_DISPONIBILIDAD";
+        if (!stock) setError(e.message);
+        let lista = items;
         try {
-          const [r, lista] = await Promise.all([pedir(), revisar(items)]);
-          elegirResumen(r, destino);
-          guardar(lista);
-        } catch {}
+          lista = await revisar(items, intento.destino);
+        } catch (revision) {
+          if (stock) setError(revision.message);
+        }
+        const vigente = leerGuardado(claveBorrador(resumen.cliente), {
+          items: [],
+        });
+        if (
+          vigente.pendiente?.solicitud !== intento.solicitud ||
+          JSON.stringify(vigente.items) !== JSON.stringify(items)
+        ) {
+          setInicio((n) => n + 1);
+          return;
+        }
+        guardar(lista);
+        if (!stock) {
+          try {
+            elegirResumen(await pedir(), destino);
+          } catch {}
+        }
       } else
         setError(
           "No recibimos la confirmación. Usa «Comprobar envío» para recuperar el resultado sin duplicar productos.",
@@ -650,8 +697,57 @@ export default function Apartados() {
   const abiertos =
     resumen?.apartados.filter((a) => a.estado === "Abierto") || [];
   const bloqueado = resumen?.bloqueado === true,
-    fijo = enviando || Boolean(pendiente),
-    noDisponibles = items.some((i) => !i.disponible);
+    fijo = enviando || Boolean(pendiente);
+  const cliente = resumen?.cliente;
+  const sinDestino = abiertos.length > 1 && !destino;
+  useEffect(() => {
+    if (
+      !cliente ||
+      cargando ||
+      detalle ||
+      tab !== "seleccion" ||
+      fijo ||
+      bloqueado ||
+      sinDestino ||
+      !items.length
+    )
+      return;
+    return vigilarDisponibilidad(async (signal) => {
+      try {
+        const lista = await revisar(items, destino, signal);
+        if (
+          signal.aborted ||
+          busy.current ||
+          JSON.stringify(lista) === JSON.stringify(items)
+        )
+          return;
+        const key = claveBorrador(cliente);
+        const vigente = leerGuardado(key, { items: [] });
+        if (
+          vigente.pendiente ||
+          JSON.stringify(vigente.items) !== JSON.stringify(items)
+        )
+          return;
+        localStorage.setItem(
+          key,
+          JSON.stringify({ items: lista, pendiente: null }),
+        );
+        setItems(lista);
+      } catch {
+        // A failed background read must never discard the customer's draft.
+      }
+    }, 400);
+  }, [
+    cliente,
+    cargando,
+    detalle,
+    tab,
+    fijo,
+    bloqueado,
+    sinDestino,
+    items,
+    destino,
+  ]);
   const anteriores =
     resumen?.apartados.filter((a) => a.estado !== "Abierto") || [];
   const elegido = abiertos.find((a) => a.id === destino);
@@ -896,9 +992,6 @@ export default function Apartados() {
                                   <small>{i.referencia}</small>
                                   <strong>{i.nombre}</strong>
                                   <Precios p={i} />
-                                  {!i.disponible && (
-                                    <b className="ap-baja">Ya no disponible</b>
-                                  )}
                                   <div className="ap-qty">
                                     <button
                                       aria-label={"Restar " + i.referencia}
@@ -1014,7 +1107,6 @@ export default function Apartados() {
                                 enviando ||
                                 (!pendiente &&
                                   (bloqueado ||
-                                    noDisponibles ||
                                     (abiertos.length > 0 && !destino)))
                               }
                               onClick={confirmar}

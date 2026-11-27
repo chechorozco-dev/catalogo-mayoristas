@@ -3,6 +3,7 @@ import { createHmac } from "node:crypto";
 import { GET } from "../app/api/apartados/route.js";
 import assert from "node:assert/strict";
 import {
+  actualizarSeleccion,
   combinarCarrito,
   descontarConfirmados,
 } from "../lib/apartados/carrito.mjs";
@@ -28,6 +29,26 @@ test("al confirmar menos unidades, el resto queda en el carrito mayorista", () =
   lista[0].cantidad = 1;
   assert.equal(descontarConfirmados(carrito, lista)[0].cantidad, 1);
 });
+test("la revisión retira solo las cantidades que no se pueden apartar y conserva las variantes y las unidades del carrito", () => {
+  const items = [
+    { clave: "w:10:1", cantidad: 4, desdeCarrito: 2, referencia: "LETRA-A" },
+    {
+      clave: "w:10:2",
+      cantidad: 2,
+      desdeCarrito: 1,
+      referencia: "LETRA-B",
+      mayor: 500,
+    },
+    { clave: "r:agotado", cantidad: 1, referencia: "AC-AGOTADO" },
+  ];
+  const productos = [{ clave: "w:10:2", referencia: "LETRA-B", mayor: 600 }];
+  assert.deepEqual(actualizarSeleccion(items, productos), [
+    { ...items[1], mayor: 600, disponible: true },
+  ]);
+  assert.deepEqual(actualizarSeleccion(items, []), []);
+  assert.equal(items.length, 3);
+});
+
 test("la descarga entrega el archivo de WhatsApp Lab y utiliza un permiso específico", async (t) => {
   const token = "a".repeat(64);
   const bytes = new Uint8Array([37, 80, 68, 70, 45, 49, 46, 55]);

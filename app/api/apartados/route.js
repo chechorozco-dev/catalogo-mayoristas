@@ -103,7 +103,15 @@ function fallo(error) {
     /^[A-Z0-9-]{1,32}$/i.test(error.referencia || "")
       ? " Ref. " + error.referencia
       : "";
-  return respuesta({ mensaje: texto + ref }, status);
+  return respuesta(
+    {
+      mensaje: texto + ref,
+      ...(error.message === "PORTAL_DISPONIBILIDAD"
+        ? { codigo: error.message }
+        : {}),
+    },
+    status,
+  );
 }
 export async function GET(request) {
   const identity = acceso(request);
@@ -170,6 +178,32 @@ export async function POST(request) {
     const raw = await request.text();
     if (raw.length > 55000) return fallo(new Error("PORTAL_DATOS"));
     const b = JSON.parse(raw);
+    if (b?.accion === "revisar" && Array.isArray(b.lineas)) {
+      if (
+        (b.destino != null && !uuid.test(b.destino)) ||
+        b.lineas.length > 250 ||
+        !b.lineas.every(
+          (x) =>
+            x &&
+            typeof x.clave === "string" &&
+            sku.test(x.clave) &&
+            Number.isSafeInteger(x.cantidad) &&
+            x.cantidad >= 1 &&
+            x.cantidad <= 999,
+        )
+      )
+        return fallo(new Error("PORTAL_DATOS"));
+      return respuesta(
+        await rpc("ra_portal_revisar_seleccion", {
+          ...identity,
+          p_pedido: b.destino || null,
+          p_lineas: b.lineas.map(({ clave, cantidad }) => ({
+            clave,
+            cantidad,
+          })),
+        }),
+      );
+    }
     if (
       b?.accion === "revisar" &&
       Array.isArray(b.claves) &&
