@@ -16,6 +16,7 @@ import "../cliente-admin.css";
 import "./apartados.css";
 
 const api = "/api/apartados";
+const claveAnexo = (cliente) => "ra_apartado_anexo:" + cliente;
 const suma = (items) => items.reduce((n, p) => n + p.mayor * p.cantidad, 0);
 async function pedir(url = api, body, signal) {
   const r = await fetch(url, {
@@ -98,12 +99,7 @@ function Precios({ p }) {
     </div>
   );
 }
-function Catalogo({
-  agregar,
-  bloqueado,
-  porReferencia = false,
-  revisarSeleccion,
-}) {
+function Catalogo({ agregar, bloqueado, porReferencia = false, anexar }) {
   const [cantidades, setCantidades] = useState({});
   const [q, setQ] = useState(""),
     [offset, setOffset] = useState(0),
@@ -160,7 +156,7 @@ function Catalogo({
           autoFocus={porReferencia}
           autoCapitalize="characters"
           placeholder={
-            porReferencia ? "Ej. AC1057" : "Ej. RA7789 o collar letra"
+            porReferencia ? "Ej. 469 o RA469" : "Ej. 469, RA7789 o collar letra"
           }
           onChange={(e) => {
             setQ(e.target.value);
@@ -168,6 +164,12 @@ function Catalogo({
           }}
         />
       </label>
+      {porReferencia && (
+        <p className="ap-nota-anexo">
+          Al agregar, te guardamos esas unidades y las contamos como vendidas.
+          Si después necesitas un ajuste, escríbenos.
+        </p>
+      )}
       <div role="status" className="ap-live">
         {aviso}
       </div>
@@ -221,23 +223,20 @@ function Catalogo({
                           Number(cantidades[p.clave] ?? 1) < 1 ||
                           Number(cantidades[p.clave] ?? 1) > 999))
                     }
-                    aria-label={"Agregar " + p.referencia}
+                    aria-label={
+                      (porReferencia
+                        ? "Agregar a mi apartado · "
+                        : "Agregar ") + p.referencia
+                    }
                     onClick={() => {
-                      if (
-                        !agregar(
-                          p,
-                          porReferencia ? Number(cantidades[p.clave] ?? 1) : 1,
-                        )
-                      )
-                        return;
                       if (porReferencia) {
-                        revisarSeleccion();
-                        return;
+                        anexar(p, Number(cantidades[p.clave] ?? 1));
+                      } else if (agregar(p)) {
+                        setAviso("Agregado a la selección: " + p.referencia);
                       }
-                      setAviso("Agregado a la selección: " + p.referencia);
                     }}
                   >
-                    {porReferencia ? "Agregar a mi selección" : "+ Agregar"}
+                    {porReferencia ? "Agregar a mi apartado" : "+ Agregar"}
                   </button>
                 </div>
               </article>
@@ -462,7 +461,8 @@ export default function Apartados() {
   const [error, setError] = useState(""),
     [mensaje, setMensaje] = useState(""),
     [enviando, setEnviando] = useState(false),
-    [pendiente, setPendiente] = useState(null);
+    [pendiente, setPendiente] = useState(null),
+    [anexo, setAnexo] = useState(null);
   const [tab, setTab] = useState("resumen"),
     [cargando, setCargando] = useState(true),
     [inicio, setInicio] = useState(0);
@@ -489,9 +489,14 @@ export default function Apartados() {
         if (!vivo) return;
         elegirResumen(r);
         const borrador = leerGuardado(claveBorrador(r.cliente), { items: [] });
+        const anexoGuardado = JSON.parse(
+          sessionStorage.getItem(claveAnexo(r.cliente)) || "null",
+        );
         const url = new URL(location.href);
         const importar =
-          !borrador.pendiente && url.searchParams.get("carrito") === "1";
+          !borrador.pendiente &&
+          !anexoGuardado &&
+          url.searchParams.get("carrito") === "1";
         const lista = importar
           ? combinarCarrito(
               borrador.items,
@@ -500,7 +505,7 @@ export default function Apartados() {
           : borrador.items;
         const abiertos = r.apartados.filter((a) => a.estado === "Abierto");
         const actual =
-          borrador.pendiente || abiertos.length > 1
+          borrador.pendiente || anexoGuardado || abiertos.length > 1
             ? lista
             : await revisar(lista, abiertos[0]?.id);
         if (!vivo) return;
@@ -509,7 +514,8 @@ export default function Apartados() {
           setInicio((n) => n + 1);
           return;
         }
-        elegirResumen(r, borrador.pendiente?.destino);
+        elegirResumen(r, anexoGuardado?.destino || borrador.pendiente?.destino);
+        setAnexo(anexoGuardado);
         setItems(actual);
         setPendiente(borrador.pendiente || null);
         localStorage.setItem(
@@ -524,9 +530,11 @@ export default function Apartados() {
           history.replaceState(history.state, "", url);
         }
         setTab(
-          borrador.pendiente || (importar && lista.length > 0)
-            ? "seleccion"
-            : "resumen",
+          anexoGuardado
+            ? "referencia"
+            : borrador.pendiente || (importar && lista.length > 0)
+              ? "seleccion"
+              : "resumen",
         );
       } catch (e) {
         if (vivo && e.status !== 401) setError(e.message);
@@ -599,6 +607,89 @@ export default function Apartados() {
       }
     } catch (e) {
       if (version === versionDetalle.current) setError(e.message);
+    }
+  }
+  async function anexar(producto, cantidad) {
+    if (busy.current) return;
+    const solicitudAnterior = anexo;
+    if (
+      !solicitudAnterior &&
+      (!producto ||
+        !elegido ||
+        bloqueado ||
+        fijo ||
+        !Number.isInteger(cantidad) ||
+        cantidad < 1 ||
+        cantidad > 999)
+    )
+      return;
+    const intento = solicitudAnterior || {
+      accion: "apartar",
+      solicitud: crypto.randomUUID(),
+      destino: elegido.id,
+      lineas: [{ clave: producto.clave, cantidad, mayor: producto.mayor }],
+      referencia: producto.referencia,
+      codigo: elegido.codigo,
+    };
+    const key = claveAnexo(resumen.cliente);
+    busy.current = true;
+    setEnviando(true);
+    setError("");
+    setMensaje("");
+    try {
+      // The direct item is independent of both the wholesale cart and its draft.
+      // Keep its request ID in this tab across reloads and sign-in.
+      sessionStorage.setItem(key, JSON.stringify(intento));
+      setAnexo(intento);
+    } catch {
+      setError(
+        "No pudimos preparar el envío en este dispositivo. Inténtalo de nuevo.",
+      );
+      busy.current = false;
+      setEnviando(false);
+      return;
+    }
+    try {
+      await pedir(api, intento);
+      sessionStorage.removeItem(key);
+      setAnexo(null);
+      setMensaje(
+        "Agregamos " +
+          intento.lineas[0].cantidad +
+          " ud. de " +
+          intento.referencia +
+          " a " +
+          intento.codigo +
+          ".",
+      );
+      if (pendiente) setTab("seleccion");
+    } catch (e) {
+      if (e.status === 401) return;
+      if (!e.status || e.status >= 500) {
+        setError(
+          "No recibimos la confirmación. Comprueba el envío para saber si el accesorio quedó anexado.",
+        );
+        return;
+      }
+      sessionStorage.removeItem(key);
+      setAnexo(null);
+      if (e.codigo !== "PORTAL_DISPONIBILIDAD") setError(e.message);
+    } finally {
+      busy.current = false;
+      setEnviando(false);
+    }
+    try {
+      const r = await pedir();
+      const sigueAbierto = r.apartados.some(
+        (a) => a.id === intento.destino && a.estado === "Abierto",
+      );
+      setResumen(r);
+      if ((r.bloqueado || !sigueAbierto) && !pendiente) {
+        elegirResumen(r);
+        setTab("resumen");
+      }
+    } catch {
+      /* The saved result is already known. */
     }
   }
   async function confirmar() {
@@ -697,7 +788,7 @@ export default function Apartados() {
   const abiertos =
     resumen?.apartados.filter((a) => a.estado === "Abierto") || [];
   const bloqueado = resumen?.bloqueado === true,
-    fijo = enviando || Boolean(pendiente);
+    fijo = enviando || Boolean(pendiente) || Boolean(anexo);
   const cliente = resumen?.cliente;
   const sinDestino = abiertos.length > 1 && !destino;
   useEffect(() => {
@@ -903,7 +994,7 @@ export default function Apartados() {
                     )}
                   </>
                 )}
-                {tab !== "resumen" && (!bloqueado || pendiente) && (
+                {tab !== "resumen" && (!bloqueado || pendiente || anexo) && (
                   <>
                     <div className="ap-flujo">
                       {!fijo && (
@@ -927,6 +1018,7 @@ export default function Apartados() {
                     </div>
                     <nav className="ap-tabs" aria-label="Preparar apartado">
                       <button
+                        disabled={Boolean(anexo)}
                         aria-pressed={tab === "seleccion"}
                         onClick={() => setTab("seleccion")}
                       >
@@ -941,19 +1033,32 @@ export default function Apartados() {
                         Buscar productos
                       </button>
                     </nav>
-                    {(tab === "buscar" || tab === "referencia") && !fijo ? (
+                    {anexo ? (
+                      <section className="ap-panel">
+                        <h2>
+                          {anexo.referencia} · {anexo.codigo}
+                        </h2>
+                        {enviando ? (
+                          <p role="status">Anexando el accesorio…</p>
+                        ) : (
+                          <button
+                            className="ca-primary"
+                            onClick={() => anexar()}
+                          >
+                            Comprobar envío
+                          </button>
+                        )}
+                      </section>
+                    ) : (tab === "buscar" || tab === "referencia") && !fijo ? (
                       <>
                         <Catalogo
                           key={tab}
-                          revisarSeleccion={() => {
-                            setTab("seleccion");
-                            window.scrollTo(0, 0);
-                          }}
+                          anexar={anexar}
                           porReferencia={tab === "referencia"}
                           agregar={agregar}
                           bloqueado={bloqueado}
                         />
-                        {items.length > 0 && (
+                        {tab === "buscar" && items.length > 0 && (
                           <button
                             className="ap-sticky ca-primary"
                             onClick={() => {

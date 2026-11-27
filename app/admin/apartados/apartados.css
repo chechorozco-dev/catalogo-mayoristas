@@ -438,3 +438,9 @@
     grid-column: auto;
   }
 }
+
+.ap-nota-anexo {
+  color: #526355;
+  font-size: 14px;
+  margin: 10px 0;
+}
